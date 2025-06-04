@@ -408,31 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
     openSidebarBtn.style.left = '20px';
   }
 
-  // Adicione esta função auxiliar para remover o destaque do último número
-  // quando a página é carregada e múltiplos números já estão sorteados,
-  // ou para garantir que apenas o último tenha o estilo especial ao carregar uma sessão.
-  function applyLastDrawnStyleOnLoad() {
-    // Primeiro, remova qualquer 'last-drawn' existente se a página for recarregada
-    const currentLastDrawn = bingoTableBody.querySelector('.last-drawn');
-    if (currentLastDrawn) {
-      currentLastDrawn.classList.remove('last-drawn');
-    }
-
-    if (numerosSorteados.length > 0) {
-      const lastNumber = numerosSorteados[numerosSorteados.length - 1];
-      const todasAsCelulas = bingoTableBody.querySelectorAll('td');
-      for (const celula of todasAsCelulas) {
-        if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === lastNumber) {
-          const numeroSpan = celula.querySelector('.bingo-number-circle');
-          if (numeroSpan) {
-            numeroSpan.classList.add('last-drawn');
-          }
-          return;
-        }
-      }
-    }
-  }
-
   // --- Event Listeners ---
   sortearBtn.addEventListener('click', () => {
     if (!currentSessionName) {
@@ -511,19 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Inicialização ---
   gerarTabelaBingo();
   updateSavedSessionsList();
-  // A função atualizarListaSorteados já chamará updateLastDrawnStyle
   atualizarListaSorteados();
   updatePageTitle();
-  // A chamada anterior a 'applyLastDrawnStyleOnLoad()' pode ser removida
-  // pois 'atualizarListaSorteados()' já a chama.
 
-
-  // loadThemePreference() removido
 });
-
-function atualizarListaSorteados() {
-  // ... (código existente)
-
-  // Após atualizar a lista e salvar a sessão, aplique o estilo do último número
-  applyLastDrawnStyleOnLoad();
-}
