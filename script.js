@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             numerosSorteados = sessionData.numbers;
             currentSessionName = sessionName;
-            sessionNameInput.value = sessionName;
+            sessionNameInput.value = '';
 
             numerosSorteados.forEach(num => destacarNumero(num));
             atualizarListaSorteados();
@@ -227,26 +227,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startNewSession() {
-        if (hasDrawnNumbers && currentSessionName) {
-            if (!confirm(`A série atual "${currentSessionName}" não está vazia. Tem certeza que deseja iniciar uma nova série e perder o progresso não salvo?`)) {
-                return;
-            }
-        } else if (hasDrawnNumbers && !currentSessionName) {
-             if (!confirm('Existem números sorteados nesta sessão sem nome. Deseja iniciar uma nova série e perder o progresso?')) {
-                return;
-            }
+        const newName = sessionNameInput.value.trim();
+        if (newName && newName !== currentSessionName) {
+            numerosSorteados.forEach(num => removerDestaqueNumero(num));
+            numerosSorteados = [];
+            currentSessionName = newName;
+            sessionNameInput.value = '';
+            saveCurrentSession();
+            atualizarListaSorteados();
+            updatePageTitle();
+            updateSavedSessionsList();
+            alert('Nova série iniciada.');
+            sessionNameInput.focus();
+            openSidebar();
         }
-
-        numerosSorteados.forEach(num => removerDestaqueNumero(num));
-        numerosSorteados = [];
-        currentSessionName = '';
-        sessionNameInput.value = '';
-        atualizarListaSorteados();
-        updatePageTitle();
-        updateSavedSessionsList();
-        alert('Nova série iniciada.');
-        sessionNameInput.focus();
-        openSidebar();
     }
 
     function deleteCurrentSession() {
@@ -264,12 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             numerosSorteados.forEach(num => removerDestaqueNumero(num));
             numerosSorteados = [];
+            erasedSessionName = currentSessionName;
             currentSessionName = '';
             sessionNameInput.value = '';
             atualizarListaSorteados();
             updatePageTitle();
             updateSavedSessionsList();
-            alert(`Série "${currentSessionName}" apagada com sucesso.`);
+            alert(`Série "${erasedSessionName}" apagada com sucesso.`);
             closeSidebar();
         }
     }
@@ -494,25 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
     newSessionBtn.addEventListener('click', startNewSession);
     deleteCurrentSessionBtn.addEventListener('click', deleteCurrentSession);
     deleteAllSessionsBtn.addEventListener('click', deleteAllSavedSessions);
-
-    sessionNameInput.addEventListener('change', () => {
-        const newName = sessionNameInput.value.trim();
-        if (newName && newName !== currentSessionName) {
-            currentSessionName = newName;
-            saveCurrentSession();
-            updatePageTitle();
-        } else if (!newName && currentSessionName) {
-            if (confirm(`O nome da série foi removido. Deseja apagar a série "${currentSessionName}" do histórico?`)) {
-                 localStorage.removeItem(SESSION_DATA_PREFIX + currentSessionName);
-                 let savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-                 savedSessions = savedSessions.filter(name => name !== currentSessionName);
-                 localStorage.setItem(SESSIONS_KEY, JSON.stringify(savedSessions));
-            }
-            currentSessionName = '';
-            updatePageTitle();
-            updateSavedSessionsList();
-        }
-    });
 
     savedSessionsSelect.addEventListener('change', () => {
         const selectedSession = savedSessionsSelect.value;
