@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo - Sem Série</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Botão que exibe/oculta menu lateral -->
+    <div class="sidebar-toggle" id="sidebarToggle">☰</div>
+    <!-- Menu lateral -->
+    <aside class="sidebar" id="sidebar">
+        <p></p>
+        <h2 class="h2-white">Séries de Bingo</h2>
+        <!-- Lista de séries -->
+        <div id="seriesList"></div>
+        <!-- Botões de criação, excluir, importar e exportar séries -->
+        <div class="sidebar-actions">
+            <button class="button" id="newSeriesButton">Nova Série</button>
+            <button class="button import-export-button" id="importSeriesButton">Importar</button>
+            <button class="button import-export-button" id="exportSeriesButton">Exportar</button>
+            <button class="button delete-button" id="deleteCurrentSeriesButton">Excluir Série Atual</button>
+            <button class="button delete-button" id="deleteAllSeriesButton">Excluir Todas</button>
+        </div>
+        <!-- Seletor de arquivos. Fica visível somente nas ações dos botões de importar e exportar -->
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+    </aside>
+
+    <!-- Corpo principal da página -->
+    <main class="container">
+        <h1 id="bingoTitle">Bingo - Sem Série</h1>
+
+        <!-- Último número sorteado em destaque, botão de desfazer e grade com todos os números -->
+        <div class="game-area">
+            <div class="last-drawn-controls">
+                <div class="last-drawn-display">
+                    <span id="largeLastDrawnNumber">--</span>
+                </div>
+                <button class="button undo-button" id="undoButton">Desfazer Última Jogada</button>
+            </div>
+            <div class="bingo-grid-container">
+                <table class="bingo-grid" id="bingoGrid">
+                    </table>
+            </div>
+        </div>
+        <!-- Lista dos números sorteados -->
+        <div class="drawn-numbers-list">
+            <h2>Números Sorteados:</h2>
+            <p id="drawnNumbersDisplay"></p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

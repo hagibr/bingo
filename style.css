@@ -1,0 +1,369 @@
+:root {
+    --primary-color: #007bff; /* Azul */
+    --secondary-color: #ffc107; /* Amarelo Claro */
+    --tertiary-color: #ff8c00; /* Amarelo Escuro */
+    --text-color: #333;
+    --background-color: #f4f4f4;
+    --border-color: #ddd;
+    --button-hover-color: #0056b3;
+    --delete-button-color: #dc3545;
+    --delete-button-hover-color: #c82333;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    overflow-x: hidden; /* Prevent horizontal scroll when sidebar is open */
+}
+
+.container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    transition: margin-left 0.3s ease;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+h1, h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+/* Sidebar styles */
+.sidebar {
+    width: 187.5px; /* 25% mais estreito que 250px */
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    position: fixed;
+    height: 100%;
+    left: -227.5px; /* Fully hidden by default */
+    transition: left 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+    justify-content: flex-start; /* Alinha o conteúdo para o topo */
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1001; /* Above sidebar */
+    font-size: 24px;
+    line-height: 1;
+    transition: left 0.3s ease;
+}
+
+/* When sidebar is active, move the toggle button */
+.sidebar.active ~ .sidebar-toggle { /* Use general sibling combinator */
+    left: 207.5px; /* 187.5px (sidebar width) + 20px (left padding of toggle) */
+}
+
+
+#seriesList {
+    /* flex-grow: 1; Removido para controlar a altura fixa */
+    margin-top: 15px;
+    overflow-y: auto; /* Adiciona scroll quando o conteúdo excede a altura máxima */
+    padding-right: 5px;
+    max-height: calc(5 * (8px + 10px + 1px) + 5px); /* Aproximadamente 5 itens: (padding-top + padding-bottom + border-bottom) * 5 + algum ajuste */
+    /* 8px padding-top, 10px padding-bottom, 1px border-bottom = 19px por item. 19px * 5 = 95px */
+    max-height: 110px; /* Ajuste manual para caber 5 itens visualmente */
+    margin-bottom: 15px; /* Espaço entre a lista e os botões */
+}
+
+#seriesList div {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+#seriesList div:last-child {
+    border-bottom: none;
+}
+
+#seriesList div.active-series {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+    border-radius: 3px;
+}
+
+#seriesList div:hover:not(.active-series) {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.sidebar-actions {
+    margin-top: 0; /* Ajustado para que os botões fiquem logo após a lista */
+    padding-bottom: 20px; /* Add padding at the bottom for buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+/* General button styles */
+.button {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+    width: 100%;
+}
+
+.button:hover {
+    background-color: var(--tertiary-color);
+}
+
+.button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.import-export-button {
+    background-color: var(--tertiary-color);
+    color: white;
+}
+
+.import-export-button:hover {
+    background-color: #e07b00;
+}
+
+.delete-button {
+    background-color: var(--delete-button-color);
+    color: white;
+}
+
+.delete-button:hover {
+    background-color: var(--delete-button-hover-color);
+}
+
+
+/* Game area layout */
+.game-area {
+    display: flex;
+    align-items: flex-start; /* Align items to the top for better button placement */
+    gap: 30px;
+    margin-bottom: 30px;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: center;
+}
+
+.last-drawn-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* Space between display and button */
+}
+
+.last-drawn-display {
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 6em;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.bingo-grid-container {
+    overflow-x: auto; /* Allow horizontal scrolling for wide table */
+}
+
+.bingo-grid {
+    border-collapse: collapse;
+    table-layout: fixed; /* Fix column width */
+}
+
+.bingo-grid th, .bingo-grid td {
+    width: 50px; /* Fixed width for each cell */
+    height: 50px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid var(--border-color);
+    font-weight: bold;
+    position: relative;
+    user-select: none; /* Prevent text selection */
+    cursor: pointer;
+}
+
+.bingo-grid th {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-size: 1.2em;
+}
+
+.bingo-grid td {
+    background-color: white;
+    font-size: 1.1em;
+    transition: background-color 0.2s ease;
+}
+
+.bingo-grid td:hover:not(.drawn) {
+    background-color: var(--background-color);
+}
+
+.bingo-grid td.drawn {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border-radius: 50%;
+    transform: scale(0.9); /* Slightly shrink for circle effect */
+    transition: all 0.3s ease;
+    overflow: hidden; /* Ensure content is clipped by border-radius */
+    box-shadow: inset 0 0 0 999px var(--secondary-color), 0 0 0 5px var(--primary-color); /* Circle background with border */
+    position: relative; /* For the number content */
+    z-index: 1; /* Ensure drawn number is above default cell background */
+}
+
+.bingo-grid td.drawn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 45px; /* Slightly smaller than cell to show border */
+    height: 45px;
+    background-color: var(--secondary-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: -1; /* Behind the number */
+}
+
+/* Adjusted style for last drawn number: just larger font */
+.bingo-grid td.drawn.last-drawn {
+    font-size: 2em; /* Larger for last drawn number */
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    box-shadow: inset 0 0 0 999px var(--secondary-color), 0 0 0 5px var(--primary-color);
+    animation: none; /* Remove pulsing animation */
+}
+
+.bingo-grid td.drawn.last-drawn::before {
+    background-color: var(--secondary-color);
+}
+
+
+/* Drawn numbers list */
+.drawn-numbers-list {
+    margin-top: 30px;
+    width: 80%; /* Adjust width as needed */
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#drawnNumbersDisplay {
+    font-size: 1.2em;
+    word-wrap: break-word; /* Ensure long lists wrap */
+}
+
+/* Undo button */
+.undo-button {
+    background-color: var(--tertiary-color);
+    color: white;
+    width: 150px; /* Mesma largura do display de número */
+}
+
+.undo-button:hover {
+    background-color: #e07b00;
+}
+
+.h2-white {
+    color: white; /* Define a cor do texto para branco */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-area {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .last-drawn-display {
+        width: 120px;
+        height: 120px;
+        font-size: 4em;
+    }
+
+    .bingo-grid th, .bingo-grid td {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9em;
+    }
+
+    .bingo-grid td.drawn.last-drawn {
+        font-size: 1.2em;
+    }
+
+    .sidebar {
+        width: 150px; /* Ajuste para mobile se necessário */
+        left: -150px;
+    }
+
+    .sidebar.active ~ .sidebar-toggle {
+        left: 170px; /* Ajuste para mobile */
+    }
+
+    .undo-button {
+        width: 120px; /* Mesma largura do display de número em telas menores */
+    }
+
+    #seriesList {
+        max-height: 100px; /* Ajuste para telas menores */
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    .sidebar {
+        width: 120px; /* Mais estreito para telas pequenas */
+        left: -120px;
+    }
+
+    .sidebar.active ~ .sidebar-toggle {
+        left: 140px;
+    }
+
+    .bingo-grid th, .bingo-grid td {
+        width: 35px;
+        height: 35px;
+        font-size: 0.8em;
+    }
+
+    #seriesList {
+        max-height: 80px; /* Ajuste para telas muito pequenas */
+    }
+}
