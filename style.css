@@ -83,7 +83,7 @@ body {
     margin-bottom: 20px;
 }
 
-.sidebar .session-management {
+.sidebar .serie-management {
     flex-direction: column;
     align-items: stretch;
     background-color: transparent;
@@ -92,15 +92,15 @@ body {
     width: calc(100% - 30px);
 }
 
-.sidebar .session-management label {
+.sidebar .serie-management label {
     margin-top: 15px;
     margin-bottom: 5px;
     color: var(--sidebar-text-color);
 }
 
 /* Estilos para input de texto e select na sidebar */
-.sidebar .session-management input[type="text"],
-.sidebar .session-management select {
+.sidebar .serie-management input[type="text"],
+.sidebar .serie-management select {
     width: 100%;
     padding: 8px 10px;
     margin-bottom: 10px;
@@ -115,7 +115,7 @@ body {
     appearance: none;
 }
 
-.sidebar .session-management select {
+.sidebar .serie-management select {
     background-image: var(--sidebar-select-arrow);
     background-repeat: no-repeat;
     background-position: right 8px center;
@@ -124,15 +124,15 @@ body {
 }
 
 /* Estilos para o foco */
-.sidebar .session-management input[type="text"]:focus,
-.sidebar .session-management select:focus {
+.sidebar .serie-management input[type="text"]:focus,
+.sidebar .serie-management select:focus {
     outline: none;
     border-color: var(--bingo-header-bg);
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
 }
 
 /* Estilos padrão para todos os botões na sidebar */
-.sidebar .session-management button {
+.sidebar .serie-management button {
     width: 100%;
     margin-bottom: 10px;
     padding: 10px 15px;
@@ -148,7 +148,7 @@ body {
 }
 
 /* Estilos de hover para todos os botões da sidebar */
-.sidebar .session-management button:hover {
+.sidebar .serie-management button:hover {
     background-color: var(--primary-button-hover);
 }
 
@@ -180,19 +180,19 @@ body {
     background-color: var(--danger-button-hover) !important;
 }
 
-#exportSessionsBtn {
+#exportSeriesBtn {
     background-color: var(--info-button-bg);
     color: white;
 }
-#exportSessionsBtn:hover {
+#exportSeriesBtn:hover {
     background-color: var(--info-button-hover);
 }
 
-#importSessionsBtn {
+#importSeriesBtn {
     background-color: var(--primary-button-bg);
     color: white;
 }
-#importSessionsBtn:hover {
+#importSeriesBtn:hover {
     background-color: var(--primary-button-hover);
 }
 
@@ -394,7 +394,7 @@ td {
 
 /* Media Queries para responsividade */
 @media screen and (max-width: 768px) {
-    .session-management,
+    .serie-management,
     .controls,
     .bingo-board,
     .drawn-numbers {

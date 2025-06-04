@@ -6,14 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
   const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
 
-  const sessionNameInput = document.getElementById('sessionName');
-  const newSessionBtn = document.getElementById('newSessionBtn');
-  const savedSessionsSelect = document.getElementById('savedSessionsSelect');
-  const deleteCurrentSessionBtn = document.getElementById('deleteCurrentSessionBtn');
-  const deleteAllSessionsBtn = document.getElementById('deleteAllSessionsBtn');
+  const serieNameInput = document.getElementById('serieName');
+  const newSerieBtn = document.getElementById('newSerieBtn');
+  const savedSeriesSelect = document.getElementById('savedSeriesSelect');
+  const deleteCurrentSerieBtn = document.getElementById('deleteCurrentSerieBtn');
+  const deleteAllSeriesBtn = document.getElementById('deleteAllSeriesBtn');
 
-  const exportSessionsBtn = document.getElementById('exportSessionsBtn');
-  const importSessionsBtn = document.getElementById('importSessionsBtn');
+  const exportSeriesBtn = document.getElementById('exportSeriesBtn');
+  const importSeriesBtn = document.getElementById('importSeriesBtn');
   const importFile = document.getElementById('importFile');
 
   // Elemento para o tema removido
@@ -27,18 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let numerosSorteados = [];
   const letrasBingo = ['B', 'I', 'N', 'G', 'O'];
   let hasDrawnNumbers = false;
-  let currentSessionName = '';
+  let currentSerieName = '';
 
-  const SESSIONS_KEY = 'bingo_saved_sessions';
-  const SESSION_DATA_PREFIX = 'bingo_session_';
+  const SERIES_KEY = 'bingo_saved_series';
+  const SERIE_DATA_PREFIX = 'bingo_serie_';
   // Chave para o tema removida
 
   // --- Funções Auxiliares ---
-  function formatarNumeroDoisDigitos(num) {
+  function formatNumberTwoDigits(num) {
     return num < 10 ? '0' + num : String(num);
   }
 
-  function gerarTabelaBingo() {
+  function generateBingoTable() {
     bingoTableBody.innerHTML = '';
     for (let i = 0; i < 5; i++) {
       const row = document.createElement('tr');
@@ -51,31 +51,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const numero = (i * 15) + j + 1;
         // Cria um span para o número e o adiciona à célula
         const numeroSpan = document.createElement('span');
-        numeroSpan.textContent = formatarNumeroDoisDigitos(numero);
+        numeroSpan.textContent = formatNumberTwoDigits(numero);
         numeroSpan.classList.add('bingo-number-circle'); // Adiciona uma classe para estilização
         cell.appendChild(numeroSpan);
 
         cell.dataset.numeroOriginal = numero; // Mantém o dataset para identificação
         cell.addEventListener('click', () => {
-          if (!currentSessionName) {
+          if (!currentSerieName) {
             alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
-            sessionNameInput.focus();
+            serieNameInput.focus();
             openSidebar();
             return;
           }
 
           if (numerosSorteados.includes(numero)) {
-            alert(`O número ${formatarNumeroDoisDigitos(numero)} já foi sorteado.`);
+            alert(`O número ${formatNumberTwoDigits(numero)} já foi sorteado.`);
             return;
           }
 
-          if (!confirm(`Confirmar sorteio do número ${formatarNumeroDoisDigitos(numero)}?`)) {
+          if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
             return;
           }
 
-          destacarNumero(numero);
+          highlightNumber(numero);
           numerosSorteados.push(numero);
-          atualizarListaSorteados();
+          updateDrawnList();
           numeroSorteadoInput.value = '';
           numeroSorteadoInput.focus();
         });
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function destacarNumero(numero) {
+  function highlightNumber(numero) {
     const todasAsCelulas = bingoTableBody.querySelectorAll('td');
     for (const celula of todasAsCelulas) {
       if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === numero) {
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function removerDestaqueNumero(numero) {
+  function removeHighlightNumber(numero) {
     const todasAsCelulas = bingoTableBody.querySelectorAll('td');
     for (const celula of todasAsCelulas) {
       if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === numero) {
@@ -147,152 +147,152 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function atualizarListaSorteados() {
+  function updateDrawnList() {
     const numerosEmOrdemInversa = [...numerosSorteados].reverse();
-    const numerosParaExibirFormatados = numerosEmOrdemInversa.map(num => formatarNumeroDoisDigitos(num));
+    const numerosParaExibirFormatados = numerosEmOrdemInversa.map(num => formatNumberTwoDigits(num));
 
     numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
     contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
 
     hasDrawnNumbers = numerosSorteados.length > 0;
 
-    saveCurrentSession();
+    saveCurrentSerie();
     // Atualiza o destaque do último número SEMPRE que a lista muda
     updateLastDrawnStyle(); // CHAME AQUI!
   }
 
   function updatePageTitle() {
-    if (currentSessionName) {
-      pageTitle.textContent = `Bingo - Série ${currentSessionName}`;
+    if (currentSerieName) {
+      pageTitle.textContent = `Bingo - Série ${currentSerieName}`;
     } else {
       pageTitle.textContent = 'Bingo - Sem Série';
     }
   }
 
   // --- Funções de Gerenciamento de Sessão (localStorage) ---
-  function saveCurrentSession() {
-    if (!currentSessionName) {
-      updateSavedSessionsList();
+  function saveCurrentSerie() {
+    if (!currentSerieName) {
+      updateSavedSeriesList();
       return;
     }
 
-    const sessionData = {
+    const serieData = {
       numbers: numerosSorteados,
       timestamp: new Date().toLocaleString()
     };
-    localStorage.setItem(SESSION_DATA_PREFIX + currentSessionName, JSON.stringify(sessionData));
+    localStorage.setItem(SERIE_DATA_PREFIX + currentSerieName, JSON.stringify(serieData));
 
-    let savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-    savedSessions = [...new Set(savedSessions)];
-    if (!savedSessions.includes(currentSessionName)) {
-      savedSessions.push(currentSessionName);
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(savedSessions));
+    let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
+    savedSeries = [...new Set(savedSeries)];
+    if (!savedSeries.includes(currentSerieName)) {
+      savedSeries.push(currentSerieName);
+      localStorage.setItem(SERIES_KEY, JSON.stringify(savedSeries));
     }
-    updateSavedSessionsList();
+    updateSavedSeriesList();
   }
 
-  function loadSession(sessionName) {
-    const sessionData = JSON.parse(localStorage.getItem(SESSION_DATA_PREFIX + sessionName));
-    if (sessionData) {
-      numerosSorteados.forEach(num => removerDestaqueNumero(num));
+  function loadSerie(serieName) {
+    const serieData = JSON.parse(localStorage.getItem(SERIE_DATA_PREFIX + serieName));
+    if (serieData) {
+      numerosSorteados.forEach(num => removeHighlightNumber(num));
 
-      numerosSorteados = sessionData.numbers;
-      currentSessionName = sessionName;
-      sessionNameInput.value = '';
+      numerosSorteados = serieData.numbers;
+      currentSerieName = serieName;
+      serieNameInput.value = '';
 
-      numerosSorteados.forEach(num => destacarNumero(num));
-      atualizarListaSorteados();
+      numerosSorteados.forEach(num => highlightNumber(num));
+      updateDrawnList();
       updatePageTitle();
-      alert(`Série "${sessionName}" carregada com sucesso!`);
+      alert(`Série "${serieName}" carregada com sucesso!`);
       closeSidebar();
     } else {
-      alert(`Erro: Série "${sessionName}" não encontrada.`);
+      alert(`Erro: Série "${serieName}" não encontrada.`);
     }
   }
 
-  function updateSavedSessionsList() {
-    let savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-    savedSessions = [...new Set(savedSessions)];
+  function updateSavedSeriesList() {
+    let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
+    savedSeries = [...new Set(savedSeries)];
 
-    savedSessionsSelect.innerHTML = '<option value="">-- Selecione uma série --</option>';
-    savedSessions.forEach(session => {
+    savedSeriesSelect.innerHTML = '<option value="">-- Selecione uma série --</option>';
+    savedSeries.forEach(serie => {
       const option = document.createElement('option');
-      option.value = session;
-      option.textContent = session;
-      savedSessionsSelect.appendChild(option);
+      option.value = serie;
+      option.textContent = serie;
+      savedSeriesSelect.appendChild(option);
     });
-    if (currentSessionName) {
-      savedSessionsSelect.value = currentSessionName;
+    if (currentSerieName) {
+      savedSeriesSelect.value = currentSerieName;
     }
   }
 
-  function startNewSession() {
-    const newName = sessionNameInput.value.trim();
-    if (newName && newName !== currentSessionName) {
-      numerosSorteados.forEach(num => removerDestaqueNumero(num));
+  function startNewSerie() {
+    const newName = serieNameInput.value.trim();
+    if (newName && newName !== currentSerieName) {
+      numerosSorteados.forEach(num => removeHighlightNumber(num));
       numerosSorteados = [];
-      currentSessionName = newName;
-      sessionNameInput.value = '';
-      saveCurrentSession();
-      atualizarListaSorteados();
+      currentSerieName = newName;
+      serieNameInput.value = '';
+      saveCurrentSerie();
+      updateDrawnList();
       updatePageTitle();
-      updateSavedSessionsList();
+      updateSavedSeriesList();
       alert('Nova série iniciada.');
-      sessionNameInput.focus();
+      serieNameInput.focus();
       openSidebar();
     }
   }
 
-  function deleteCurrentSession() {
-    if (!currentSessionName) {
+  function deleteCurrentSerie() {
+    if (!currentSerieName) {
       alert('Não há uma série atual para apagar.');
       return;
     }
 
-    if (confirm(`Tem certeza que deseja APAGAR a série "${currentSessionName}" do histórico? Esta ação é irreversível.`)) {
-      localStorage.removeItem(SESSION_DATA_PREFIX + currentSessionName);
+    if (confirm(`Tem certeza que deseja APAGAR a série "${currentSerieName}" do histórico? Esta ação é irreversível.`)) {
+      localStorage.removeItem(SERIE_DATA_PREFIX + currentSerieName);
 
-      let savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-      savedSessions = savedSessions.filter(name => name !== currentSessionName);
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(savedSessions));
+      let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
+      savedSeries = savedSeries.filter(name => name !== currentSerieName);
+      localStorage.setItem(SERIES_KEY, JSON.stringify(savedSeries));
 
-      numerosSorteados.forEach(num => removerDestaqueNumero(num));
+      numerosSorteados.forEach(num => removeHighlightNumber(num));
       numerosSorteados = [];
-      erasedSessionName = currentSessionName;
-      currentSessionName = '';
-      sessionNameInput.value = '';
-      atualizarListaSorteados();
+      erasedSerieName = currentSerieName;
+      currentSerieName = '';
+      serieNameInput.value = '';
+      updateDrawnList();
       updatePageTitle();
-      updateSavedSessionsList();
-      alert(`Série "${erasedSessionName}" apagada com sucesso.`);
+      updateSavedSeriesList();
+      alert(`Série "${erasedSerieName}" apagada com sucesso.`);
       closeSidebar();
     }
   }
 
-  function deleteAllSavedSessions() {
+  function deleteAllSavedSeries() {
     if (confirm('ATENÇÃO: Tem certeza que deseja APAGAR TODAS as séries salvas? Esta ação é irreversível.')) {
       localStorage.clear();
-      numerosSorteados.forEach(num => removerDestaqueNumero(num));
+      numerosSorteados.forEach(num => removeHighlightNumber(num));
       numerosSorteados = [];
-      currentSessionName = '';
-      sessionNameInput.value = '';
-      atualizarListaSorteados();
+      currentSerieName = '';
+      serieNameInput.value = '';
+      updateDrawnList();
       updatePageTitle();
-      updateSavedSessionsList();
+      updateSavedSeriesList();
       alert('Todas as séries salvas foram apagadas.');
       closeSidebar();
     }
   }
 
   // --- Funções de Exportar/Importar ---
-  function exportAllSessions() {
+  function exportAllSeries() {
     let allData = {};
-    const savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
+    const savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
 
-    savedSessions.forEach(sessionName => {
-      const sessionData = localStorage.getItem(SESSION_DATA_PREFIX + sessionName);
-      if (sessionData) {
-        allData[sessionName] = JSON.parse(sessionData);
+    savedSeries.forEach(serieName => {
+      const serieData = localStorage.getItem(SERIE_DATA_PREFIX + serieName);
+      if (serieData) {
+        allData[serieName] = JSON.parse(serieData);
       }
     });
 
@@ -335,48 +335,48 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        let sessionsAdded = 0;
-        let sessionsOverwritten = 0;
+        let seriesAdded = 0;
+        let seriesOverwritten = 0;
         let invalidData = 0;
 
-        let savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-        savedSessions = [...new Set(savedSessions)];
+        let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
+        savedSeries = [...new Set(savedSeries)];
 
-        for (const sessionName in importedData) {
-          if (importedData.hasOwnProperty(sessionName)) {
-            const sessionData = importedData[sessionName];
-            if (sessionData && Array.isArray(sessionData.numbers)) {
-              const localStorageKey = SESSION_DATA_PREFIX + sessionName;
+        for (const serieName in importedData) {
+          if (importedData.hasOwnProperty(serieName)) {
+            const serieData = importedData[serieName];
+            if (serieData && Array.isArray(serieData.numbers)) {
+              const localStorageKey = SERIE_DATA_PREFIX + serieName;
               if (localStorage.getItem(localStorageKey)) {
-                sessionsOverwritten++;
+                seriesOverwritten++;
               } else {
-                sessionsAdded++;
+                seriesAdded++;
               }
-              localStorage.setItem(localStorageKey, JSON.stringify(sessionData));
+              localStorage.setItem(localStorageKey, JSON.stringify(serieData));
 
-              if (!savedSessions.includes(sessionName)) {
-                savedSessions.push(sessionName);
+              if (!savedSeries.includes(serieName)) {
+                savedSeries.push(serieName);
               }
             } else {
               invalidData++;
-              console.warn(`Dados inválidos para a série: ${sessionName}`);
+              console.warn(`Dados inválidos para a série: ${serieName}`);
             }
           }
         }
-        localStorage.setItem(SESSIONS_KEY, JSON.stringify(savedSessions));
+        localStorage.setItem(SERIES_KEY, JSON.stringify(savedSeries));
 
-        numerosSorteados.forEach(num => removerDestaqueNumero(num));
+        numerosSorteados.forEach(num => removeHighlightNumber(num));
         numerosSorteados = [];
-        currentSessionName = '';
-        sessionNameInput.value = '';
-        atualizarListaSorteados();
+        currentSerieName = '';
+        serieNameInput.value = '';
+        updateDrawnList();
         updatePageTitle();
 
         let importMessage = `Importação concluída!\n`;
-        if (sessionsAdded > 0) importMessage += `- ${sessionsAdded} séries adicionadas.\n`;
-        if (sessionsOverwritten > 0) importMessage += `- ${sessionsOverwritten} séries sobrescritas.\n`;
+        if (seriesAdded > 0) importMessage += `- ${seriesAdded} séries adicionadas.\n`;
+        if (seriesOverwritten > 0) importMessage += `- ${seriesOverwritten} séries sobrescritas.\n`;
         if (invalidData > 0) importMessage += `- ${invalidData} entradas ignoradas devido a dados inválidos.\n`;
-        if (sessionsAdded === 0 && sessionsOverwritten === 0 && invalidData === 0) {
+        if (seriesAdded === 0 && seriesOverwritten === 0 && invalidData === 0) {
           importMessage += `- Nenhum dado de série válido encontrado no arquivo.`;
         }
 
@@ -410,9 +410,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Event Listeners ---
   sortearBtn.addEventListener('click', () => {
-    if (!currentSessionName) {
+    if (!currentSerieName) {
       alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
-      sessionNameInput.focus();
+      serieNameInput.focus();
       openSidebar();
       return;
     }
@@ -425,17 +425,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (numerosSorteados.includes(numero)) {
-      alert(`O número ${formatarNumeroDoisDigitos(numero)} já foi sorteado.`);
+      alert(`O número ${formatNumberTwoDigits(numero)} já foi sorteado.`);
       return;
     }
 
-    if (!confirm(`Confirmar sorteio do número ${formatarNumeroDoisDigitos(numero)}?`)) {
+    if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
       return;
     }
 
-    destacarNumero(numero);
+    highlightNumber(numero);
     numerosSorteados.push(numero);
-    atualizarListaSorteados();
+    updateDrawnList();
     numeroSorteadoInput.value = '';
     numeroSorteadoInput.focus();
   });
@@ -448,10 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const numeroADesfazer = numerosSorteados[numerosSorteados.length - 1];
 
-    if (confirm(`Tem certeza que deseja desfazer a jogada do número ${formatarNumeroDoisDigitos(numeroADesfazer)}?`)) {
-      removerDestaqueNumero(numeroADesfazer);
+    if (confirm(`Tem certeza que deseja desfazer a jogada do número ${formatNumberTwoDigits(numeroADesfazer)}?`)) {
+      removeHighlightNumber(numeroADesfazer);
       numerosSorteados.pop();
-      atualizarListaSorteados();
+      updateDrawnList();
     }
   });
 
@@ -461,22 +461,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  newSessionBtn.addEventListener('click', startNewSession);
-  deleteCurrentSessionBtn.addEventListener('click', deleteCurrentSession);
-  deleteAllSessionsBtn.addEventListener('click', deleteAllSavedSessions);
+  newSerieBtn.addEventListener('click', startNewSerie);
+  deleteCurrentSerieBtn.addEventListener('click', deleteCurrentSerie);
+  deleteAllSeriesBtn.addEventListener('click', deleteAllSavedSeries);
 
-  savedSessionsSelect.addEventListener('change', () => {
-    const selectedSession = savedSessionsSelect.value;
-    if (selectedSession) {
-      loadSession(selectedSession);
+  savedSeriesSelect.addEventListener('change', () => {
+    const selectedSerie = savedSeriesSelect.value;
+    if (selectedSerie) {
+      loadSerie(selectedSerie);
     }
   });
 
   openSidebarBtn.addEventListener('click', openSidebar);
   closeSidebarBtn.addEventListener('click', closeSidebar);
 
-  exportSessionsBtn.addEventListener('click', exportAllSessions);
-  importSessionsBtn.addEventListener('click', () => {
+  exportSeriesBtn.addEventListener('click', exportAllSeries);
+  importSeriesBtn.addEventListener('click', () => {
     importFile.click();
   });
   importFile.addEventListener('change', handleImportFile);
@@ -484,9 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listener para o botão de tema removido
 
   // --- Inicialização ---
-  gerarTabelaBingo();
-  updateSavedSessionsList();
-  atualizarListaSorteados();
+  generateBingoTable();
+  updateSavedSeriesList();
+  updateDrawnList();
   updatePageTitle();
 
 });
