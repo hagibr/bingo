@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeSidebarBtn = document.getElementById('closeSidebarBtn');
   const content = document.querySelector('.content');
   const pageTitle = document.getElementById('pageTitle');
+  const headTitle = document.getElementById('headTitle');
 
   let numerosSorteados = [];
   const letrasBingo = ['B', 'I', 'N', 'G', 'O'];
@@ -164,8 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function updatePageTitle() {
     if (currentSerieName) {
       pageTitle.textContent = `Bingo - Série ${currentSerieName}`;
+      headTitle.textContent = `Bingo - Série ${currentSerieName}`;
     } else {
       pageTitle.textContent = 'Bingo - Sem Série';
+      headTitle.textContent = 'Bingo - Sem Série';
     }
   }
 
@@ -203,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
       numerosSorteados.forEach(num => highlightNumber(num));
       updateDrawnList();
       updatePageTitle();
-      alert(`Série "${serieName}" carregada com sucesso!`);
+      //alert(`Série "${serieName}" carregada com sucesso!`);
       closeSidebar();
     } else {
       alert(`Erro: Série "${serieName}" não encontrada.`);
@@ -265,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePageTitle();
       updateSavedSeriesList();
       alert(`Série "${erasedSerieName}" apagada com sucesso.`);
-      closeSidebar();
+      //closeSidebar();
     }
   }
 
