@@ -1,55 +1,63 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo - Sem Série</title>
+    <title>Bingo - Sem série</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Botão que exibe/oculta menu lateral -->
-    <div class="sidebar-toggle" id="sidebarToggle">☰</div>
-    <!-- Menu lateral -->
-    <aside class="sidebar" id="sidebar">
-        <p></p>
-        <h2 class="h2-white">Séries de Bingo</h2>
-        <!-- Lista de séries -->
-        <div id="seriesList"></div>
-        <!-- Botões de criação, excluir, importar e exportar séries -->
-        <div class="sidebar-actions">
-            <button class="button" id="newSeriesButton">Nova Série</button>
-            <button class="button import-export-button" id="importSeriesButton">Importar</button>
-            <button class="button import-export-button" id="exportSeriesButton">Exportar</button>
-            <button class="button delete-button" id="deleteCurrentSeriesButton">Excluir Série Atual</button>
-            <button class="button delete-button" id="deleteAllSeriesButton">Excluir Todas</button>
-        </div>
-        <!-- Seletor de arquivos. Fica visível somente nas ações dos botões de importar e exportar -->
-        <input type="file" id="importFileInput" accept=".json" style="display: none;">
-    </aside>
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <button class="close-sidebar-btn" id="closeSidebarBtn">&times;</button>
+            <h2>Gerenciar Séries</h2>
+            <div class="session-management">
+                <label for="sessionName">Série Atual:</label>
+                <input type="text" id="sessionName" placeholder="Ex: Sorteio 01/06/2025">
+                <button id="newSessionBtn">Nova Série</button>
+                <select id="savedSessionsSelect"></select>
+                <button id="deleteCurrentSessionBtn" class="delete-button">Apagar Série Atual</button>
+                <button id="deleteAllSessionsBtn" class="delete-button">Apagar Todas as Séries</button>
 
-    <!-- Corpo principal da página -->
-    <main class="container">
-        <h1 id="bingoTitle">Bingo - Sem Série</h1>
+                <hr style="width: 100%; border-top: 1px solid #555; margin: 15px 0;">
 
-        <!-- Último número sorteado em destaque, botão de desfazer e grade com todos os números -->
-        <div class="game-area">
-            <div class="last-drawn-controls">
-                <div class="last-drawn-display">
-                    <span id="largeLastDrawnNumber">--</span>
+                <button id="exportSessionsBtn">Exportar Séries</button>
+                <button id="importSessionsBtn">Importar Séries</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+
                 </div>
-                <button class="button undo-button" id="undoButton">Desfazer Última Jogada</button>
+        </div>
+
+        <div class="content">
+            <button class="open-sidebar-btn" id="openSidebarBtn">☰ Gerenciar Séries</button>
+            <h1 id="pageTitle">Bingo São Gaspar</h1>
+
+            <div class="controls">
+                <label for="numeroSorteado">Número Sorteado:</label>
+                <input type="number" id="numeroSorteado" min="1" max="75">
+                <button id="sortearBtn">Sortear</button>
+                <button id="desfazerBtn">Desfazer Última Jogada</button>
             </div>
-            <div class="bingo-grid-container">
-                <table class="bingo-grid" id="bingoGrid">
-                    </table>
+
+            <div class="bingo-board">
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th colspan="15">Números do Bingo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bingoTableBody">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="drawn-numbers">
+                <h2>Números Sorteados: <span id="contadorNumerosSorteados">(0)</span></h2>
+                <textarea id="numerosSorteadosLista" rows="3" readonly></textarea>
             </div>
         </div>
-        <!-- Lista dos números sorteados -->
-        <div class="drawn-numbers-list">
-            <h2>Números Sorteados:</h2>
-            <p id="drawnNumbersDisplay"></p>
-        </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>

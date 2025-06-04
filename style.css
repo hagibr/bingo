@@ -1,369 +1,434 @@
+/* Variáveis CSS para cores - Tema Claro (padrão único) */
 :root {
-    --primary-color: #007bff; /* Azul */
-    --secondary-color: #ffc107; /* Amarelo Claro */
-    --tertiary-color: #ff8c00; /* Amarelo Escuro */
+    --body-bg: #f0f8ff; /* Azul claro para o fundo do corpo */
     --text-color: #333;
-    --background-color: #f4f4f4;
-    --border-color: #ddd;
-    --button-hover-color: #0056b3;
-    --delete-button-color: #dc3545;
-    --delete-button-hover-color: #c82333;
+    --sidebar-bg: #e0f2f7; /* Azul muito claro para a sidebar */
+    --sidebar-text-color: #333;
+    --sidebar-input-bg: #ffffff;
+    --sidebar-input-border: #a0d1e1;
+    --sidebar-input-text-color: #333;
+    --main-content-bg: #ffffff;
+    --main-content-border: #cce7f0;
+
+    /* Cores da Tabela */
+    --table-cell-bg: #ffffff; /* Fundo branco para as células da tabela */
+    --table-cell-border: #dee2e6; /* Borda padrão */
+
+    --highlight-color: #fff9c4; /* Amarelo claro para números sorteados */
+    --bingo-letter-bg: #17a2b8; /* Azul claro para as letras BINGO */
+    --bingo-header-bg: #17a2b8; /* Azul claro para o cabeçalho da tabela */
+
+    /* Cores dos Botões (mantidas semânticas) */
+    --primary-button-bg: #007bff; /* Azul primário */
+    --primary-button-hover: #0056b3;
+    --success-button-bg: #28a745; /* Verde para sortear (ação positiva) */
+    --success-button-hover: #218838;
+    --danger-button-bg: #dc3545; /* Vermelho para apagar (ação destrutiva) */
+    --danger-button-hover: #bd2130;
+    --info-button-bg: #17a2b8; /* Azul claro para info/exportar */
+    --info-button-hover: #138496;
+
+    /* Seta do Select */
+    --sidebar-select-arrow: url('data:image/svg+xml;utf8,<svg fill="%23333333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+
+    /* VARIÁVEIS PARA OS CÍRCULOS */
+    --circle-size: 35px; /* Tamanho do círculo (largura e altura) */
+    --circle-bg: #f0f0f0; /* Fundo do círculo (um cinza claro) */
+    --circle-border: 1px solid #ccc; /* Borda do círculo */
+    --circle-text-color: #333; /* Cor do texto dentro do círculo */
+    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
+    --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
+
+    /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
+    --last-drawn-circle-bg: #f7d700; /* Amarelo gema para o último número sorteado */
+    --last-drawn-circle-border: 2px solid #e6c500; /* Borda mais grossa/escura para o último */
+    --last-drawn-circle-text-color: white; /* AGORA BRANCO! */
 }
+
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
-    padding: 0;
-    background-color: var(--background-color);
+    background-color: var(--body-bg);
     color: var(--text-color);
-    display: flex;
-    overflow-x: hidden; /* Prevent horizontal scroll when sidebar is open */
+    overflow: hidden;
 }
 
-.container {
+.main-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* --- Sidebar (Menu Lateral) --- */
+.sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: var(--sidebar-bg);
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 60px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--sidebar-text-color);
+}
+
+.sidebar h2 {
+    color: var(--bingo-header-bg);
+    margin-bottom: 20px;
+}
+
+.sidebar .session-management {
+    flex-direction: column;
+    align-items: stretch;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0 15px;
+    width: calc(100% - 30px);
+}
+
+.sidebar .session-management label {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: var(--sidebar-text-color);
+}
+
+/* Estilos para input de texto e select na sidebar */
+.sidebar .session-management input[type="text"],
+.sidebar .session-management select {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--sidebar-input-border);
+    border-radius: 4px;
+    background-color: var(--sidebar-input-bg);
+    color: var(--sidebar-input-text-color);
+    font-size: 16px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.sidebar .session-management select {
+    background-image: var(--sidebar-select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 18px;
+    padding-right: 30px;
+}
+
+/* Estilos para o foco */
+.sidebar .session-management input[type="text"]:focus,
+.sidebar .session-management select:focus {
+    outline: none;
+    border-color: var(--bingo-header-bg);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+}
+
+/* Estilos padrão para todos os botões na sidebar */
+.sidebar .session-management button {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    box-sizing: border-box;
+    background-color: var(--primary-button-bg);
+    color: var(--sidebar-text-color);
+}
+
+/* Estilos de hover para todos os botões da sidebar */
+.sidebar .session-management button:hover {
+    background-color: var(--primary-button-hover);
+}
+
+
+/* Estilos específicos para botões com cores diferentes */
+.close-sidebar-btn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+    background: none;
+    border: none;
+    color: var(--sidebar-text-color);
+    cursor: pointer;
+    padding: 10px;
+}
+
+.close-sidebar-btn:hover {
+    color: var(--danger-button-bg);
+}
+
+.delete-button {
+    background-color: var(--danger-button-bg) !important;
+    color: white !important;
+}
+
+.delete-button:hover {
+    background-color: var(--danger-button-hover) !important;
+}
+
+#exportSessionsBtn {
+    background-color: var(--info-button-bg);
+    color: white;
+}
+#exportSessionsBtn:hover {
+    background-color: var(--info-button-hover);
+}
+
+#importSessionsBtn {
+    background-color: var(--primary-button-bg);
+    color: white;
+}
+#importSessionsBtn:hover {
+    background-color: var(--primary-button-hover);
+}
+
+
+/* --- Conteúdo Principal --- */
+.content {
+    transition: margin-left 0.5s;
+    padding: 20px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
-    transition: margin-left 0.3s ease;
-    box-sizing: border-box;
-    width: 100%;
 }
 
-h1, h2 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-}
-
-/* Sidebar styles */
-.sidebar {
-    width: 187.5px; /* 25% mais estreito que 250px */
-    background-color: var(--primary-color);
+.open-sidebar-btn {
+    font-size: 20px;
+    cursor: pointer;
+    background-color: var(--primary-button-bg);
     color: white;
-    padding: 20px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-    position: fixed;
-    height: 100%;
-    left: -227.5px; /* Fully hidden by default */
-    transition: left 0.3s ease;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 0;
-    justify-content: flex-start; /* Alinha o conteúdo para o topo */
-}
-
-.sidebar.active {
-    left: 0;
-}
-
-.sidebar-toggle {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
     position: fixed;
     top: 20px;
     left: 20px;
-    background-color: var(--primary-color);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 1001; /* Above sidebar */
-    font-size: 24px;
-    line-height: 1;
-    transition: left 0.3s ease;
+    z-index: 100;
+    transition: left 0.5s;
 }
 
-/* When sidebar is active, move the toggle button */
-.sidebar.active ~ .sidebar-toggle { /* Use general sibling combinator */
-    left: 207.5px; /* 187.5px (sidebar width) + 20px (left padding of toggle) */
+.open-sidebar-btn:hover {
+    background-color: var(--primary-button-hover);
 }
 
-
-#seriesList {
-    /* flex-grow: 1; Removido para controlar a altura fixa */
-    margin-top: 15px;
-    overflow-y: auto; /* Adiciona scroll quando o conteúdo excede a altura máxima */
-    padding-right: 5px;
-    max-height: calc(5 * (8px + 10px + 1px) + 5px); /* Aproximadamente 5 itens: (padding-top + padding-bottom + border-bottom) * 5 + algum ajuste */
-    /* 8px padding-top, 10px padding-bottom, 1px border-bottom = 19px por item. 19px * 5 = 95px */
-    max-height: 110px; /* Ajuste manual para caber 5 itens visualmente */
-    margin-bottom: 15px; /* Espaço entre a lista e os botões */
+h1 {
+    color: var(--bingo-header-bg);
+    margin-bottom: 20px;
+    text-align: center;
+    margin-top: 0;
 }
 
-#seriesList div {
-    padding: 8px 10px;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-#seriesList div:last-child {
-    border-bottom: none;
-}
-
-#seriesList div.active-series {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    font-weight: bold;
-    border-radius: 3px;
-}
-
-#seriesList div:hover:not(.active-series) {
-    background-color: rgba(255,255,255,0.1);
-}
-
-.sidebar-actions {
-    margin-top: 0; /* Ajustado para que os botões fiquem logo após a lista */
-    padding-bottom: 20px; /* Add padding at the bottom for buttons */
+.controls,
+.bingo-board,
+.drawn-numbers {
+    margin-bottom: 20px;
+    background-color: var(--main-content-bg);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     display: flex;
-    flex-direction: column;
-    gap: 10px; /* Espaçamento entre os botões */
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
 }
 
-/* General button styles */
-.button {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    border: none;
+.controls {
+    justify-content: center;
+}
+
+.controls label {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.controls input[type="number"] {
+    padding: 8px;
+    border: 1px solid var(--main-content-border);
+    border-radius: 4px;
+    width: 80px;
+    background-color: var(--main-content-bg);
+    color: var(--text-color);
+}
+
+.controls input[type="number"]:focus {
+    outline: none;
+    border-color: var(--bingo-header-bg);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+}
+
+.controls button {
     padding: 10px 15px;
-    border-radius: 5px;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.3s ease;
+}
+
+#sortearBtn {
+    background-color: var(--success-button-bg);
+    color: white;
+}
+
+#sortearBtn:hover {
+    background-color: var(--success-button-hover);
+}
+
+#desfazerBtn {
+    background-color: var(--danger-button-bg);
+    color: white;
+}
+
+#desfazerBtn:hover {
+    background-color: var(--danger-button-hover);
+}
+
+.bingo-board thead th[colspan="15"] {
+    background-color: var(--bingo-header-bg);
+    color: white;
+}
+
+table {
+    border-collapse: collapse;
     width: 100%;
 }
 
-.button:hover {
-    background-color: var(--tertiary-color);
-}
-
-.button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.import-export-button {
-    background-color: var(--tertiary-color);
-    color: white;
-}
-
-.import-export-button:hover {
-    background-color: #e07b00;
-}
-
-.delete-button {
-    background-color: var(--delete-button-color);
-    color: white;
-}
-
-.delete-button:hover {
-    background-color: var(--delete-button-hover-color);
-}
-
-
-/* Game area layout */
-.game-area {
-    display: flex;
-    align-items: flex-start; /* Align items to the top for better button placement */
-    gap: 30px;
-    margin-bottom: 30px;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    justify-content: center;
-}
-
-.last-drawn-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px; /* Space between display and button */
-}
-
-.last-drawn-display {
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    width: 150px;
-    height: 150px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 6em;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.bingo-grid-container {
-    overflow-x: auto; /* Allow horizontal scrolling for wide table */
-}
-
-.bingo-grid {
-    border-collapse: collapse;
-    table-layout: fixed; /* Fix column width */
-}
-
-.bingo-grid th, .bingo-grid td {
-    width: 50px; /* Fixed width for each cell */
-    height: 50px;
+th, td {
+    padding: 0;
     text-align: center;
-    vertical-align: middle;
-    border: 1px solid var(--border-color);
-    font-weight: bold;
-    position: relative;
-    user-select: none; /* Prevent text selection */
-    cursor: pointer;
-}
-
-.bingo-grid th {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    font-size: 1.2em;
-}
-
-.bingo-grid td {
-    background-color: white;
     font-size: 1.1em;
-    transition: background-color 0.2s ease;
+    color: var(--text-color);
+    border: 1px solid var(--table-cell-border);
+    display: table-cell;
+    vertical-align: middle;
 }
 
-.bingo-grid td:hover:not(.drawn) {
-    background-color: var(--background-color);
-}
-
-.bingo-grid td.drawn {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    border-radius: 50%;
-    transform: scale(0.9); /* Slightly shrink for circle effect */
-    transition: all 0.3s ease;
-    overflow: hidden; /* Ensure content is clipped by border-radius */
-    box-shadow: inset 0 0 0 999px var(--secondary-color), 0 0 0 5px var(--primary-color); /* Circle background with border */
-    position: relative; /* For the number content */
-    z-index: 1; /* Ensure drawn number is above default cell background */
-}
-
-.bingo-grid td.drawn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 45px; /* Slightly smaller than cell to show border */
-    height: 45px;
-    background-color: var(--secondary-color);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    z-index: -1; /* Behind the number */
-}
-
-/* Adjusted style for last drawn number: just larger font */
-.bingo-grid td.drawn.last-drawn {
-    font-size: 2em; /* Larger for last drawn number */
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    box-shadow: inset 0 0 0 999px var(--secondary-color), 0 0 0 5px var(--primary-color);
-    animation: none; /* Remove pulsing animation */
-}
-
-.bingo-grid td.drawn.last-drawn::before {
-    background-color: var(--secondary-color);
-}
-
-
-/* Drawn numbers list */
-.drawn-numbers-list {
-    margin-top: 30px;
-    width: 80%; /* Adjust width as needed */
-    text-align: center;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-#drawnNumbersDisplay {
-    font-size: 1.2em;
-    word-wrap: break-word; /* Ensure long lists wrap */
-}
-
-/* Undo button */
-.undo-button {
-    background-color: var(--tertiary-color);
+.bingo-letter {
+    background-color: var(--bingo-letter-bg);
     color: white;
-    width: 150px; /* Mesma largura do display de número */
+    font-weight: bold;
+    font-size: 1.5em;
+    width: 30px;
+    display: table-cell;
+    vertical-align: middle;
+    padding: 10px;
 }
 
-.undo-button:hover {
-    background-color: #e07b00;
+/* ESTILO DOS CÍRCULOS DOS NÚMEROS */
+.bingo-number-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--circle-size);
+    height: var(--circle-size);
+    border-radius: 50%;
+    background-color: var(--circle-bg);
+    border: var(--circle-border);
+    color: var(--circle-text-color);
+    font-weight: bold;
+    font-size: 1.1em;
+    margin: 5px auto;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
 }
 
-.h2-white {
-    color: white; /* Define a cor do texto para branco */
+td {
+    width: calc(100% / 15);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .game-area {
-        flex-direction: column;
-        gap: 20px;
+/* Estilo para o número sorteado (destacado) - Cor do amarelo claro */
+.highlighted .bingo-number-circle {
+    background-color: var(--highlight-circle-bg);
+    color: var(--highlight-circle-text-color);
+    border-color: var(--highlight-circle-bg);
+    box-shadow: 0 0 8px rgba(247, 215, 0, 0.3); /* Sombra mais suave para os destacados */
+}
+
+/* ESTILO MELHORADO PARA O ÚLTIMO NÚMERO SORTEADO */
+.last-drawn {
+    background-color: var(--last-drawn-circle-bg); /* Amarelo gema forte */
+    border: var(--last-drawn-circle-border); /* Borda mais definida */
+    color: var(--last-drawn-circle-text-color); /* AGORA BRANCO! */
+    font-size: 1.8em; /* FONTE AUMENTADA! */
+    transform: scale(1.1); /* Pequeno aumento de tamanho */
+    box-shadow: 0 0 15px rgba(247, 215, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
+    z-index: 1; /* Garante que ele fique por cima, se houver sobreposição */
+    position: relative; /* Necessário para z-index */
+}
+
+
+.drawn-numbers h2 {
+    color: var(--bingo-header-bg);
+    margin-bottom: 10px;
+}
+
+#numerosSorteadosLista {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--main-content-border);
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 1.5em;
+    resize: vertical;
+    background-color: var(--main-content-bg);
+    color: var(--text-color);
+}
+
+/* Media Queries para responsividade */
+@media screen and (max-width: 768px) {
+    .session-management,
+    .controls,
+    .bingo-board,
+    .drawn-numbers {
+        width: 95%;
     }
 
-    .last-drawn-display {
-        width: 120px;
-        height: 120px;
-        font-size: 4em;
+    .sidebar {
+        padding-top: 15px;
     }
 
-    .bingo-grid th, .bingo-grid td {
-        width: 40px;
-        height: 40px;
+    .open-sidebar-btn {
+        top: 10px;
+        left: 10px;
+        font-size: 18px;
+    }
+
+    /* Reduzir o tamanho dos círculos em telas menores */
+    :root {
+        --circle-size: 28px;
+    }
+    .bingo-number-circle {
         font-size: 0.9em;
     }
+    th, td {
+        padding: 5px;
+    }
 
-    .bingo-grid td.drawn.last-drawn {
+    #numerosSorteadosLista {
         font-size: 1.2em;
     }
 
-    .sidebar {
-        width: 150px; /* Ajuste para mobile se necessário */
-        left: -150px;
-    }
-
-    .sidebar.active ~ .sidebar-toggle {
-        left: 170px; /* Ajuste para mobile */
-    }
-
-    .undo-button {
-        width: 120px; /* Mesma largura do display de número em telas menores */
-    }
-
-    #seriesList {
-        max-height: 100px; /* Ajuste para telas menores */
-    }
-}
-
-@media (max-width: 480px) {
-    .container {
-        padding: 10px;
-    }
-
-    h1 {
-        font-size: 1.8em;
-    }
-
-    .sidebar {
-        width: 120px; /* Mais estreito para telas pequenas */
-        left: -120px;
-    }
-
-    .sidebar.active ~ .sidebar-toggle {
-        left: 140px;
-    }
-
-    .bingo-grid th, .bingo-grid td {
-        width: 35px;
-        height: 35px;
-        font-size: 0.8em;
-    }
-
-    #seriesList {
-        max-height: 80px; /* Ajuste para telas muito pequenas */
+    /* Ajuste para o último número sorteado em telas menores */
+    .last-drawn {
+        font-size: 1.4em; /* Fonte ainda maior, mas ajustada para caber */
+        transform: scale(1.05); /* Um pouco menos de destaque para não ficar muito grande */
     }
 }
