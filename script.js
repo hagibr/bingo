@@ -32,7 +32,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const SERIES_KEY = 'bingo_saved_series';
   const SERIE_DATA_PREFIX = 'bingo_serie_';
-  // Chave para o tema removida
+  
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+  const githubPagesDomain = '.github.io'; // O sufixo comum para domínios do GitHub Pages
+
+  let isGitHubPages = false;
+  let githubRepoUrl = '';
+
+  // Verifica se o hostname termina com '.github.io'
+  if (hostname.endsWith(githubPagesDomain)) {
+    isGitHubPages = true;
+
+    // URL de projeto (e.g., hagibr.github.io/meu-projeto)
+    if (pathname.length > 1) { // Verifica se há algo além de '/' no caminho
+      const repoName = pathname.split('/')[1]; // Pega a primeira parte após a barra inicial
+      const usernameOrOrg = hostname.substring(0, hostname.indexOf(githubPagesDomain));
+      githubRepoUrl = `https://github.com/${usernameOrOrg}/${repoName}`;
+    }
+  }
+
+  // Se estiver no GitHub Pages e tivermos a URL do repositório
+  if (isGitHubPages && githubRepoUrl) {
+    const githubLinkContainer = document.getElementById('github-repo-link-container'); // Um elemento HTML onde você quer adicionar o link
+
+    if (githubLinkContainer) {
+      const link = document.createElement('a');
+      link.href = githubRepoUrl;
+      link.textContent = 'Ver este projeto no GitHub';
+      link.target = '_blank'; // Abre em uma nova aba
+      link.rel = 'noopener noreferrer'; // Melhora a segurança
+
+      // Estilização básica (opcional)
+      link.style.display = 'block';
+      link.style.marginTop = '20px';
+      link.style.padding = '10px 15px';
+      link.style.backgroundColor = '#007bff';
+      link.style.color = 'white';
+      link.style.textDecoration = 'none';
+      link.style.borderRadius = '5px';
+      link.style.textAlign = 'center';
+
+      githubLinkContainer.appendChild(link);
+    } else {
+      console.warn("Elemento com ID 'github-repo-link-container' não encontrado.");
+    }
+  }
 
   // --- Funções Auxiliares ---
   function formatNumberTwoDigits(num) {
