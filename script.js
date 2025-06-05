@@ -59,19 +59,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (githubLinkContainer) {
       const link = document.createElement('a');
       link.href = githubRepoUrl;
-      link.textContent = 'Ver este projeto no GitHub';
-      link.target = '_blank'; // Abre em uma nova aba
-      link.rel = 'noopener noreferrer'; // Melhora a segurança
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
 
-      // Estilização básica (opcional)
-      link.style.display = 'block';
+      // *** CÓDIGO SVG INLINE AQUI ***
+      // Crie um elemento div temporário para "parsear" a string SVG em elementos DOM
+      const svgContainer = document.createElement('div');
+      // Cole o código SVG do GitHub dentro das crases (template literal)
+      svgContainer.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" width="1em" height="1em" fill="currentColor">
+                    <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-2.4-5.6-5.7 0-2.9 2.3-5.2 5.6-5.2 3 0 5.2 2.3 5.2 5.2zm-3.3 40.7c-.3 2.7-3 4.9-6.3 4.9-3.6 0-5.9-2.2-6.2-4.9-.3-2.9 2.4-5.2 5.2-5.2 3.5.2 6.2 2.4 6.3 5.2zm-33.3 22.1c-.5 2.7-3.2 4.9-6.6 4.9-3.6 0-6.3-2.2-6.6-4.9-.3-2.9 2.4-5.2 5.2-5.2 3.6.3 6.4 2.5 6.6 5.2zm-30.8-37.3c-1.1 2.7-3.9 4.9-7.2 4.9-3.9 0-6.9-2.2-7.1-5.2-.5-2.9 2.2-5.5 5.2-5.5 3.1.3 5.9 2.5 6.4 5.5zm-33.1 33.1c-.6 2.7-4.1 4.9-7.6 4.9-4.2 0-7.1-2.2-7.5-5.2-.3-2.9 2.5-5.5 5.5-5.5 3.3.3 6.4 2.5 7 5.5zM388.6 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-2.4-5.6-5.7 0-2.9 2.3-5.2 5.6-5.2 3 0 5.2 2.3 5.2 5.2zm-3.3 40.7c-.3 2.7-3 4.9-6.3 4.9-3.6 0-5.9-2.2-6.2-4.9-.3-2.9 2.4-5.2 5.2-5.2 3.5.2 6.2 2.4 6.3 5.2zm-33.3 22.1c-.5 2.7-3.2 4.9-6.6 4.9-3.6 0-6.3-2.2-6.6-4.9-.3-2.9 2.4-5.2 5.2-5.2 3.6.3 6.4 2.5 6.6 5.2zm-30.8-37.3c-1.1 2.7-3.9 4.9-7.2 4.9-3.9 0-6.9-2.2-7.1-5.2-.5-2.9 2.2-5.5 5.2-5.5 3.1.3 5.9 2.5 6.4 5.5zm-33.1 33.1c-.6 2.7-4.1 4.9-7.6 4.9-4.2 0-7.1-2.2-7.5-5.2-.3-2.9 2.5-5.5 5.5-5.5 3.3.3 6.4 2.5 7 5.5zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.8 496 252 496 113.3 389.9 8 251.2 8h-6.4z"/>
+                </svg>
+            `;
+      const svgElement = svgContainer.querySelector('svg'); // Pega o elemento SVG real
+
+      // Opcional: Adicionar estilos diretamente ao SVG para tamanho e cor
+      svgElement.style.width = '1em'; // Para que ele se ajuste ao tamanho da fonte do texto
+      svgElement.style.height = '1em';
+      svgElement.style.marginRight = '8px';
+      svgElement.style.verticalAlign = 'middle'; // Para alinhar melhor com o texto
+      svgElement.style.fill = 'currentColor'; // Faz com que o SVG herde a cor do texto do link
+
+      // Criar o elemento de texto
+      const textSpan = document.createElement('span');
+      textSpan.textContent = 'Ver no GitHub';
+
+      // Adicionar o ícone SVG e o texto ao link
+      link.appendChild(svgElement);
+      link.appendChild(textSpan);
+
+      // Estilização básica (continua como antes)
+      link.style.display = 'inline-flex';
+      link.style.alignItems = 'center';
       link.style.marginTop = '20px';
       link.style.padding = '10px 15px';
-      link.style.backgroundColor = '#007bff';
+      link.style.backgroundColor = '#212529';
       link.style.color = 'white';
       link.style.textDecoration = 'none';
       link.style.borderRadius = '5px';
       link.style.textAlign = 'center';
+      link.style.fontSize = '1em';
 
       githubLinkContainer.appendChild(link);
     } else {
