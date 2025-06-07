@@ -327,6 +327,7 @@ td {
     border-color: var(--highlight-circle-bg);
     box-shadow: 0 0 8px rgba(247, 215, 0, 0.3); /* Sombra mais suave para os destacados */
     cursor: default;
+    text-decoration: underline;
 }
 
 /* ESTILO MELHORADO PARA O ÚLTIMO NÚMERO SORTEADO */
@@ -340,6 +341,7 @@ td {
     z-index: 1; /* Garante que ele fique por cima, se houver sobreposição */
     position: relative; /* Necessário para z-index */
     cursor: default;
+    text-decoration: underline;
 }
 
 
