@@ -33,7 +33,7 @@
 
     /* VARIÁVEIS PARA OS CÍRCULOS */
     --circle-size: 50px; /* Tamanho do círculo (largura e altura) */
-    --circle-bg: #f0f0f0; /* Fundo do círculo (um cinza claro) */
+    --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
     --circle-border: 1px solid #ccc; /* Borda do círculo */
     --circle-text-color: #333; /* Cor do texto dentro do círculo */
     --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
@@ -51,6 +51,7 @@ body {
     margin: 0;
     background-color: var(--body-bg);
     color: var(--text-color);
+    cursor: default;
 }
 
 .main-container {
@@ -347,6 +348,7 @@ th, td {
     margin: 5px auto;
     box-sizing: border-box;
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
+    cursor: pointer;
 }
 
 td {
@@ -359,6 +361,7 @@ td {
     color: var(--highlight-circle-text-color);
     border-color: var(--highlight-circle-bg);
     box-shadow: 0 0 8px rgba(247, 215, 0, 0.3); /* Sombra mais suave para os destacados */
+    cursor: default;
 }
 
 /* ESTILO MELHORADO PARA O ÚLTIMO NÚMERO SORTEADO */
@@ -371,6 +374,7 @@ td {
     box-shadow: 0 0 15px rgba(247, 215, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
     z-index: 1; /* Garante que ele fique por cima, se houver sobreposição */
     position: relative; /* Necessário para z-index */
+    cursor: default;
 }
 
 
@@ -389,6 +393,7 @@ td {
     resize: vertical;
     background-color: var(--main-content-bg);
     color: var(--text-color);
+    cursor: default;
 }
 
 /* Media Queries para responsividade */

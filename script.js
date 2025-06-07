@@ -129,16 +129,18 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.appendChild(numeroSpan);
 
         cell.dataset.numeroOriginal = numero; // Mantém o dataset para identificação
+
         cell.addEventListener('click', () => {
+          // Ignora ação quando já sorteou este número
+          if(numerosSorteados.includes(numero))
+          {
+            return;
+          }
+                  
           if (!currentSerieName) {
             alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
             serieNameInput.focus();
             openSidebar();
-            return;
-          }
-
-          if (numerosSorteados.includes(numero)) {
-            alert(`O número ${formatNumberTwoDigits(numero)} já foi sorteado.`);
             return;
           }
 
