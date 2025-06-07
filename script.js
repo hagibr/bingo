@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const numeroSorteadoInput = document.getElementById('numeroSorteado');
-  const sortearBtn = document.getElementById('sortearBtn');
   const desfazerBtn = document.getElementById('desfazerBtn');
   const bingoTableBody = document.getElementById('bingoTableBody');
   const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
@@ -151,8 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
           highlightNumber(numero);
           numerosSorteados.push(numero);
           updateDrawnList();
-          numeroSorteadoInput.value = '';
-          numeroSorteadoInput.focus();
         });
         row.appendChild(cell);
       }
@@ -485,38 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
     openSidebarBtn.style.left = '20px';
   }
 
-  // --- Event Listeners ---
-  sortearBtn.addEventListener('click', () => {
-    if (!currentSerieName) {
-      alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
-      serieNameInput.focus();
-      openSidebar();
-      return;
-    }
-
-    const numero = parseInt(numeroSorteadoInput.value);
-
-    if (isNaN(numero) || numero < 1 || numero > 75) {
-      alert('Por favor, insira um número válido entre 1 e 75.');
-      return;
-    }
-
-    if (numerosSorteados.includes(numero)) {
-      alert(`O número ${formatNumberTwoDigits(numero)} já foi sorteado.`);
-      return;
-    }
-
-    if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
-      return;
-    }
-
-    highlightNumber(numero);
-    numerosSorteados.push(numero);
-    updateDrawnList();
-    numeroSorteadoInput.value = '';
-    numeroSorteadoInput.focus();
-  });
-
   desfazerBtn.addEventListener('click', () => {
     if (numerosSorteados.length === 0) {
       alert('Não há jogada para desfazer.');
@@ -529,12 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
       removeHighlightNumber(numeroADesfazer);
       numerosSorteados.pop();
       updateDrawnList();
-    }
-  });
-
-  numeroSorteadoInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-      sortearBtn.click();
     }
   });
 

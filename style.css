@@ -233,7 +233,6 @@ h1 {
     margin-top: 0;
 }
 
-.controls,
 .bingo-board,
 .drawn-numbers {
     margin-bottom: 20px;
@@ -250,46 +249,9 @@ h1 {
     box-sizing: border-box;
 }
 
-.controls {
-    justify-content: center;
-}
-
-.controls label {
-    font-weight: bold;
-    color: var(--text-color);
-}
-
-.controls input[type="number"] {
-    padding: 8px;
-    border: 1px solid var(--main-content-border);
+.bingo-board button
+{
     border-radius: 4px;
-    width: 80px;
-    background-color: var(--main-content-bg);
-    color: var(--text-color);
-}
-
-.controls input[type="number"]:focus {
-    outline: none;
-    border-color: var(--bingo-header-bg);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
-}
-
-.controls button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-}
-
-#sortearBtn {
-    background-color: var(--success-button-bg);
-    color: white;
-}
-
-#sortearBtn:hover {
-    background-color: var(--success-button-hover);
 }
 
 #desfazerBtn {
@@ -399,7 +361,6 @@ td {
 /* Media Queries para responsividade */
 @media screen and (max-width: 768px) {
     .serie-management,
-    .controls,
     .bingo-board,
     .drawn-numbers {
         width: 95%;

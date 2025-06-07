@@ -32,19 +32,13 @@
             <button class="open-sidebar-btn" id="openSidebarBtn">☰ Gerenciar Séries</button>
             <h1 id="pageTitle">Bingo - Sem Série</h1>
 
-            <div class="controls">
-                <label for="numeroSorteado">Número Sorteado:</label>
-                <input type="number" id="numeroSorteado" min="1" max="75">
-                <button id="sortearBtn">Sortear</button>
-                <button id="desfazerBtn">Desfazer Última Jogada</button>
-            </div>
-
             <div class="bingo-board">
                 <table>
                     <thead>
                         <tr>
                             <th></th>
-                            <th colspan="15">Números do Bingo</th>
+                            <th colspan="14">Números do Bingo</th>
+                            <th><button id="desfazerBtn" title="Desfazer última jogada">↶</button></th>
                         </tr>
                     </thead>
                     <tbody id="bingoTableBody">
