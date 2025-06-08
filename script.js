@@ -146,9 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
 
-          if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
-            return;
-          }
+          //if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
+          //  return;
+          //}
 
           highlightNumber(numero);
           numerosSorteados.push(numero);
@@ -246,8 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updatePageTitle() {
     if (currentSerieName) {
-      pageTitle.textContent = `Bingo - Série ${currentSerieName}`;
-      headTitle.textContent = `Bingo - Série ${currentSerieName}`;
+      pageTitle.textContent = `Bingo - ${currentSerieName}`;
+      headTitle.textContent = `Bingo - ${currentSerieName}`;
     } else {
       pageTitle.textContent = 'Bingo - Sem Série';
       headTitle.textContent = 'Bingo - Sem Série';
