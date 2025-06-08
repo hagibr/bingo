@@ -9,7 +9,7 @@
 <body>
     <div class="main-container">
         <div class="sidebar" id="sidebar">
-            <button class="close-sidebar-btn" id="closeSidebarBtn">&times;</button>
+            <button class="close-sidebar-btn" id="closeSidebarBtn" title="Fechar">&times;</button>
             <h2>Gerenciar Séries</h2>
             <div class="serie-management">
                 <label for="serieName">Nome da Série:</label>
@@ -29,15 +29,18 @@
         </div>
 
         <div class="content">
-            <button class="open-sidebar-btn" id="openSidebarBtn">☰ Gerenciar Séries</button>
+            <button class="open-sidebar-btn" id="openSidebarBtn" title="Gerenciar Séries">☰</button>
             <h1 id="pageTitle">Bingo - Sem Série</h1>
 
             <div class="bingo-board">
                 <table>
                     <thead>
                         <tr>
+                            <!-- An empty cell (for letters B-I-N-G-O) -->
                             <th></th>
-                            <th class="bingo-letter" colspan="14">Números do Bingo</th>
+                            <!-- A header saying 'Números do Bingo spanning 15 cells '-->
+                            <th class="bingo-letter" colspan="15">Números do Bingo</th>
+                            <!-- An undo button (and for letters B-I-N-G-O) -->
                             <th><button id="desfazerBtn" title="Desfazer última jogada">↶</button></th>
                         </tr>
                     </thead>
@@ -47,7 +50,7 @@
             </div>
 
             <div class="drawn-numbers">
-                <h2>Números Sorteados: <span id="contadorNumerosSorteados">(0)</span></h2>
+                <h3>Números Sorteados: <span id="contadorNumerosSorteados">(0)</span> / Restantes: <span id="contadorNumerosRestantes">(75)</span></h3>
                 <textarea id="numerosSorteadosLista" rows="3" readonly></textarea>
             </div>
             

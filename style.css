@@ -35,8 +35,8 @@
     --circle-size: 50px; /* Tamanho do círculo (largura e altura) */
     --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
     --circle-border: 1px solid #ccc; /* Borda do círculo */
-    --circle-text-color: #333; /* Cor do texto dentro do círculo */
-    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
+    --circle-text-color: #919191; /* Cor do texto dentro do círculo */
+    --highlight-circle-bg: #888888; /* Amarelo claro para o círculo destacado normal */
     --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
 
     /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
@@ -156,8 +156,8 @@ body {
 /* Estilos específicos para botões com cores diferentes */
 .close-sidebar-btn {
     position: absolute;
-    top: 0;
-    right: 25px;
+    top: 10px;
+    right: 180px;
     font-size: 36px;
     margin-left: 50px;
     background: none;
@@ -252,9 +252,9 @@ h1 {
 .bingo-board button {
     font-size: 20px;
     border-radius: 10px;
-    height: 48px;
-    width: 48px;
-    
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
 }
 
 #desfazerBtn {
@@ -345,9 +345,10 @@ td {
 }
 
 
-.drawn-numbers h2 {
+.drawn-numbers h3 {
     color: var(--bingo-header-bg);
     margin-bottom: 10px;
+    margin-left: auto;
 }
 
 #numerosSorteadosLista {
@@ -356,7 +357,7 @@ td {
     border: 1px solid var(--main-content-border);
     border-radius: 4px;
     padding: 10px;
-    font-size: 1.5em;
+    font-size: 2em;
     resize: vertical;
     background-color: var(--main-content-bg);
     color: var(--text-color);

@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const bingoTableBody = document.getElementById('bingoTableBody');
   const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
   const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
+  const contadorNumerosRestantes = document.getElementById('contadorNumerosRestantes');
+  
 
   const serieNameInput = document.getElementById('serieName');
   const newSerieBtn = document.getElementById('newSerieBtn');
@@ -111,9 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateBingoTable() {
     bingoTableBody.innerHTML = '';
+    // 5 rows
     for (let i = 0; i < 5; i++) {
       const row = document.createElement('tr');
       const letterCell = document.createElement('td');
+      // One of the letters B-I-N-G-O at the beginning of the row
       letterCell.textContent = letrasBingo[i];
       letterCell.classList.add('bingo-letter');
       row.appendChild(letterCell);
@@ -152,6 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         row.appendChild(cell);
       }
+      // One of the letters B-I-N-G-O at the end of the row
+      const letterCell2 = document.createElement('td');
+      letterCell2.textContent = letrasBingo[i];
+      letterCell2.classList.add('bingo-letter');
+      row.appendChild(letterCell2);
+      
       bingoTableBody.appendChild(row);
     }
   }
@@ -224,6 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
     contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
+    contadorNumerosRestantes.textContent = `(${75-numerosSorteados.length})`;
+    
 
     hasDrawnNumbers = numerosSorteados.length > 0;
 
