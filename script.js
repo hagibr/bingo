@@ -299,7 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
     savedSeries = [...new Set(savedSeries)];
 
-    savedSeriesSelect.innerHTML = '<option value="">-- Selecione uma série --</option>';
+    if (!currentSerieName) {
+      savedSeriesSelect.innerHTML = '<option value="">-- Crie uma série --</option>';
+    }
+    else {
+      savedSeriesSelect.innerHTML = '';
+    }
+    
     savedSeries.forEach(serie => {
       const option = document.createElement('option');
       option.value = serie;
