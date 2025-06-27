@@ -1,6 +1,18 @@
+// A função para obter o parâmetro da URL pode ficar fora ou dentro do listener.
+// É bom tê-la como uma função separada para reutilização.
+function getParameterByName(name, url = window.location.href) {
+  name = name.replace(/[\[\]]/g, '\\$&');
+  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+    results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const desfazerBtn = document.getElementById('desfazerBtn');
   const bingoTableBody = document.getElementById('bingoTableBody');
+  const bingoTableHeader = document.getElementById('bingoTableHeader');
   const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
   const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
   const contadorNumerosRestantes = document.getElementById('contadorNumerosRestantes');
@@ -39,6 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isGitHubPages = false;
   let githubRepoUrl = '';
+
+  let bingoBoardSize = getParameterByName('size');
+
+  // Verificando se 'param1' foi fornecido ou se é nulo/vazio
+  if (bingoBoardSize === null || bingoBoardSize.trim() === '') {
+      bingoBoardSize = 75;
+  } else {
+      // Se o parâmetro for encontrado, tente convertê-lo para um número.
+      // Valide se é um número válido, caso contrário, use o padrão.
+      bingoBoardSize = parseInt(bingoBoardSize);
+      if (isNaN(bingoBoardSize)) {
+          bingoBoardSize = 75;
+      }
+  }
+  // Permitindo somente valores default (75 e 90)
+  if( bingoBoardSize != 75 && bingoBoardSize != 90 )
+    bingoBoardSize = 75;
 
   // Verifica se o hostname termina com '.github.io'
   if (hostname.endsWith(githubPagesDomain)) {
@@ -113,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateBingoTable() {
     bingoTableBody.innerHTML = '';
+    bingoTableHeader.setAttribute('colspan', (bingoBoardSize/5));
     // 5 rows
     for (let i = 0; i < 5; i++) {
       const row = document.createElement('tr');
@@ -121,9 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
       letterCell.textContent = letrasBingo[i];
       letterCell.classList.add('bingo-letter');
       row.appendChild(letterCell);
-      for (let j = 0; j < 15; j++) {
+      // 15 or 18 columns
+      for (let j = 0; j < (bingoBoardSize/5); j++) {
         const cell = document.createElement('td');
-        const numero = (i * 15) + j + 1;
+        const numero = (i * (bingoBoardSize/5)) + j + 1;
         // Cria um span para o número e o adiciona à célula
         const numeroSpan = document.createElement('span');
         numeroSpan.textContent = formatNumberTwoDigits(numero);
@@ -234,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
     contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
-    contadorNumerosRestantes.textContent = `(${75-numerosSorteados.length})`;
+    contadorNumerosRestantes.textContent = `(${bingoBoardSize-numerosSorteados.length})`;
     
 
     hasDrawnNumbers = numerosSorteados.length > 0;
