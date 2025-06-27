@@ -43,6 +43,10 @@
     --last-drawn-circle-bg: #f7d700; /* Amarelo gema para o último número sorteado */
     --last-drawn-circle-border: 2px solid #e6c500; /* Borda mais grossa/escura para o último */
     --last-drawn-circle-text-color: white; /* AGORA BRANCO! */
+
+    --last-drawn-circle-size: 100px;
+    --very-last-drawn-circle-size: 150px;
+    
 }
 
 
@@ -310,6 +314,42 @@ th, td {
     color: var(--circle-text-color);
     font-weight: bold;
     font-size: 1.1em;
+    margin: 5px auto;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
+    cursor: pointer;
+}
+
+.bingo-very-last-drawn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--very-last-drawn-circle-size);
+    height: var(--very-last-drawn-circle-size);
+    border-radius: 50%;
+    background-color: var(--circle-bg);
+    border: var(--circle-border);
+    color: var(--circle-text-color);
+    font-weight: bold;
+    font-size: 6em;
+    margin: 5px auto;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
+    cursor: pointer;
+}
+
+.bingo-last-drawn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--last-drawn-circle-size);
+    height: var(--last-drawn-circle-size);
+    border-radius: 50%;
+    background-color: var(--circle-bg);
+    border: var(--circle-border);
+    color: var(--circle-text-color);
+    font-weight: bold;
+    font-size: 4em;
     margin: 5px auto;
     box-sizing: border-box;
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */

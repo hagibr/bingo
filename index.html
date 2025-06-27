@@ -1,64 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="headTitle">Bingo - Sem série</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="headTitle">Bingo - Sem série</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div class="main-container">
-        <div class="sidebar" id="sidebar">
-            <button class="close-sidebar-btn" id="closeSidebarBtn" title="Fechar">&times;</button>
-            <h2>Gerenciar Séries</h2>
-            <div class="serie-management">
-                <label for="serieName">Nome da Série:</label>
-                <input type="text" id="serieName" placeholder="Ex: Branca">
-                <button id="newSerieBtn">Criar Nova Série</button>
-                <select id="savedSeriesSelect"></select>
-                <button id="deleteCurrentSerieBtn" class="delete-button">Apagar Série Atual</button>
-                <button id="deleteAllSeriesBtn" class="delete-button">Apagar Todas as Séries</button>
+  <div class="main-container">
+    <div class="sidebar" id="sidebar">
+      <button class="close-sidebar-btn" id="closeSidebarBtn" title="Fechar">&times;</button>
+      <h2>Gerenciar Séries</h2>
+      <div class="serie-management">
+        <label for="serieName">Nome da Série:</label>
+        <input type="text" id="serieName" placeholder="Ex: Branca">
+        <button id="newSerieBtn">Criar Nova Série</button>
+        <select id="savedSeriesSelect"></select>
+        <button id="deleteCurrentSerieBtn" class="delete-button">Apagar Série Atual</button>
+        <button id="deleteAllSeriesBtn" class="delete-button">Apagar Todas as Séries</button>
 
-                <hr style="width: 100%; border-top: 1px solid #555; margin: 15px 0;">
+        <hr style="width: 100%; border-top: 1px solid #555; margin: 15px 0;">
 
-                <button id="exportSeriesBtn">Exportar Séries</button>
-                <button id="importSeriesBtn">Importar Séries</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;">
-                <div id="github-repo-link-container"></div>
-            </div>
-        </div>
-
-        <div class="content">
-            <button class="open-sidebar-btn" id="openSidebarBtn" title="Gerenciar Séries">☰</button>
-            <h1 id="pageTitle">Bingo - Sem Série</h1>
-
-            <div class="bingo-board">
-                <table>
-                    <thead>
-                        <tr>
-                            <!-- An empty cell (for letters B-I-N-G-O) -->
-                            <th></th>
-                            <!-- A header saying 'Números do Bingo spanning 15 cells '-->
-                            <th class="bingo-letter" colspan="15" id="bingoTableHeader">Números do Bingo</th>
-                            <!-- An undo button (and for letters B-I-N-G-O) -->
-                            <th><button id="desfazerBtn" title="Desfazer última jogada">↶</button></th>
-                        </tr>
-                    </thead>
-                    <tbody id="bingoTableBody">
-                        </tbody>
-                </table>
-            </div>
-
-            <div class="drawn-numbers">
-                <h3>Números Sorteados: <span id="contadorNumerosSorteados">(0)</span> / Restantes: <span id="contadorNumerosRestantes">(75)</span></h3>
-                <textarea id="numerosSorteadosLista" rows="3" readonly></textarea>
-            </div>
-            
-        </div>
-        
+        <button id="exportSeriesBtn">Exportar Séries</button>
+        <button id="importSeriesBtn">Importar Séries</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <div id="github-repo-link-container"></div>
+      </div>
     </div>
 
-    
-    <script src="script.js"></script>
+    <div class="content">
+      <button class="open-sidebar-btn" id="openSidebarBtn" title="Gerenciar Séries">☰</button>
+      <h1 id="pageTitle">Bingo - Sem Série</h1>
+
+      <div class="bingo-board">
+        <table>
+          <thead>
+            <tr>
+              <!-- An empty cell (for letters B-I-N-G-O) -->
+              <th></th>
+              <!-- A header saying 'Números do Bingo spanning 15 cells '-->
+              <th class="bingo-letter" colspan="15" id="bingoTableHeader">Números do Bingo</th>
+              <!-- An undo button (and for letters B-I-N-G-O) -->
+              <th><button id="desfazerBtn" title="Desfazer última jogada">↶</button></th>
+            </tr>
+          </thead>
+          <tbody id="bingoTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="drawn-numbers">
+        <h3>Números Sorteados: <span id="contadorNumerosSorteados">(0)</span> / Restantes: <span
+            id="contadorNumerosRestantes">(75)</span></h3>
+        <table>
+          <tbody id="bingoLastDrawn">
+        </table>
+        <!-- <textarea id="numerosSorteadosLista" rows="3" readonly></textarea> -->
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script src="script.js"></script>
 </body>
+
 </html>

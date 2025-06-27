@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const desfazerBtn = document.getElementById('desfazerBtn');
   const bingoTableBody = document.getElementById('bingoTableBody');
   const bingoTableHeader = document.getElementById('bingoTableHeader');
-  const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
+  //const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
   const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
   const contadorNumerosRestantes = document.getElementById('contadorNumerosRestantes');
-  
+  const bingoLastDrawn = document.getElementById('bingoLastDrawn');
 
   const serieNameInput = document.getElementById('serieName');
   const newSerieBtn = document.getElementById('newSerieBtn');
@@ -263,13 +263,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const numerosEmOrdemInversa = [...numerosSorteados].reverse();
     const numerosParaExibirFormatados = numerosEmOrdemInversa.map(num => formatNumberTwoDigits(num));
 
-    numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
+    //numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
     contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
     contadorNumerosRestantes.textContent = `(${bingoBoardSize-numerosSorteados.length})`;
     
 
     hasDrawnNumbers = numerosSorteados.length > 0;
 
+    bingoLastDrawn.innerHTML = '';
+    if( hasDrawnNumbers )
+    {
+      let row = document.createElement('tr');
+      let max_drawn = numerosSorteados.length > 5 ? 5 : numerosSorteados.length;
+      for (let i = 0; i < max_drawn; i++)
+      {
+        const cell = document.createElement('td');
+        // Cria um span para o número e o adiciona à célula
+        const numeroSpan = document.createElement('span');
+        numeroSpan.textContent = numerosParaExibirFormatados[i];
+        if( i == 0)
+          numeroSpan.classList.add('bingo-very-last-drawn'); // Adiciona uma classe para estilização
+        else
+          numeroSpan.classList.add('bingo-last-drawn'); // Adiciona uma classe para estilização
+        cell.appendChild(numeroSpan);
+        row.appendChild(cell);
+      }
+      bingoLastDrawn.appendChild(row);
+    }
+    
     saveCurrentSerie();
     // Atualiza o destaque do último número SEMPRE que a lista muda
     updateLastDrawnStyle(); // CHAME AQUI!
@@ -315,6 +336,9 @@ document.addEventListener('DOMContentLoaded', () => {
       numerosSorteados = serieData.numbers;
       currentSerieName = serieName;
       serieNameInput.value = '';
+      
+      // Antes de adicionar os números, garanta que eles estão dentro do tamanho do board do bingo atual.
+      numerosSorteados = numerosSorteados.filter(numero => numero <= bingoBoardSize);
 
       numerosSorteados.forEach(num => highlightNumber(num));
       updateDrawnList();
