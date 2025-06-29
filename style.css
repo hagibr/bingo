@@ -261,12 +261,12 @@ h1 {
     cursor: pointer;
 }
 
-#desfazerBtn {
+#undoBtn {
     background-color: var(--danger-button-bg);
     color: white;
 }
 
-#desfazerBtn:hover {
+#undoBtn:hover {
     background-color: var(--danger-button-hover);
 }
 

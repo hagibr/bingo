@@ -10,7 +10,8 @@ function getParameterByName(name, url = window.location.href) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const desfazerBtn = document.getElementById('desfazerBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const randomDrawBtn = document.getElementById('randomDrawBtn');
   const bingoTableBody = document.getElementById('bingoTableBody');
   const bingoTableHeader = document.getElementById('bingoTableHeader');
   const bingoLastDrawnList = document.getElementById('bingoLastDrawnList');
@@ -73,9 +74,25 @@ document.addEventListener('DOMContentLoaded', () => {
           bingoBoardSize = 75;
       }
   }
+
   // Permitindo somente valores default (75 e 90)
   if( bingoBoardSize != 75 && bingoBoardSize != 90 )
     bingoBoardSize = 75;
+
+  let allowRandomDraw = getParameterByName("draw");
+  if (allowRandomDraw === null || allowRandomDraw.trim() === '') {
+      allowRandomDraw = false;
+  } else if( allowRandomDraw === 'true'){
+      allowRandomDraw = true;
+  } else {
+    allowRandomDraw = false;
+  }
+  
+  if( allowRandomDraw )
+  {
+    randomDrawBtn.classList.remove('hidden');
+    randomDrawBtn.classList.add('visible');
+  }
 
   // Verifica se o hostname termina com '.github.io'
   if (hostname.endsWith(githubPagesDomain)) {
@@ -669,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openSidebarBtn.style.left = '20px';
   }
 
-  desfazerBtn.addEventListener('click', () => {
+  undoBtn.addEventListener('click', () => {
     if (numerosSorteados.length === 0) {
       alert('Não há jogada para desfazer.');
       return;
@@ -682,6 +699,41 @@ document.addEventListener('DOMContentLoaded', () => {
       numerosSorteados.pop();
       updateDrawnList();
     }
+  });
+
+  randomDrawBtn.addEventListener('click', () => {
+    if (!currentSerieName) {
+      alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
+      serieNameInput.focus();
+      openSidebar();
+      return;
+    }
+
+    if( numerosSorteados.length >= bingoBoardSize )
+    {
+      alert("Já sorteou todos os números");
+      return;  
+    }
+
+    let numerosDisponiveis = [];
+    for (let i = 1; i <= bingoBoardSize; i++) {
+      if(!numerosSorteados.includes(i))
+      {
+        numerosDisponiveis.push(i);
+      }
+    }
+    if( numerosDisponiveis.length != (bingoBoardSize-numerosSorteados.length) )
+    {
+      alert("Problema");
+      return;
+    }
+
+    let numero = numerosDisponiveis[Math.trunc(Math.random()*numerosDisponiveis.length)];
+
+    highlightNumber(numero);
+    numerosSorteados.push(numero);
+    updateDrawnList();
+
   });
 
   newSerieBtn.addEventListener('click', startNewSerie);
