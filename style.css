@@ -36,7 +36,7 @@
     --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
     --circle-border: 1px solid #ccc; /* Borda do círculo */
     --circle-text-color: #919191; /* Cor do texto dentro do círculo */
-    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */ 
+    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
     --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
 
     /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
@@ -357,9 +357,42 @@ width: 100%;
     cursor: default;
 }
 
+/* Estilo para o contêiner do label editável */
+#editableLabelContainer {
+    border: 1px solid #ccc;
+    padding: 10px;
+    display: inline-block; /* Para que o contêiner se ajuste ao conteúdo */
+    cursor: pointer; /* Indica que é clicável */
+    min-width: 150px; /* Largura mínima para o contêiner */
+}
 
+/* Estilo para o texto visível (o "label") */
+.editable-text-display {
+    display: inline-block; /* Para se ajustar ao contêiner */
+    width: 100%; /* Ocupa a largura total do contêiner */
+    font-size: 2em;
+}
+
+/* Estilo para o campo de input */
+.editable-text-input {
+    width: 100%; /* Ocupa a largura total do contêiner */
+    box-sizing: border-box; /* Inclui padding e border na largura total */
+    border: 1px solid #007bff;
+    padding: 5px;
+    font-size: 2em;
+}
+
+/* Classes de visibilidade */
 .hidden {
     display: none;
+}
+
+.visible {
+    display: inline-block; /* Para o span/div */
+}
+
+.visible-input {
+    display: inline-block; /* Para o input */
 }
 
 .bingo-last-drawn {

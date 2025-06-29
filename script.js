@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageTitle = document.getElementById('pageTitle');
   const headTitle = document.getElementById('headTitle');
 
+  const descriptionLabel = document.getElementById('descriptionLabel');
+  const descriptionInput = document.getElementById('descriptionInput');
+  const optionalDescription = document.getElementById('optionalDescription');
+
+
   let numerosSorteados = [];
   const letrasBingo = ['B', 'I', 'N', 'G', 'O'];
   let hasDrawnNumbers = false;
@@ -178,6 +183,55 @@ document.addEventListener('DOMContentLoaded', () => {
             bingoLastDrawnList.classList.add('visible');
         }
     });
+
+  // Função para exibir o input e ocultar o label
+  function enableEditMode() {
+      descriptionLabel.classList.add('hidden');
+      descriptionLabel.classList.remove('visible'); // Remova visible se já tiver
+
+      descriptionInput.value = descriptionLabel.textContent; // Copia o texto atual para o input
+      descriptionInput.classList.remove('hidden');
+      descriptionInput.classList.add('visible-input'); // Usar visible-input para o input
+      descriptionInput.focus(); // Coloca o foco no input
+      descriptionInput.addEventListener('blur', disableEditMode);
+  }
+
+  // Função para ocultar o input e exibir o label
+  function disableEditMode() {
+    if ((descriptionInput.value != '') || confirm(`Tem certeza de que vai deixar a descrição vazia?`)){
+      descriptionLabel.textContent = descriptionInput.value; // Atualiza o texto do label com o valor do input
+      saveCurrentSerie();
+    }
+    descriptionLabel.classList.remove('hidden');
+    descriptionLabel.classList.add('visible'); // Adiciona visible ao label
+    descriptionInput.classList.add('hidden');
+    descriptionInput.classList.remove('visible-input'); // Remova visible-input
+    descriptionInput.value = '';
+    descriptionInput.removeEventListener('blur', disableEditMode);
+  
+  }
+
+  // Quando o label é clicado, entra no modo de edição
+  descriptionLabel.addEventListener('click', enableEditMode);
+
+  // Opcional: Permitir que "Enter" também desabilite o modo de edição
+  descriptionInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+          disableEditMode();
+      }
+  });
+
+  // Opcional: Se o clique for no contêiner, mas não no input, ative o modo de edição
+  optionalDescription.addEventListener('click', function(event) {
+      // Se o clique foi no contêiner e o descriptionLabel está visível, ative o modo de edição
+      if (event.target === descriptionLabel || event.target === optionalDescription && descriptionLabel.classList.contains('visible')) {
+          enableEditMode();
+      }
+  });
+
+  // Garante que o label esteja visível e o input escondido inicialmente
+  descriptionLabel.classList.add('visible');
+  descriptionInput.classList.add('hidden');
 
   function generateBingoTable() {
     bingoTableBody.innerHTML = '';
@@ -353,7 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const serieData = {
       numbers: numerosSorteados,
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toLocaleString(),
+      description: descriptionLabel.textContent,
     };
     localStorage.setItem(SERIE_DATA_PREFIX + currentSerieName, JSON.stringify(serieData));
 
@@ -374,11 +429,13 @@ document.addEventListener('DOMContentLoaded', () => {
       numerosSorteados = serieData.numbers;
       currentSerieName = serieName;
       serieNameInput.value = '';
+      descriptionLabel.textContent = serieData.description;
       
       // Antes de adicionar os números, garanta que eles estão dentro do tamanho do board do bingo atual.
       numerosSorteados = numerosSorteados.filter(numero => numero <= bingoBoardSize);
 
       numerosSorteados.forEach(num => highlightNumber(num));
+      
       updateDrawnList();
       updatePageTitle();
       //alert(`Série "${serieName}" carregada com sucesso!`);
@@ -417,11 +474,13 @@ document.addEventListener('DOMContentLoaded', () => {
       numerosSorteados = [];
       currentSerieName = newName;
       serieNameInput.value = '';
+      descriptionLabel.textContent = 'Descrição';
+      
       saveCurrentSerie();
       updateDrawnList();
       updatePageTitle();
       updateSavedSeriesList();
-      alert('Nova série iniciada.');
+      alert(`Nova Série "${newName}" iniciada.`);
       serieNameInput.focus();
       openSidebar();
     }
@@ -553,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
         numerosSorteados = [];
         currentSerieName = '';
         serieNameInput.value = '';
+        descriptionLabel.textContent = '';
         updateDrawnList();
         updatePageTitle();
 
