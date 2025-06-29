@@ -36,7 +36,7 @@
     --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
     --circle-border: 1px solid #ccc; /* Borda do círculo */
     --circle-text-color: #919191; /* Cor do texto dentro do círculo */
-    --highlight-circle-bg: #888888; /* Amarelo claro para o círculo destacado normal */
+    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
     --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
 
     /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
@@ -338,6 +338,30 @@ th, td {
     cursor: pointer;
 }
 
+/* Garante que a tabela se comporte como bloco quando visível */
+#bingoLastDrawnTable.visible {
+    display: table; /* Mantém como table para semântica da tabela */
+}
+
+/* Garante que a textarea se comporte como bloco quando visível */
+#bingoLastDrawnList.visible {
+width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--main-content-border);
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 2em;
+    resize: vertical;
+    background-color: var(--main-content-bg);
+    color: var(--text-color);
+    cursor: default;
+}
+
+
+.hidden {
+    display: none;
+}
+
 .bingo-last-drawn {
     display: flex;
     align-items: center;
@@ -391,18 +415,6 @@ td {
     margin-left: auto;
 }
 
-#numerosSorteadosLista {
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid var(--main-content-border);
-    border-radius: 4px;
-    padding: 10px;
-    font-size: 2em;
-    resize: vertical;
-    background-color: var(--main-content-bg);
-    color: var(--text-color);
-    cursor: default;
-}
 
 /* Media Queries para responsividade */
 @media screen and (max-width: 768px) {

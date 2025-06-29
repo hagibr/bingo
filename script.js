@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const desfazerBtn = document.getElementById('desfazerBtn');
   const bingoTableBody = document.getElementById('bingoTableBody');
   const bingoTableHeader = document.getElementById('bingoTableHeader');
-  //const numerosSorteadosLista = document.getElementById('numerosSorteadosLista');
+  const bingoLastDrawnList = document.getElementById('bingoLastDrawnList');
+  const bingoLastDrawnTable = document.getElementById('bingoLastDrawnTable');
   const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
   const contadorNumerosRestantes = document.getElementById('contadorNumerosRestantes');
   const bingoLastDrawn = document.getElementById('bingoLastDrawn');
@@ -140,6 +141,44 @@ document.addEventListener('DOMContentLoaded', () => {
     return num < 10 ? '0' + num : String(num);
   }
 
+  bingoLastDrawnTable.addEventListener('click', function() {
+        // Verifica se a tabela está visível
+        if (bingoLastDrawnTable.classList.contains('visible')) {
+            // Se a tabela está visível, esconde-a e mostra o textarea
+            bingoLastDrawnTable.classList.remove('visible');
+            bingoLastDrawnTable.classList.add('hidden');
+            
+            bingoLastDrawnList.classList.remove('hidden');
+            bingoLastDrawnList.classList.add('visible');
+        } else {
+            // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
+            bingoLastDrawnList.classList.remove('visible');
+            bingoLastDrawnList.classList.add('hidden');
+            
+            bingoLastDrawnTable.classList.remove('hidden');
+            bingoLastDrawnTable.classList.add('visible');
+        }
+    });
+
+    // Adicione um evento de clique para o textarea também, para alternar de volta
+    bingoLastDrawnList.addEventListener('click', function() {
+        // Se o textarea está visível, esconde-o e mostra a tabela
+        if (bingoLastDrawnList.classList.contains('visible')) {
+            bingoLastDrawnList.classList.remove('visible');
+            bingoLastDrawnList.classList.add('hidden');
+            
+            bingoLastDrawnTable.classList.remove('hidden');
+            bingoLastDrawnTable.classList.add('visible');
+        } else {
+            // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
+            bingoLastDrawnTable.classList.remove('visible');
+            bingoLastDrawnTable.classList.add('hidden');
+            
+            bingoLastDrawnList.classList.remove('hidden');
+            bingoLastDrawnList.classList.add('visible');
+        }
+    });
+
   function generateBingoTable() {
     bingoTableBody.innerHTML = '';
     bingoTableHeader.setAttribute('colspan', (bingoBoardSize/5));
@@ -263,11 +302,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const numerosEmOrdemInversa = [...numerosSorteados].reverse();
     const numerosParaExibirFormatados = numerosEmOrdemInversa.map(num => formatNumberTwoDigits(num));
 
-    //numerosSorteadosLista.value = numerosParaExibirFormatados.join(' - ');
+    bingoLastDrawnList.value = numerosParaExibirFormatados.join(' - ');
     contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
     contadorNumerosRestantes.textContent = `(${bingoBoardSize-numerosSorteados.length})`;
     
-
     hasDrawnNumbers = numerosSorteados.length > 0;
 
     bingoLastDrawn.innerHTML = '';
