@@ -370,7 +370,7 @@ width: 100%;
 .editable-text-display {
     display: inline-block; /* Para se ajustar ao contêiner */
     width: 100%; /* Ocupa a largura total do contêiner */
-    font-size: 2em;
+    font-size: 1.5em;
 }
 
 /* Estilo para o campo de input */
@@ -379,7 +379,7 @@ width: 100%;
     box-sizing: border-box; /* Inclui padding e border na largura total */
     border: 1px solid #007bff;
     padding: 5px;
-    font-size: 2em;
+    font-size: 1.5em;
 }
 
 /* Classes de visibilidade */

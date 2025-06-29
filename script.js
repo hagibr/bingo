@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportSeriesBtn = document.getElementById('exportSeriesBtn');
   const importSeriesBtn = document.getElementById('importSeriesBtn');
   const importFile = document.getElementById('importFile');
+ 
+  const resetSerieDescriptionBtn = document.getElementById('resetSerieDescriptionBtn');
 
   // Elemento para o tema removido
 
@@ -449,11 +451,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let savedSeries = JSON.parse(localStorage.getItem(SERIES_KEY) || '[]');
     savedSeries = [...new Set(savedSeries)];
 
-    if (!currentSerieName) {
+    if (savedSeries.length == 0) {
       savedSeriesSelect.innerHTML = '<option value="">-- Crie uma série --</option>';
     }
     else {
-      savedSeriesSelect.innerHTML = '';
+      savedSeriesSelect.innerHTML = '<option value="">-- Selecione uma série --</option>';
     }
     
     savedSeries.forEach(serie => {
@@ -462,6 +464,8 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = serie;
       savedSeriesSelect.appendChild(option);
     });
+
+
     if (currentSerieName) {
       savedSeriesSelect.value = currentSerieName;
     }
@@ -511,6 +515,19 @@ document.addEventListener('DOMContentLoaded', () => {
       //closeSidebar();
     }
   }
+  function resetCurrentSerieDescription() {
+    if (!currentSerieName) {
+      alert('Não há uma série atual para resetar descrição.');
+      return;
+    }
+
+    if (confirm(`Tem certeza que deseja resetar a descrição da série "${currentSerieName}"?`)) {
+      descriptionLabel.textContent = 'Descrição';
+      saveCurrentSerie();
+    }
+  }
+
+
 
   function deleteAllSavedSeries() {
     if (confirm('ATENÇÃO: Tem certeza que deseja APAGAR TODAS as séries salvas? Esta ação é irreversível.')) {
@@ -670,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
   newSerieBtn.addEventListener('click', startNewSerie);
   deleteCurrentSerieBtn.addEventListener('click', deleteCurrentSerie);
   deleteAllSeriesBtn.addEventListener('click', deleteAllSavedSeries);
+  resetSerieDescriptionBtn.addEventListener('click', resetCurrentSerieDescription);
 
   savedSeriesSelect.addEventListener('change', () => {
     const selectedSerie = savedSeriesSelect.value;
