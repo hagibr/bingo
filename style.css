@@ -36,7 +36,7 @@
     --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
     --circle-border: 1px solid #ccc; /* Borda do círculo */
     --circle-text-color: #919191; /* Cor do texto dentro do círculo */
-    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
+    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */ 
     --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
 
     /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
