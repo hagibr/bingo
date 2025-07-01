@@ -1,14 +1,14 @@
-function hasParameter(name, url = window.location.href) {
-    // Escapa caracteres especiais no nome do parâmetro para uso na regex
-    name = name.replace(/[\[\]]/g, '\\$&');
+function hasParameter(param, url = window.location.href) {
+  // Escapa caracteres especiais no nome do parâmetro para uso na regex
+  param = param.replace(/[\[\]]/g, '\\$&');
 
-    // Cria uma regex para encontrar o parâmetro.
-    // Procura por '?param', '&param', ou 'param='
-    // A parte '(?=&|$)' garante que não pegue parte de outro nome de parâmetro (ex: 'paramexample')
-    var regex = new RegExp('[?&]' + name + '(?=&|$|=)');
+  // Cria uma regex para encontrar o parâmetro.
+  // Procura por '?param', '&param', ou 'param='
+  // A parte '(?=&|$)' garante que não pegue parte de outro nome de parâmetro (ex: 'draw')
+  var regex = new RegExp('[?&]' + param + '(?=&|$|=)');
 
-    // Testa a URL contra a regex
-    return regex.test(url);
+  // Testa a URL contra a regex
+  return regex.test(url);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const bingoTableHeader = document.getElementById('bingoTableHeader');
   const bingoLastDrawnList = document.getElementById('bingoLastDrawnList');
   const bingoLastDrawnTable = document.getElementById('bingoLastDrawnTable');
-  const contadorNumerosSorteados = document.getElementById('contadorNumerosSorteados');
-  const contadorNumerosRestantes = document.getElementById('contadorNumerosRestantes');
+  const countDrawnNumbers = document.getElementById('countDrawnNumbers');
+  const countRemainingNumbers = document.getElementById('countRemainingNumbers');
   const bingoLastDrawn = document.getElementById('bingoLastDrawn');
 
   const serieNameInput = document.getElementById('serieName');
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportSeriesBtn = document.getElementById('exportSeriesBtn');
   const importSeriesBtn = document.getElementById('importSeriesBtn');
   const importFile = document.getElementById('importFile');
- 
+
   const resetSerieDescriptionBtn = document.getElementById('resetSerieDescriptionBtn');
 
   // Elemento para o tema removido
@@ -47,15 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const descriptionInput = document.getElementById('descriptionInput');
   const optionalDescription = document.getElementById('optionalDescription');
 
-
-  let numerosSorteados = [];
-  const letrasBingo = ['B', 'I', 'N', 'G', 'O'];
-  let hasDrawnNumbers = false;
+  let drawnNumbers = [];
+  const bingoLetters = ['B', 'I', 'N', 'G', 'O'];
   let currentSerieName = '';
 
   const SERIES_KEY = 'bingo_saved_series';
   const SERIE_DATA_PREFIX = 'bingo_serie_';
-  
+
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
   const githubPagesDomain = '.github.io'; // O sufixo comum para domínios do GitHub Pages
@@ -66,9 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let bingoBoardSize = hasParameter('90') ? 90 : 75;
 
   let allowRandomDraw = hasParameter("draw");
-    
-  if( allowRandomDraw )
-  {
+
+  if (allowRandomDraw) {
     randomDrawBtn.classList.remove('hidden');
     randomDrawBtn.classList.add('visible');
   }
@@ -144,59 +141,59 @@ document.addEventListener('DOMContentLoaded', () => {
     return num < 10 ? '0' + num : String(num);
   }
 
-  bingoLastDrawnTable.addEventListener('click', function() {
-        // Verifica se a tabela está visível
-        if (bingoLastDrawnTable.classList.contains('visible')) {
-            // Se a tabela está visível, esconde-a e mostra o textarea
-            bingoLastDrawnTable.classList.remove('visible');
-            bingoLastDrawnTable.classList.add('hidden');
-            
-            bingoLastDrawnList.classList.remove('hidden');
-            bingoLastDrawnList.classList.add('visible');
-        } else {
-            // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
-            bingoLastDrawnList.classList.remove('visible');
-            bingoLastDrawnList.classList.add('hidden');
-            
-            bingoLastDrawnTable.classList.remove('hidden');
-            bingoLastDrawnTable.classList.add('visible');
-        }
-    });
+  bingoLastDrawnTable.addEventListener('click', function () {
+    // Verifica se a tabela está visível
+    if (bingoLastDrawnTable.classList.contains('visible')) {
+      // Se a tabela está visível, esconde-a e mostra o textarea
+      bingoLastDrawnTable.classList.remove('visible');
+      bingoLastDrawnTable.classList.add('hidden');
 
-    // Adicione um evento de clique para o textarea também, para alternar de volta
-    bingoLastDrawnList.addEventListener('click', function() {
-        // Se o textarea está visível, esconde-o e mostra a tabela
-        if (bingoLastDrawnList.classList.contains('visible')) {
-            bingoLastDrawnList.classList.remove('visible');
-            bingoLastDrawnList.classList.add('hidden');
-            
-            bingoLastDrawnTable.classList.remove('hidden');
-            bingoLastDrawnTable.classList.add('visible');
-        } else {
-            // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
-            bingoLastDrawnTable.classList.remove('visible');
-            bingoLastDrawnTable.classList.add('hidden');
-            
-            bingoLastDrawnList.classList.remove('hidden');
-            bingoLastDrawnList.classList.add('visible');
-        }
-    });
+      bingoLastDrawnList.classList.remove('hidden');
+      bingoLastDrawnList.classList.add('visible');
+    } else {
+      // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
+      bingoLastDrawnList.classList.remove('visible');
+      bingoLastDrawnList.classList.add('hidden');
+
+      bingoLastDrawnTable.classList.remove('hidden');
+      bingoLastDrawnTable.classList.add('visible');
+    }
+  });
+
+  // Adicione um evento de clique para o textarea também, para alternar de volta
+  bingoLastDrawnList.addEventListener('click', function () {
+    // Se o textarea está visível, esconde-o e mostra a tabela
+    if (bingoLastDrawnList.classList.contains('visible')) {
+      bingoLastDrawnList.classList.remove('visible');
+      bingoLastDrawnList.classList.add('hidden');
+
+      bingoLastDrawnTable.classList.remove('hidden');
+      bingoLastDrawnTable.classList.add('visible');
+    } else {
+      // Se a tabela está invisível (e o textarea visível), esconde o textarea e mostra a tabela
+      bingoLastDrawnTable.classList.remove('visible');
+      bingoLastDrawnTable.classList.add('hidden');
+
+      bingoLastDrawnList.classList.remove('hidden');
+      bingoLastDrawnList.classList.add('visible');
+    }
+  });
 
   // Função para exibir o input e ocultar o label
   function enableEditMode() {
-      descriptionLabel.classList.add('hidden');
-      descriptionLabel.classList.remove('visible'); // Remova visible se já tiver
+    descriptionLabel.classList.add('hidden');
+    descriptionLabel.classList.remove('visible'); // Remova visible se já tiver
 
-      descriptionInput.value = descriptionLabel.textContent; // Copia o texto atual para o input
-      descriptionInput.classList.remove('hidden');
-      descriptionInput.classList.add('visible-input'); // Usar visible-input para o input
-      descriptionInput.focus(); // Coloca o foco no input
-      descriptionInput.addEventListener('blur', disableEditMode);
+    descriptionInput.value = descriptionLabel.textContent; // Copia o texto atual para o input
+    descriptionInput.classList.remove('hidden');
+    descriptionInput.classList.add('visible-input'); // Usar visible-input para o input
+    descriptionInput.focus(); // Coloca o foco no input
+    descriptionInput.addEventListener('blur', disableEditMode);
   }
 
   // Função para ocultar o input e exibir o label
   function disableEditMode() {
-    if ((descriptionInput.value != '') || confirm(`Tem certeza de que vai deixar a descrição vazia?`)){
+    if ((descriptionInput.value != '') || confirm(`Tem certeza de que vai deixar a descrição vazia?`)) {
       descriptionLabel.textContent = descriptionInput.value; // Atualiza o texto do label com o valor do input
       saveCurrentSerie();
     }
@@ -206,25 +203,25 @@ document.addEventListener('DOMContentLoaded', () => {
     descriptionInput.classList.remove('visible-input'); // Remova visible-input
     descriptionInput.value = '';
     descriptionInput.removeEventListener('blur', disableEditMode);
-  
+
   }
 
   // Quando o label é clicado, entra no modo de edição
   descriptionLabel.addEventListener('click', enableEditMode);
 
   // Opcional: Permitir que "Enter" também desabilite o modo de edição
-  descriptionInput.addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') {
-          disableEditMode();
-      }
+  descriptionInput.addEventListener('keypress', function (event) {
+    if (event.key === 'Enter') {
+      disableEditMode();
+    }
   });
 
   // Opcional: Se o clique for no contêiner, mas não no input, ative o modo de edição
-  optionalDescription.addEventListener('click', function(event) {
-      // Se o clique foi no contêiner e o descriptionLabel está visível, ative o modo de edição
-      if (event.target === descriptionLabel || event.target === optionalDescription && descriptionLabel.classList.contains('visible')) {
-          enableEditMode();
-      }
+  optionalDescription.addEventListener('click', function (event) {
+    // Se o clique foi no contêiner e o descriptionLabel está visível, ative o modo de edição
+    if (event.target === descriptionLabel || event.target === optionalDescription && descriptionLabel.classList.contains('visible')) {
+      enableEditMode();
+    }
   });
 
   // Garante que o label esteja visível e o input escondido inicialmente
@@ -233,19 +230,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateBingoTable() {
     bingoTableBody.innerHTML = '';
-    bingoTableHeader.setAttribute('colspan', (bingoBoardSize/5));
+    bingoTableHeader.setAttribute('colspan', (bingoBoardSize / 5));
     // 5 rows
     for (let i = 0; i < 5; i++) {
       const row = document.createElement('tr');
       const letterCell = document.createElement('td');
       // One of the letters B-I-N-G-O at the beginning of the row
-      letterCell.textContent = letrasBingo[i];
+      letterCell.textContent = bingoLetters[i];
       letterCell.classList.add('bingo-letter');
       row.appendChild(letterCell);
       // 15 or 18 columns
-      for (let j = 0; j < (bingoBoardSize/5); j++) {
+      for (let j = 0; j < (bingoBoardSize / 5); j++) {
         const cell = document.createElement('td');
-        const numero = (i * (bingoBoardSize/5)) + j + 1;
+        const numero = (i * (bingoBoardSize / 5)) + j + 1;
         // Cria um span para o número e o adiciona à célula
         const numeroSpan = document.createElement('span');
         numeroSpan.textContent = formatNumberTwoDigits(numero);
@@ -256,11 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         cell.addEventListener('click', () => {
           // Ignora ação quando já sorteou este número
-          if(numerosSorteados.includes(numero))
-          {
+          if (drawnNumbers.includes(numero)) {
             return;
           }
-                  
+
           if (!currentSerieName) {
             alert('Por favor, defina um nome para esta série de bingo antes de sortear o primeiro número.');
             serieNameInput.focus();
@@ -268,40 +264,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
 
-          //if (!confirm(`Confirmar sorteio do número ${formatNumberTwoDigits(numero)}?`)) {
-          //  return;
-          //}
-
           highlightNumber(numero);
-          numerosSorteados.push(numero);
+          drawnNumbers.push(numero);
           updateDrawnList();
         });
         row.appendChild(cell);
       }
       // One of the letters B-I-N-G-O at the end of the row
       const letterCell2 = document.createElement('td');
-      letterCell2.textContent = letrasBingo[i];
+      letterCell2.textContent = bingoLetters[i];
       letterCell2.classList.add('bingo-letter');
       row.appendChild(letterCell2);
-      
+
       bingoTableBody.appendChild(row);
     }
   }
 
   function highlightNumber(numero) {
-    const todasAsCelulas = bingoTableBody.querySelectorAll('td');
-    for (const celula of todasAsCelulas) {
-      if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === numero) {
-        const numeroSpan = celula.querySelector('.bingo-number-circle');
-        if (numeroSpan) {
+    const allCells = bingoTableBody.querySelectorAll('td');
+    for (const cell of allCells) {
+      if (cell.dataset.numeroOriginal && parseInt(cell.dataset.numeroOriginal) === numero) {
+        const numberSpan = cell.querySelector('.bingo-number-circle');
+        if (numberSpan) {
           // Antes de destacar um NOVO número, remove o destaque do ANTERIOR último número.
           const currentLastDrawn = bingoTableBody.querySelector('.last-drawn');
           if (currentLastDrawn) {
             currentLastDrawn.classList.remove('last-drawn');
           }
 
-          celula.classList.add('highlighted'); // Mantém o destaque normal
-          numeroSpan.classList.add('last-drawn'); // Adiciona a classe para o estilo do último número
+          cell.classList.add('highlighted'); // Mantém o destaque normal
+          numberSpan.classList.add('last-drawn'); // Adiciona a classe para o estilo do último número
         }
         return;
       }
@@ -309,12 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function removeHighlightNumber(numero) {
-    const todasAsCelulas = bingoTableBody.querySelectorAll('td');
-    for (const celula of todasAsCelulas) {
-      if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === numero) {
-        const numeroSpan = celula.querySelector('.bingo-number-circle');
+    const allCells = bingoTableBody.querySelectorAll('td');
+    for (const cell of allCells) {
+      if (cell.dataset.numeroOriginal && parseInt(cell.dataset.numeroOriginal) === numero) {
+        const numeroSpan = cell.querySelector('.bingo-number-circle');
         if (numeroSpan) {
-          celula.classList.remove('highlighted');
+          cell.classList.remove('highlighted');
           numeroSpan.classList.remove('last-drawn'); // Remove a classe do número desfeito
         }
         return;
@@ -332,18 +324,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Se houver números sorteados, aplica a classe 'last-drawn' ao último da lista.
-    if (numerosSorteados.length > 0) {
-      const lastNumber = numerosSorteados[numerosSorteados.length - 1];
-      const todasAsCelulas = bingoTableBody.querySelectorAll('td');
-      for (const celula of todasAsCelulas) {
-        if (celula.dataset.numeroOriginal && parseInt(celula.dataset.numeroOriginal) === lastNumber) {
-          const numeroSpan = celula.querySelector('.bingo-number-circle');
-          if (numeroSpan) {
-            numeroSpan.classList.add('last-drawn');
+    if (drawnNumbers.length > 0) {
+      const lastNumber = drawnNumbers[drawnNumbers.length - 1];
+      const allCells = bingoTableBody.querySelectorAll('td');
+      for (const cell of allCells) {
+        if (cell.dataset.numeroOriginal && parseInt(cell.dataset.numeroOriginal) === lastNumber) {
+          const numberSpan = cell.querySelector('.bingo-number-circle');
+          if (numberSpan) {
+            numberSpan.classList.add('last-drawn');
           }
-          // Não precisa de 'return' aqui se você quiser continuar a iterar
-          // ou se tiver certeza que só haverá uma célula com esse número.
-          // Mas para otimização, se o número é único, um 'return' é bom.
+
           return; // Encontrou e aplicou, pode sair.
         }
       }
@@ -351,27 +341,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateDrawnList() {
-    const numerosEmOrdemInversa = [...numerosSorteados].reverse();
-    const numerosParaExibirFormatados = numerosEmOrdemInversa.map(num => formatNumberTwoDigits(num));
+    const numbersInReverseOrder = [...drawnNumbers].reverse();
+    const numbersToShowFormatted = numbersInReverseOrder.map(num => formatNumberTwoDigits(num));
 
-    bingoLastDrawnList.value = numerosParaExibirFormatados.join(' - ');
-    contadorNumerosSorteados.textContent = `(${numerosSorteados.length})`;
-    contadorNumerosRestantes.textContent = `(${bingoBoardSize-numerosSorteados.length})`;
-    
-    hasDrawnNumbers = numerosSorteados.length > 0;
+    bingoLastDrawnList.value = numbersToShowFormatted.join(' - ');
+    countDrawnNumbers.textContent = `(${drawnNumbers.length})`;
+    countRemainingNumbers.textContent = `(${bingoBoardSize - drawnNumbers.length})`;
 
     bingoLastDrawn.innerHTML = '';
-    if( hasDrawnNumbers )
-    {
+    if (drawnNumbers.length > 0) {
       let row = document.createElement('tr');
-      let max_drawn = numerosSorteados.length > 5 ? 5 : numerosSorteados.length;
-      for (let i = 0; i < max_drawn; i++)
-      {
+      let max_drawn = drawnNumbers.length > 5 ? 5 : drawnNumbers.length;
+      for (let i = 0; i < max_drawn; i++) {
         const cell = document.createElement('td');
+        cell.style.border = "none";
         // Cria um span para o número e o adiciona à célula
         const numeroSpan = document.createElement('span');
-        numeroSpan.textContent = numerosParaExibirFormatados[i];
-        if( i == 0)
+        numeroSpan.textContent = numbersToShowFormatted[i];
+        if (i == 0)
           numeroSpan.classList.add('bingo-very-last-drawn'); // Adiciona uma classe para estilização
         else
           numeroSpan.classList.add('bingo-last-drawn'); // Adiciona uma classe para estilização
@@ -380,10 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       bingoLastDrawn.appendChild(row);
     }
-    
+
     saveCurrentSerie();
     // Atualiza o destaque do último número SEMPRE que a lista muda
-    updateLastDrawnStyle(); // CHAME AQUI!
+    updateLastDrawnStyle(); 
   }
 
   function updatePageTitle() {
@@ -404,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const serieData = {
-      numbers: numerosSorteados,
+      numbers: drawnNumbers,
       timestamp: new Date().toLocaleString(),
       description: descriptionLabel.textContent,
     };
@@ -422,18 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadSerie(serieName) {
     const serieData = JSON.parse(localStorage.getItem(SERIE_DATA_PREFIX + serieName));
     if (serieData) {
-      numerosSorteados.forEach(num => removeHighlightNumber(num));
+      drawnNumbers.forEach(num => removeHighlightNumber(num));
 
-      numerosSorteados = serieData.numbers;
+      drawnNumbers = serieData.numbers;
       currentSerieName = serieName;
       serieNameInput.value = '';
       descriptionLabel.textContent = serieData.description;
-      
-      // Antes de adicionar os números, garanta que eles estão dentro do tamanho do board do bingo atual.
-      numerosSorteados = numerosSorteados.filter(numero => numero <= bingoBoardSize);
 
-      numerosSorteados.forEach(num => highlightNumber(num));
-      
+      // Antes de adicionar os números, garanta que eles estão dentro do tamanho do board do bingo atual.
+      drawnNumbers = drawnNumbers.filter(numero => numero <= bingoBoardSize);
+
+      drawnNumbers.forEach(num => highlightNumber(num));
+
       updateDrawnList();
       updatePageTitle();
       //alert(`Série "${serieName}" carregada com sucesso!`);
@@ -453,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else {
       savedSeriesSelect.innerHTML = '<option value="">-- Selecione uma série --</option>';
     }
-    
+
     savedSeries.forEach(serie => {
       const option = document.createElement('option');
       option.value = serie;
@@ -470,12 +457,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function startNewSerie() {
     const newName = serieNameInput.value.trim();
     if (newName && newName !== currentSerieName) {
-      numerosSorteados.forEach(num => removeHighlightNumber(num));
-      numerosSorteados = [];
+      drawnNumbers.forEach(num => removeHighlightNumber(num));
+      drawnNumbers = [];
       currentSerieName = newName;
       serieNameInput.value = '';
       descriptionLabel.textContent = 'Descrição';
-      
+
       saveCurrentSerie();
       updateDrawnList();
       updatePageTitle();
@@ -499,8 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
       savedSeries = savedSeries.filter(name => name !== currentSerieName);
       localStorage.setItem(SERIES_KEY, JSON.stringify(savedSeries));
 
-      numerosSorteados.forEach(num => removeHighlightNumber(num));
-      numerosSorteados = [];
+      drawnNumbers.forEach(num => removeHighlightNumber(num));
+      drawnNumbers = [];
       erasedSerieName = currentSerieName;
       currentSerieName = '';
       serieNameInput.value = '';
@@ -508,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePageTitle();
       updateSavedSeriesList();
       alert(`Série "${erasedSerieName}" apagada com sucesso.`);
-      //closeSidebar();
     }
   }
   function resetCurrentSerieDescription() {
@@ -523,13 +509,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-
-
   function deleteAllSavedSeries() {
     if (confirm('ATENÇÃO: Tem certeza que deseja APAGAR TODAS as séries salvas? Esta ação é irreversível.')) {
       localStorage.clear();
-      numerosSorteados.forEach(num => removeHighlightNumber(num));
-      numerosSorteados = [];
+      drawnNumbers.forEach(num => removeHighlightNumber(num));
+      drawnNumbers = [];
       currentSerieName = '';
       serieNameInput.value = '';
       updateDrawnList();
@@ -621,8 +605,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         localStorage.setItem(SERIES_KEY, JSON.stringify(savedSeries));
 
-        numerosSorteados.forEach(num => removeHighlightNumber(num));
-        numerosSorteados = [];
+        drawnNumbers.forEach(num => removeHighlightNumber(num));
+        drawnNumbers = [];
         currentSerieName = '';
         serieNameInput.value = '';
         descriptionLabel.textContent = '';
@@ -666,16 +650,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   undoBtn.addEventListener('click', () => {
-    if (numerosSorteados.length === 0) {
+    if (drawnNumbers.length === 0) {
       alert('Não há jogada para desfazer.');
       return;
     }
 
-    const numeroADesfazer = numerosSorteados[numerosSorteados.length - 1];
+    const numeroADesfazer = drawnNumbers[drawnNumbers.length - 1];
 
     if (confirm(`Tem certeza que deseja desfazer a jogada do número ${formatNumberTwoDigits(numeroADesfazer)}?`)) {
       removeHighlightNumber(numeroADesfazer);
-      numerosSorteados.pop();
+      drawnNumbers.pop();
       updateDrawnList();
     }
   });
@@ -688,29 +672,26 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if( numerosSorteados.length >= bingoBoardSize )
-    {
+    if (drawnNumbers.length >= bingoBoardSize) {
       alert("Já sorteou todos os números");
-      return;  
+      return;
     }
 
-    let numerosDisponiveis = [];
+    let availableNumbers = [];
     for (let i = 1; i <= bingoBoardSize; i++) {
-      if(!numerosSorteados.includes(i))
-      {
-        numerosDisponiveis.push(i);
+      if (!drawnNumbers.includes(i)) {
+        availableNumbers.push(i);
       }
     }
-    if( numerosDisponiveis.length != (bingoBoardSize-numerosSorteados.length) )
-    {
+    if (availableNumbers.length != (bingoBoardSize - drawnNumbers.length)) {
       alert("Problema");
       return;
     }
 
-    let numero = numerosDisponiveis[Math.trunc(Math.random()*numerosDisponiveis.length)];
+    let numero = availableNumbers[Math.trunc(Math.random() * availableNumbers.length)];
 
     highlightNumber(numero);
-    numerosSorteados.push(numero);
+    drawnNumbers.push(numero);
     updateDrawnList();
 
   });
@@ -735,8 +716,6 @@ document.addEventListener('DOMContentLoaded', () => {
     importFile.click();
   });
   importFile.addEventListener('change', handleImportFile);
-
-  // Event listener para o botão de tema removido
 
   // --- Inicialização ---
   generateBingoTable();
