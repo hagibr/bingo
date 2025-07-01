@@ -1,490 +1,537 @@
 /* Variáveis CSS para cores - Tema Claro (padrão único) */
 :root {
-    --body-bg: #f0f8ff; /* Azul claro para o fundo do corpo */
-    --text-color: #333;
-    --sidebar-bg: #e0f2f7; /* Azul muito claro para a sidebar */
-    --sidebar-text-color: #333;
-    --sidebar-input-bg: #ffffff;
-    --sidebar-input-border: #a0d1e1;
-    --sidebar-input-text-color: #333;
-    --main-content-bg: #ffffff;
-    --main-content-border: #cce7f0;
+  --body-bg: #f0f8ff;
+  /* Azul claro para o fundo do corpo */
+  --text-color: #333;
+  --sidebar-bg: #e0f2f7;
+  /* Azul muito claro para a sidebar */
+  --sidebar-text-color: #333;
+  --sidebar-input-bg: #ffffff;
+  --sidebar-input-border: #a0d1e1;
+  --sidebar-input-text-color: #333;
+  --main-content-bg: #ffffff;
+  --main-content-border: #cce7f0;
 
-    /* Cores da Tabela */
-    --table-cell-bg: #ffffff; /* Fundo branco para as células da tabela */
-    --table-cell-border: #dee2e6; /* Borda padrão */
+  /* Cores da Tabela */
+  --table-cell-bg: #ffffff;
+  /* Fundo branco para as células da tabela */
+  --table-cell-border: #dee2e6;
+  /* Borda padrão */
 
-    --highlight-color: #fff9c4; /* Amarelo claro para números sorteados */
-    --bingo-letter-bg: #17a2b8; /* Azul claro para as letras BINGO */
-    --bingo-header-bg: #17a2b8; /* Azul claro para o cabeçalho da tabela */
+  --highlight-color: #fff9c4;
+  /* Amarelo claro para números sorteados */
+  --bingo-letter-bg: #17a2b8;
+  /* Azul claro para as letras BINGO */
+  --bingo-header-bg: #17a2b8;
+  /* Azul claro para o cabeçalho da tabela */
 
-    /* Cores dos Botões (mantidas semânticas) */
-    --primary-button-bg: #007bff; /* Azul primário */
-    --primary-button-hover: #0056b3;
-    --success-button-bg: #28a745; /* Verde para sortear (ação positiva) */
-    --success-button-hover: #218838;
-    --danger-button-bg: #dc3545; /* Vermelho para apagar (ação destrutiva) */
-    --danger-button-hover: #bd2130;
-    --info-button-bg: #17a2b8; /* Azul claro para info/exportar */
-    --info-button-hover: #138496;
+  /* Cores dos Botões (mantidas semânticas) */
+  --primary-button-bg: #007bff;
+  /* Azul primário */
+  --primary-button-hover: #0056b3;
+  --success-button-bg: #28a745;
+  /* Verde para sortear (ação positiva) */
+  --success-button-hover: #218838;
+  --danger-button-bg: #dc3545;
+  /* Vermelho para apagar (ação destrutiva) */
+  --danger-button-hover: #bd2130;
+  --info-button-bg: #17a2b8;
+  /* Azul claro para info/exportar */
+  --info-button-hover: #138496;
 
-    /* Seta do Select */
-    --sidebar-select-arrow: url('data:image/svg+xml;utf8,<svg fill="%23333333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+  /* Seta do Select */
+  --sidebar-select-arrow: url('data:image/svg+xml;utf8,<svg fill="%23333333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
 
-    /* VARIÁVEIS PARA OS CÍRCULOS */
-    --circle-size: 50px; /* Tamanho do círculo (largura e altura) */
-    --circle-bg: #e0e0e0; /* Fundo do círculo (um cinza claro) */
-    --circle-border: 1px solid #ccc; /* Borda do círculo */
-    --circle-text-color: #919191; /* Cor do texto dentro do círculo */
-    --highlight-circle-bg: #fff9c4; /* Amarelo claro para o círculo destacado normal */
-    --highlight-circle-text-color: #333; /* Cor do texto no círculo destacado normal */
+  /* VARIÁVEIS PARA OS CÍRCULOS */
+  --circle-size: 50px;
+  /* Tamanho do círculo (largura e altura) */
+  --circle-bg: #e0e0e0;
+  /* Fundo do círculo (um cinza claro) */
+  --circle-border: 1px solid #ccc;
+  /* Borda do círculo */
+  --circle-text-color: #919191;
+  /* Cor do texto dentro do círculo */
+  --highlight-circle-bg: #fff9c4;
+  /* Amarelo claro para o círculo destacado normal */
+  --highlight-circle-text-color: #333;
+  /* Cor do texto no círculo destacado normal */
 
-    /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
-    --last-drawn-circle-bg: #f7d700; /* Amarelo gema para o último número sorteado */
-    --last-drawn-circle-border: 2px solid #e6c500; /* Borda mais grossa/escura para o último */
-    --last-drawn-circle-text-color: white; /* AGORA BRANCO! */
+  /* NOVAS VARIÁVEIS PARA O ÚLTIMO NÚMERO SORTEADO (AJUSTADAS) */
+  --last-drawn-circle-bg: #f7d700;
+  /* Amarelo gema para o último número sorteado */
+  --last-drawn-circle-border: 2px solid #e6c500;
+  /* Borda mais grossa/escura para o último */
+  --last-drawn-circle-text-color: white;
+  /* AGORA BRANCO! */
 
-    --last-drawn-circle-size: 100px;
-    --very-last-drawn-circle-size: 150px;
-    
+  --last-drawn-circle-size: 100px;
+  --very-last-drawn-circle-size: 150px;
+
 }
 
 
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background-color: var(--body-bg);
-    color: var(--text-color);
-    cursor: default;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: var(--body-bg);
+  color: var(--text-color);
+  cursor: default;
 }
 
 .main-container {
-    display: flex;
-    height: 100vh;
+  display: flex;
+  height: 100vh;
 }
 
 /* --- Sidebar (Menu Lateral) --- */
 .sidebar {
-    height: 100%;
-    width: 0;
-    position: fixed;
-    z-index: 1000;
-    top: 0;
-    left: 0;
-    background-color: var(--sidebar-bg);
-    overflow-x: hidden;
-    transition: 0.5s;
-    padding-top: 60px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: var(--sidebar-text-color);
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  background-color: var(--sidebar-bg);
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--sidebar-text-color);
 }
 
 .sidebar h2 {
-    color: var(--bingo-header-bg);
-    margin-bottom: 20px;
+  color: var(--bingo-header-bg);
+  margin-bottom: 20px;
 }
 
 .sidebar .serie-management {
-    flex-direction: column;
-    align-items: stretch;
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0 15px;
-    width: calc(100% - 30px);
+  flex-direction: column;
+  align-items: stretch;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0 15px;
+  width: calc(100% - 30px);
 }
 
 .sidebar .serie-management label {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: var(--sidebar-text-color);
+  margin-top: 15px;
+  margin-bottom: 5px;
+  color: var(--sidebar-text-color);
 }
 
 /* Estilos para input de texto e select na sidebar */
 .sidebar .serie-management input[type="text"],
 .sidebar .serie-management select {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 10px;
-    border: 1px solid var(--sidebar-input-border);
-    border-radius: 4px;
-    background-color: var(--sidebar-input-bg);
-    color: var(--sidebar-input-text-color);
-    font-size: 16px;
-    box-sizing: border-box;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--sidebar-input-border);
+  border-radius: 4px;
+  background-color: var(--sidebar-input-bg);
+  color: var(--sidebar-input-text-color);
+  font-size: 16px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .sidebar .serie-management select {
-    background-image: var(--sidebar-select-arrow);
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 18px;
-    padding-right: 30px;
+  background-image: var(--sidebar-select-arrow);
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 18px;
+  padding-right: 30px;
 }
 
 /* Estilos para o foco */
 .sidebar .serie-management input[type="text"]:focus,
 .sidebar .serie-management select:focus {
-    outline: none;
-    border-color: var(--bingo-header-bg);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+  outline: none;
+  border-color: var(--bingo-header-bg);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
 }
 
 /* Estilos padrão para todos os botões na sidebar */
 .sidebar .serie-management button {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-    text-align: center;
-    box-sizing: border-box;
-    background-color: var(--primary-button-bg);
-    color: var(--sidebar-text-color);
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  text-align: center;
+  box-sizing: border-box;
+  background-color: var(--primary-button-bg);
+  color: var(--sidebar-text-color);
 }
 
 /* Estilos de hover para todos os botões da sidebar */
 .sidebar .serie-management button:hover {
-    background-color: var(--primary-button-hover);
+  background-color: var(--primary-button-hover);
 }
 
 
 /* Estilos específicos para botões com cores diferentes */
 .close-sidebar-btn {
-    position: absolute;
-    top: 10px;
-    right: 180px;
-    font-size: 36px;
-    margin-left: 50px;
-    background: none;
-    border: none;
-    color: var(--sidebar-text-color);
-    cursor: pointer;
-    padding: 10px;
+  position: absolute;
+  top: 10px;
+  right: 180px;
+  font-size: 36px;
+  margin-left: 50px;
+  background: none;
+  border: none;
+  color: var(--sidebar-text-color);
+  cursor: pointer;
+  padding: 10px;
 }
 
 .close-sidebar-btn:hover {
-    color: var(--danger-button-bg);
+  color: var(--danger-button-bg);
 }
 
 .delete-button {
-    background-color: var(--danger-button-bg) !important;
-    color: white !important;
+  background-color: var(--danger-button-bg) !important;
+  color: white !important;
 }
 
 .delete-button:hover {
-    background-color: var(--danger-button-hover) !important;
+  background-color: var(--danger-button-hover) !important;
 }
 
 #exportSeriesBtn {
-    background-color: var(--info-button-bg);
-    color: white;
+  background-color: var(--info-button-bg);
+  color: white;
 }
+
 #exportSeriesBtn:hover {
-    background-color: var(--info-button-hover);
+  background-color: var(--info-button-hover);
 }
 
 #importSeriesBtn {
-    background-color: var(--primary-button-bg);
-    color: white;
+  background-color: var(--primary-button-bg);
+  color: white;
 }
+
 #importSeriesBtn:hover {
-    background-color: var(--primary-button-hover);
+  background-color: var(--primary-button-hover);
 }
 
 
 /* --- Conteúdo Principal --- */
 .content {
-    transition: margin-left 0.5s;
-    padding: 20px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  transition: margin-left 0.5s;
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .open-sidebar-btn {
-    font-size: 20px;
-    cursor: pointer;
-    background-color: var(--primary-button-bg);
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-    transition: left 0.5s;
+  font-size: 20px;
+  cursor: pointer;
+  background-color: var(--primary-button-bg);
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  transition: left 0.5s;
 }
 
 .open-sidebar-btn:hover {
-    background-color: var(--primary-button-hover);
+  background-color: var(--primary-button-hover);
 }
 
 h1 {
-    color: var(--bingo-header-bg);
-    margin-bottom: 20px;
-    text-align: center;
-    margin-top: 0;
+  color: var(--bingo-header-bg);
+  margin-bottom: 20px;
+  text-align: center;
+  margin-top: 0;
 }
 
 .bingo-board,
 .drawn-numbers {
-    margin-bottom: 20px;
-    background-color: var(--main-content-bg);
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    width: 100%;
-    max-width: 1100px;
-    box-sizing: border-box;
+  margin-bottom: 20px;
+  background-color: var(--main-content-bg);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
 }
 
 .bingo-board button {
-    font-size: 20px;
-    border-radius: 10px;
-    height: 100%;
-    width: 100%;
-    cursor: pointer;
+  font-size: 20px;
+  border-radius: 10px;
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
 }
 
 #undoBtn {
-    background-color: var(--danger-button-bg);
-    color: white;
+  background-color: var(--danger-button-bg);
+  color: white;
 }
 
 #undoBtn:hover {
-    background-color: var(--danger-button-hover);
+  background-color: var(--danger-button-hover);
 }
 
 .bingo-board thead th[colspan="15"] {
-    background-color: var(--bingo-header-bg);
-    color: white;
+  background-color: var(--bingo-header-bg);
+  color: white;
 }
 
 table {
-    border-collapse: collapse;
-    width: 100%;
+  border-collapse: collapse;
+  width: 100%;
 }
 
-th, td {
-    padding: 0;
-    text-align: center;
-    font-size: 1.1em;
-    color: var(--text-color);
-    border: 1px solid var(--table-cell-border);
-    display: table-cell;
-    vertical-align: middle;
+th,
+td {
+  padding: 0;
+  text-align: center;
+  font-size: 1.1em;
+  color: var(--text-color);
+  border: 1px solid var(--table-cell-border);
+  display: table-cell;
+  vertical-align: middle;
 }
 
 .bingo-letter {
-    background-color: var(--bingo-letter-bg);
-    color: white;
-    font-weight: bold;
-    font-size: 1.5em;
-    width: 30px;
-    display: table-cell;
-    vertical-align: middle;
-    padding: 10px;
+  background-color: var(--bingo-letter-bg);
+  color: white;
+  font-weight: bold;
+  font-size: 1.5em;
+  width: 30px;
+  display: table-cell;
+  vertical-align: middle;
+  padding: 10px;
 }
 
 /* ESTILO DOS CÍRCULOS DOS NÚMEROS */
 .bingo-number-circle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--circle-size);
-    height: var(--circle-size);
-    border-radius: 50%;
-    background-color: var(--circle-bg);
-    border: var(--circle-border);
-    color: var(--circle-text-color);
-    font-weight: bold;
-    font-size: 1.1em;
-    margin: 5px auto;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 50%;
+  background-color: var(--circle-bg);
+  border: var(--circle-border);
+  color: var(--circle-text-color);
+  font-weight: bold;
+  font-size: 1.1em;
+  margin: 5px auto;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease;
+  /* Adicionando 'font-size' para transição suave */
+  cursor: pointer;
 }
 
 .bingo-very-last-drawn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--very-last-drawn-circle-size);
-    height: var(--very-last-drawn-circle-size);
-    border-radius: 50%;
-    background-color: var(--circle-bg);
-    border: var(--circle-border);
-    color: var(--circle-text-color);
-    font-weight: bold;
-    font-size: 6em;
-    margin: 5px auto;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--very-last-drawn-circle-size);
+  height: var(--very-last-drawn-circle-size);
+  border-radius: 50%;
+  background-color: var(--circle-bg);
+  border: var(--circle-border);
+  color: var(--circle-text-color);
+  font-weight: bold;
+  font-size: 6em;
+  margin: 5px auto;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease;
+  /* Adicionando 'font-size' para transição suave */
+  cursor: pointer;
 }
 
 /* Garante que a tabela se comporte como bloco quando visível */
 #bingoLastDrawnTable.visible {
-    display: table; /* Mantém como table para semântica da tabela */
+  display: table;
+  /* Mantém como table para semântica da tabela */
 }
 
 /* Garante que a textarea se comporte como bloco quando visível */
 #bingoLastDrawnList.visible {
-width: 100%;
-    box-sizing: border-box;
-    border: 1px solid var(--main-content-border);
-    border-radius: 4px;
-    padding: 10px;
-    font-size: 2em;
-    resize: vertical;
-    background-color: var(--main-content-bg);
-    color: var(--text-color);
-    cursor: default;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--main-content-border);
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 2em;
+  resize: vertical;
+  background-color: var(--main-content-bg);
+  color: var(--text-color);
+  cursor: default;
 }
 
 /* Estilo para o contêiner do label editável */
 #editableLabelContainer {
-    border: 1px solid #ccc;
-    padding: 10px;
-    display: inline-block; /* Para que o contêiner se ajuste ao conteúdo */
-    cursor: pointer; /* Indica que é clicável */
-    min-width: 150px; /* Largura mínima para o contêiner */
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: inline-block;
+  /* Para que o contêiner se ajuste ao conteúdo */
+  cursor: pointer;
+  /* Indica que é clicável */
+  min-width: 150px;
+  /* Largura mínima para o contêiner */
 }
 
 /* Estilo para o texto visível (o "label") */
 .editable-text-display {
-    display: inline-block; /* Para se ajustar ao contêiner */
-    width: 100%; /* Ocupa a largura total do contêiner */
-    font-size: 1.5em;
+  display: inline-block;
+  /* Para se ajustar ao contêiner */
+  width: 100%;
+  /* Ocupa a largura total do contêiner */
+  font-size: 1.5em;
 }
 
 /* Estilo para o campo de input */
 .editable-text-input {
-    width: 100%; /* Ocupa a largura total do contêiner */
-    box-sizing: border-box; /* Inclui padding e border na largura total */
-    border: 1px solid #007bff;
-    padding: 5px;
-    font-size: 1.5em;
+  width: 100%;
+  /* Ocupa a largura total do contêiner */
+  box-sizing: border-box;
+  /* Inclui padding e border na largura total */
+  border: 1px solid #007bff;
+  padding: 5px;
+  font-size: 1.5em;
 }
 
 /* Classes de visibilidade */
 .hidden {
-    display: none;
+  display: none;
 }
 
 .visible {
-    display: inline-block; /* Para o span/div */
+  display: inline-block;
+  /* Para o span/div */
 }
 
 .visible-input {
-    display: inline-block; /* Para o input */
+  display: inline-block;
+  /* Para o input */
 }
 
 .bingo-last-drawn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--last-drawn-circle-size);
-    height: var(--last-drawn-circle-size);
-    border-radius: 50%;
-    background-color: var(--circle-bg);
-    border: var(--circle-border);
-    color: var(--circle-text-color);
-    font-weight: bold;
-    font-size: 4em;
-    margin: 5px auto;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease; /* Adicionando 'font-size' para transição suave */
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--last-drawn-circle-size);
+  height: var(--last-drawn-circle-size);
+  border-radius: 50%;
+  background-color: var(--circle-bg);
+  border: var(--circle-border);
+  color: var(--circle-text-color);
+  font-weight: bold;
+  font-size: 4em;
+  margin: 5px auto;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, font-size 0.3s ease;
+  /* Adicionando 'font-size' para transição suave */
+  cursor: pointer;
 }
 
 td {
-    width: calc(100% / 15);
+  width: calc(100% / 15);
 }
 
 /* Estilo para o número sorteado (destacado) - Cor do amarelo claro */
 .highlighted .bingo-number-circle {
-    background-color: var(--highlight-circle-bg);
-    color: var(--highlight-circle-text-color);
-    border-color: var(--highlight-circle-bg);
-    box-shadow: 0 0 8px rgba(247, 215, 0, 0.3); /* Sombra mais suave para os destacados */
-    cursor: default;
-    text-decoration: underline;
+  background-color: var(--highlight-circle-bg);
+  color: var(--highlight-circle-text-color);
+  border-color: var(--highlight-circle-bg);
+  box-shadow: 0 0 8px rgba(247, 215, 0, 0.3);
+  /* Sombra mais suave para os destacados */
+  cursor: default;
+  text-decoration: underline;
 }
 
 /* ESTILO MELHORADO PARA O ÚLTIMO NÚMERO SORTEADO */
 .last-drawn {
-    background-color: var(--last-drawn-circle-bg); /* Amarelo gema forte */
-    border: var(--last-drawn-circle-border); /* Borda mais definida */
-    color: var(--last-drawn-circle-text-color); /* AGORA BRANCO! */
-    font-size: 1.8em; /* FONTE AUMENTADA! */
-    transform: scale(1.1); /* Pequeno aumento de tamanho */
-    box-shadow: 0 0 15px rgba(247, 215, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
-    z-index: 1; /* Garante que ele fique por cima, se houver sobreposição */
-    position: relative; /* Necessário para z-index */
-    cursor: default;
-    text-decoration: underline;
+  background-color: var(--last-drawn-circle-bg);
+  /* Amarelo gema forte */
+  border: var(--last-drawn-circle-border);
+  /* Borda mais definida */
+  color: var(--last-drawn-circle-text-color);
+  /* AGORA BRANCO! */
+  font-size: 1.8em;
+  /* FONTE AUMENTADA! */
+  transform: scale(1.1);
+  /* Pequeno aumento de tamanho */
+  box-shadow: 0 0 15px rgba(247, 215, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.2);
+  /* Sombra mais intensa */
+  z-index: 1;
+  /* Garante que ele fique por cima, se houver sobreposição */
+  position: relative;
+  /* Necessário para z-index */
+  cursor: default;
+  text-decoration: underline;
 }
 
 
 .drawn-numbers h3 {
-    color: var(--bingo-header-bg);
-    margin-bottom: 10px;
-    margin-left: auto;
+  color: var(--bingo-header-bg);
+  margin-bottom: 10px;
+  margin-left: auto;
 }
 
 
 /* Media Queries para responsividade */
 @media screen and (max-width: 768px) {
-    .serie-management,
-    .bingo-board,
-    .drawn-numbers {
-        width: 95%;
-    }
 
-    .sidebar {
-        padding-top: 15px;
-    }
+  .serie-management,
+  .bingo-board,
+  .drawn-numbers {
+    width: 95%;
+  }
 
-    .open-sidebar-btn {
-        top: 10px;
-        left: 10px;
-        font-size: 18px;
-    }
+  .sidebar {
+    padding-top: 15px;
+  }
 
-    /* Reduzir o tamanho dos círculos em telas menores */
-    :root {
-        --circle-size: 28px;
-    }
-    .bingo-number-circle {
-        font-size: 0.9em;
-    }
-    th, td {
-        padding: 5px;
-    }
+  .open-sidebar-btn {
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+  }
 
-    #numerosSorteadosLista {
-        font-size: 1.2em;
-    }
+  /* Reduzir o tamanho dos círculos em telas menores */
+  :root {
+    --circle-size: 28px;
+  }
 
-    /* Ajuste para o último número sorteado em telas menores */
-    .last-drawn {
-        font-size: 1.4em; /* Fonte ainda maior, mas ajustada para caber */
-        transform: scale(1.05); /* Um pouco menos de destaque para não ficar muito grande */
-    }
+  .bingo-number-circle {
+    font-size: 0.9em;
+  }
+
+  th,
+  td {
+    padding: 5px;
+  }
+
+  /* Ajuste para o último número sorteado em telas menores */
+  .last-drawn {
+    font-size: 1.4em;
+    /* Fonte ainda maior, mas ajustada para caber */
+    transform: scale(1.05);
+    /* Um pouco menos de destaque para não ficar muito grande */
+  }
 }
