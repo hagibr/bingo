@@ -1,12 +1,14 @@
-// A função para obter o parâmetro da URL pode ficar fora ou dentro do listener.
-// É bom tê-la como uma função separada para reutilização.
-function getParameterByName(name, url = window.location.href) {
-  name = name.replace(/[\[\]]/g, '\\$&');
-  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-    results = regex.exec(url);
-  if (!results) return null;
-  if (!results[2]) return '';
-  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+function hasParameter(name, url = window.location.href) {
+    // Escapa caracteres especiais no nome do parâmetro para uso na regex
+    name = name.replace(/[\[\]]/g, '\\$&');
+
+    // Cria uma regex para encontrar o parâmetro.
+    // Procura por '?param', '&param', ou 'param='
+    // A parte '(?=&|$)' garante que não pegue parte de outro nome de parâmetro (ex: 'paramexample')
+    var regex = new RegExp('[?&]' + name + '(?=&|$|=)');
+
+    // Testa a URL contra a regex
+    return regex.test(url);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -61,33 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let isGitHubPages = false;
   let githubRepoUrl = '';
 
-  let bingoBoardSize = getParameterByName('size');
+  let bingoBoardSize = hasParameter('90') ? 90 : 75;
 
-  // Verificando se 'param1' foi fornecido ou se é nulo/vazio
-  if (bingoBoardSize === null || bingoBoardSize.trim() === '') {
-      bingoBoardSize = 75;
-  } else {
-      // Se o parâmetro for encontrado, tente convertê-lo para um número.
-      // Valide se é um número válido, caso contrário, use o padrão.
-      bingoBoardSize = parseInt(bingoBoardSize);
-      if (isNaN(bingoBoardSize)) {
-          bingoBoardSize = 75;
-      }
-  }
-
-  // Permitindo somente valores default (75 e 90)
-  if( bingoBoardSize != 75 && bingoBoardSize != 90 )
-    bingoBoardSize = 75;
-
-  let allowRandomDraw = getParameterByName("draw");
-  if (allowRandomDraw === null || allowRandomDraw.trim() === '') {
-      allowRandomDraw = false;
-  } else if( allowRandomDraw === 'true'){
-      allowRandomDraw = true;
-  } else {
-    allowRandomDraw = false;
-  }
-  
+  let allowRandomDraw = hasParameter("draw");
+    
   if( allowRandomDraw )
   {
     randomDrawBtn.classList.remove('hidden');
