@@ -136,6 +136,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Função executada pelo botão "Baixar Site"
+  document.getElementById('downloadAllFiles').addEventListener('click', function () {
+    const filesToDownload = ['index.html', 'script.js', 'style.css'];
+
+    filesToDownload.forEach(filename => {
+      const link = document.createElement('a');
+      link.href = filename;
+      link.download = filename; // Define o nome do arquivo para download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link); // Remove o link temporário
+    });
+  });
+  
+
+
   // --- Funções Auxiliares ---
   function formatNumberTwoDigits(num) {
     return num < 10 ? '0' + num : String(num);
