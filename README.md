@@ -12,3 +12,18 @@ No final, temos um sistema estilo dashboard que achei que ficou legal, com estas
 - Destaque do último número sorteado
 - Possibilidade de desfazer último número sorteado
 - Estilo personalizável a partir da paleta de 3 cores escolhidas
+
+
+# Licença MIT
+
+Este projeto é distribuído sob a **Licença MIT**.
+
+Isso significa que você tem a liberdade de:
+
+* **Usar:** O software pode ser utilizado em qualquer tipo de projeto, seja ele comercial, privado ou de código aberto.
+* **Modificar:** Você pode alterar o código-fonte como quiser para atender às suas necessidades.
+* **Distribuir:** Você tem a liberdade de distribuir o código original ou as suas versões modificadas.
+
+A única condição é que o **aviso de direitos autorais e a permissão de licença** sejam mantidos em todas as cópias ou partes substanciais do software.
+
+Para mais detalhes, consulte o arquivo `LICENSE` incluído neste repositório.
