@@ -317,6 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   prizeLabel.addEventListener('blur', (e) => {
+    if (e.target.textContent.trim() === '') {
+      e.target.textContent = `Prêmio da Rodada ${appState.currentRound}`;
+    }
     appState.rounds[appState.currentRound].prize = e.target.textContent;
     saveState();
   });
