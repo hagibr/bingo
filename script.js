@@ -15,6 +15,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const drawRandomButton = document.getElementById('draw-random-button');
   const numbersCountSpan = document.getElementById('numbers-count');
   const closeModalX = document.getElementById('close-modal-x');
+  const patternGrid = document.getElementById('pattern-grid');
+  const patternSelect = document.getElementById('pattern-select');
+
+  // --- Definições de Padrões ---
+  const BINGO_PATTERNS = [
+    { name: "Personalizado", sequences: [] },
+    { name: "Linha", sequences: [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24]] },
+    { name: "Coluna", sequences: [[0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24]] },
+    { name: "Linha+Coluna", sequences: [[0, 1, 2, 3, 4, 6, 11, 16, 21], [5, 6, 7, 8, 9, 3, 13, 18, 23], [10, 11, 12, 13, 14, 4, 9, 19, 24], [15, 16, 17, 18, 19, 0, 5, 10, 20], [20, 21, 22, 23, 24, 2, 7, 12, 17]] },
+    { name: "Diagonal", sequences: [[0, 6, 12, 18, 24], [4, 8, 12, 16, 20]] },
+    { name: "7 Pedras", sequences: [[18, 7, 24, 14, 9, 16, 4], [5, 3, 7, 19, 21, 18, 4], [3, 8, 10, 1, 24, 21, 13], [21, 14, 16, 10, 17, 4, 18], [22, 4, 0, 23, 21, 2, 6]] },
+    { name: "Cartela Cheia", sequences: [Array.from({ length: 25 }, (_, i) => i)] }
+  ];
+
+  let animationStep = 0;
+  let animationPhase = true; // true = cor, false = vazio
+
+  // Popular o seletor de padrões
+  BINGO_PATTERNS.forEach((p, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = p.name;
+    patternSelect.appendChild(option);
+  });
 
   // Config Modal Elements
   const configModal = document.getElementById('config-modal');
@@ -60,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Garantir que a estrutura de rounds esteja completa
       for (let i = 1; i <= appState.numRounds; i++) {
         if (!appState.rounds[i]) {
-          appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null };
+          appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
         }
       }
     } else {
@@ -73,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const initializeDefaultState = () => {
     appState.rounds = {};
     for (let i = 1; i <= appState.numRounds; i++) {
-      appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null };
+      appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
     }
   };
 
@@ -93,6 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Drawn Numbers
     displayDrawnNumbers();
+
+    // Padrão da Rodada
+    initPatternGrid();
+    patternSelect.value = appState.rounds[appState.currentRound].patternIndex || 0;
 
     // Placeholder Dinâmico
     manualNumberInput.placeholder = `01-${appState.maxNumber.toString().padStart(2, '0')}`;
@@ -127,6 +155,69 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = `Rodada ${i}`;
       roundSelector.appendChild(option);
     }
+  };
+
+  const initPatternGrid = () => {
+    patternGrid.innerHTML = '';
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('pattern-cell');
+      cell.addEventListener('click', () => togglePatternCell(i));
+      patternGrid.appendChild(cell);
+    }
+  };
+
+  const updatePatternGridUI = (activeIndices) => {
+    const cells = patternGrid.querySelectorAll('.pattern-cell');
+    cells.forEach((cell, i) => {
+      if (activeIndices.includes(i)) {
+        cell.classList.add('active');
+      } else {
+        cell.classList.remove('active');
+      }
+    });
+  };
+
+  const startAnimationLoop = () => {
+    const run = () => {
+      const currentRoundData = appState.rounds[appState.currentRound];
+      if (!currentRoundData) return setTimeout(run, 1000);
+
+      const pIdx = currentRoundData.patternIndex || 0;
+      patternGrid.title = `Padrão: ${BINGO_PATTERNS[pIdx].name}`;
+
+      if (pIdx === 0) {
+        // Modo Personalizado: Estático
+        updatePatternGridUI(currentRoundData.pattern || []);
+      } else {
+        // Modo Animado
+        const pattern = BINGO_PATTERNS[pIdx];
+        if (animationPhase) {
+          const seq = pattern.sequences[animationStep % pattern.sequences.length];
+          updatePatternGridUI(seq);
+          animationStep++;
+        } else {
+          updatePatternGridUI([]);
+        }
+        animationPhase = !animationPhase;
+      }
+      setTimeout(run, 1000);
+    };
+    run();
+  };
+
+  const togglePatternCell = (index) => {
+    const currentRoundData = appState.rounds[appState.currentRound];
+    currentRoundData.patternIndex = 0; // Muda para personalizado ao clicar
+    if (!currentRoundData.pattern) currentRoundData.pattern = [];
+    const pos = currentRoundData.pattern.indexOf(index);
+    if (pos > -1) {
+      currentRoundData.pattern.splice(pos, 1);
+    } else {
+      currentRoundData.pattern.push(index);
+    }
+    patternSelect.value = 0; // Volta visualmente para "Personalizado"
+    saveState();
   };
 
   const displayDrawnNumbers = () => {
@@ -250,6 +341,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   drawRandomButton.addEventListener('click', drawRandomNumber);
 
+  patternSelect.addEventListener('change', (e) => {
+    const currentRoundData = appState.rounds[appState.currentRound];
+    currentRoundData.patternIndex = parseInt(e.target.value);
+    animationStep = 0;
+    animationPhase = true;
+    saveState();
+  });
+
   // Config Modal Event Listeners
   configEventName.addEventListener('input', (e) => {
     appState.eventName = e.target.value;
@@ -267,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionar ou remover rodadas conforme necessário
     if (newNumRounds > appState.numRounds) {
       for (let i = appState.numRounds + 1; i <= newNumRounds; i++) {
-        appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null };
+        appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
       }
     } else if (newNumRounds < appState.numRounds) {
       // Remover rodadas extras (cuidado para não perder dados se já houver sorteios)
@@ -362,4 +461,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Inicialização ---
   loadState(); // Carrega o estado salvo ao iniciar
+  startAnimationLoop();
 });
