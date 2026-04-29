@@ -114,6 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Prize Label
     prizeLabel.textContent = appState.rounds[appState.currentRound].prize;
+    if (prizeLabel.textContent.trim() === '') {
+      prizeLabel.textContent = `Prêmio da Rodada ${appState.currentRound}`;
+    }
 
     // Drawn Numbers
     displayDrawnNumbers();
