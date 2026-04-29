@@ -1,0 +1,363 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  background-color: #f4f4f4;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background-color: #28a745;
+  /* Verde vibrante */
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.event-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.8em;
+  flex-grow: 1;
+}
+
+.config-button {
+  background-color: #007bff;
+  /* Azul */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s;
+}
+
+.config-button:hover {
+  background-color: #0056b3;
+}
+
+.bingo-main {
+  flex-grow: 1;
+  padding: 20px;
+  max-width: 1080px;
+  margin: 20px auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.round-section,
+.drawn-numbers-section {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.drawn-numbers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.drawn-numbers-header h2 {
+  margin: 0;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.round-section label,
+.round-section select,
+.prize-display {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+#round-selector {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+
+.prize-display {
+  background-color: #fff3cd;
+  /* Amarelo claro */
+  border: 1px solid #ffeeba;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-weight: bold;
+  color: #856404;
+  cursor: pointer;
+  min-width: 200px;
+  /* Para garantir que o clique seja fácil */
+  display: inline-block;
+}
+
+.prize-display:focus {
+  outline: 2px solid #007bff;
+  background-color: #e2f0ff;
+}
+
+.drawn-numbers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 60px;
+  border: 1px dashed #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawn-number-item {
+  background-color: #e9ecef;
+  border: 1px solid #dee2e6;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.drawn-number-item.last-drawn {
+  background-color: #ffc107;
+  /* Amarelo */
+  color: #333;
+  border-color: #ffc107;
+  width: 80px;
+  /* 2x maior */
+  height: 80px;
+  /* 2x maior */
+  font-size: 2.2em;
+  /* 2x maior */
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+}
+
+.draw-controls {
+  display: flex;
+  gap: 10px;
+}
+
+#manual-number-input {
+  width: 110px;
+}
+
+input[type="number"],
+button,
+select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.undo-button {
+  background-color: #dc3545;
+  /* Vermelho */
+}
+
+.undo-button:hover {
+  background-color: #c82333;
+}
+
+.toggle-sort-button {
+  background-color: #6c757d;
+  /* Cinza */
+  margin-top: 10px;
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.toggle-sort-button:hover {
+  background-color: #5a6268;
+}
+
+/* Modal de Configurações */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+}
+
+.close-x {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.close-x:hover {
+  color: #333;
+  background: none;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.config-full {
+  grid-column: span 2;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  color: #28a745;
+}
+
+.modal-content label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content select {
+  width: calc(100% - 22px);
+  /* Ajuste para padding e border */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+.modal-content input[type="file"] {
+  padding: 5px 0;
+}
+
+.event-icon-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ccc;
+  margin-top: 10px;
+  display: block;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  padding: 10px 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Responsividade básica */
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .app-header h1 {
+    font-size: 1.5em;
+    margin-top: 10px;
+  }
+
+  .event-icon {
+    margin-right: 0;
+  }
+
+  .drawn-numbers-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .draw-controls {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .draw-controls input,
+  .draw-controls button {
+    width: 100%;
+  }
+
+  .bingo-main {
+    padding: 10px;
+    margin: 10px auto;
+  }
+
+  .drawn-number-item.last-drawn {
+    width: 60px;
+    height: 60px;
+    font-size: 1.8em;
+  }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bingo do Evento</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="app-header">
+    <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
+    <h1 id="event-title">Nome do Evento de Bingo</h1>
+    <button id="config-button" class="config-button">⚙️ Configurações</button>
+  </header>
+
+  <main class="bingo-main">
+    <section class="round-section">
+      <label for="round-selector">Rodada:</label>
+      <select id="round-selector">
+        <!-- Opções de rodadas serão geradas via JS -->
+      </select>
+      <div class="prize-display">
+        <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada: [Clique para
+          editar]</span>
+      </div>
+    </section>
+
+    <section class="drawn-numbers-section">
+      <div class="drawn-numbers-header">
+        <h2>Números Sorteados <span id="numbers-count">(0)</span></h2>
+        <div class="header-controls">
+          <div id="manual-draw-controls" class="draw-controls">
+            <input type="number" id="manual-number-input" min="1" max="75" placeholder="1-75">
+            <button id="confirm-number-button">Confirmar</button>
+          </div>
+          <div id="auto-draw-controls" class="draw-controls hidden">
+            <button id="draw-random-button">Sortear</button>
+          </div>
+          <button id="undo-last-button" class="undo-button" title="Desfazer">⟲</button>
+        </div>
+      </div>
+      <div id="drawn-numbers-list" class="drawn-numbers-list">
+        <!-- Números sorteados aparecerão aqui -->
+      </div>
+      <button id="toggle-sort-button" class="toggle-sort-button">Ordem: Sorteio</button>
+    </section>
+  </main>
+
+  <div id="config-modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="close-modal-x" class="close-x">&times;</button>
+      <h2>Configurações do Evento</h2>
+
+      <div class="config-grid">
+        <div class="config-full">
+          <label for="config-event-name">Nome do Evento:</label>
+          <input type="text" id="config-event-name">
+        </div>
+
+        <div>
+          <label for="config-num-rounds">Nº de Rodadas:</label>
+          <input type="number" id="config-num-rounds" min="1">
+        </div>
+        <div>
+          <label for="config-max-number">Nº Máximo:</label>
+          <input type="number" id="config-max-number" min="1" max="200">
+        </div>
+
+        <div>
+          <label for="config-draw-mode">Modo de Sorteio:</label>
+          <select id="config-draw-mode">
+            <option value="manual">Manual</option>
+            <option value="automatic">Automático</option>
+          </select>
+        </div>
+        <div>
+          <label for="config-icon-upload">Upload de Ícone:</label>
+          <input type="file" id="config-icon-upload" accept="image/*">
+          <img id="config-icon-preview" src="default-icon.png" alt="Prévia do Ícone" class="event-icon-preview">
+        </div>
+      </div>
+
+
+      <div class="modal-actions">
+        <button id="export-session-button">Exportar Sessão (JSON)</button>
+        <input type="file" id="import-session-input" accept="application/json" style="display: none;">
+        <button id="import-session-button">Importar Sessão (JSON)</button>
+        <button id="close-config-button">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
