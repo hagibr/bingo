@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateUI = () => {
     // Header
     eventTitle.textContent = appState.eventName;
+    document.title = appState.eventName;
     eventIcon.src = appState.eventIcon;
     configIconPreview.src = appState.eventIcon; // Atualiza a prévia no modal
 
