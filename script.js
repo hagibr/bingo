@@ -190,8 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
       patternGrid.title = `Padrão: ${BINGO_PATTERNS[pIdx].name}`;
 
       if (pIdx === 0) {
-        // Modo Personalizado: Estático
-        updatePatternGridUI(currentRoundData.pattern || []);
+        // Modo Animado para um padrão próprio
+        if (animationPhase) {
+          updatePatternGridUI(currentRoundData.pattern || []);
+        } else {
+          updatePatternGridUI([]);
+        }
+        animationPhase = !animationPhase;
       } else {
         // Modo Animado
         const pattern = BINGO_PATTERNS[pIdx];
