@@ -102,8 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     currentRef = db.ref('sessions/' + id);
     currentRef.on('value', (snapshot) => {
-      appState = snapshot.val();
-      if (appState) {
+      const data = snapshot.val();
+      // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
+      if (data && data.sessions && data.activeSessionName) {
+        appState = data.sessions[data.activeSessionName];
         idEntrySection.classList.add('hidden');
         bingoContent.classList.remove('hidden');
         updateUI();

@@ -66,14 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const importSessionButton = document.getElementById('import-session-button');
   const importSessionInput = document.getElementById('import-session-input');
 
-  // --- Estado da Aplicação ---
-  let sessionsData = {
-    activeSessionName: "Sessão Padrão",
-    sessions: {}
-  };
-  let appState = {};
-
-  // --- Funções Auxiliares ---
+  // --- Gera um ID aleatório ---
   const generateRandomId = (length = 6) => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
     let result = '';
@@ -83,16 +76,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   };
 
+  // --- Estado da Aplicação ---
+  let sessionsData = {
+    sessionId: generateRandomId(),
+    firebaseWriteToken: "",
+    activeSessionName: "Sessão Padrão",
+    sessions: {}
+  };
+  let appState = {};
+
+  // --- Cria uma sessão com valores padrão ---
   const createDefaultSessionState = (name) => {
     const newState = {
       eventName: name,
-      sessionId: generateRandomId(),
       eventIcon: "default-icon.png",
       maxNumber: 75,
       numRounds: 1,
       currentRound: 1,
       drawMode: "manual",
-      firebaseWriteToken: "", // Novo campo para o token secreto de escrita
       rounds: {},
       isSortedAscending: false
     };
@@ -130,9 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let syncTimeout = null;
   const syncToFirebase = (immediate = false) => {
     const performSync = () => {
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && appState && appState.sessionId) {
-        // Enviamos o appState que já contém o campo firebaseWriteToken.
-        firebase.database().ref('sessions/' + appState.sessionId).set(appState)
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData && sessionsData.sessionId) {
+        // Enviamos o sessionsData que já contém o campo firebaseWriteToken na raiz.
+        firebase.database().ref('sessions/' + sessionsData.sessionId).set(sessionsData)
           .catch(err => {
             console.error("Erro ao sincronizar Firebase:", err.code, err.message);
           });
@@ -158,6 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedData = localStorage.getItem('bingoSessionsData');
     if (storedData) {
       sessionsData = JSON.parse(storedData);
+
+      // Migração: se os campos não estiverem na raiz, busca da sessão ativa
+      if (!sessionsData.sessionId) {
+        const current = sessionsData.sessions[sessionsData.activeSessionName];
+        sessionsData.sessionId = current?.sessionId || generateRandomId();
+        sessionsData.firebaseWriteToken = current?.firebaseWriteToken || "";
+      }
+
       appState = sessionsData.sessions[sessionsData.activeSessionName];
     } else {
       // Migração de dados do formato antigo ou inicialização limpa
@@ -165,20 +174,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (legacyState) {
         const parsedLegacy = JSON.parse(legacyState);
         const name = parsedLegacy.eventName || "Sessão Antiga";
+        sessionsData.sessionId = parsedLegacy.sessionId || generateRandomId();
+        sessionsData.firebaseWriteToken = parsedLegacy.firebaseWriteToken || "";
         sessionsData.sessions[name] = parsedLegacy;
         sessionsData.activeSessionName = name;
       } else {
+        sessionsData.sessionId = generateRandomId();
         const defaultName = "Sessão Padrão";
         sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
         sessionsData.activeSessionName = defaultName;
       }
       appState = sessionsData.sessions[sessionsData.activeSessionName];
-    }
-
-    // Garante que a sessão ativa tenha um ID (migração de dados antigos)
-    if (appState && !appState.sessionId) {
-      appState.sessionId = generateRandomId();
-      saveState(true);
     }
 
     // Inicializa Firebase se a configuração estiver disponível
@@ -232,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
-    configFirebaseWriteToken.value = appState.firebaseWriteToken || '';
-    configSessionId.value = appState.sessionId || '';
+    configFirebaseWriteToken.value = sessionsData.firebaseWriteToken || '';
+    configSessionId.value = sessionsData.sessionId || '';
     updateSessionSelector();
 
     // Botão de Ordenação
@@ -243,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const configShareLink = document.getElementById('config-share-link');
     if (configShareLink) {
       const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-      configShareLink.value = `${baseUrl}view.html?id=${appState.sessionId}`;
+      configShareLink.value = `${baseUrl}view.html?id=${sessionsData.sessionId}`;
     }
 
     saveState(immediateSync);
@@ -481,20 +487,16 @@ document.addEventListener('DOMContentLoaded', () => {
   configSessionSelector.addEventListener('change', (e) => {
     sessionsData.activeSessionName = e.target.value;
     appState = sessionsData.sessions[sessionsData.activeSessionName];
-    if (appState && !appState.sessionId) {
-      appState.sessionId = generateRandomId();
-      saveState(true);
-    }
     updateUI(true);
   });
 
   configSessionId.addEventListener('input', (e) => {
-    appState.sessionId = e.target.value.toUpperCase();
+    sessionsData.sessionId = e.target.value.toUpperCase();
     updateUI(false); // Sincronização em segundo plano enquanto digita
   });
 
   regenerateIdButton.addEventListener('click', () => {
-    appState.sessionId = generateRandomId();
+    sessionsData.sessionId = generateRandomId();
     updateUI(true);
   });
 
@@ -551,13 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = snapshot.val();
 
       if (data) {
-        // Injetamos o token manual pois o Firebase não o retorna na leitura (devido às regras de segurança)
+        // Injetamos o token manual pois o Firebase não o retorna na leitura
         data.firebaseWriteToken = token;
-
-        const sessionName = data.eventName || `Nuvem_${id}`;
-        sessionsData.sessions[sessionName] = data;
-        sessionsData.activeSessionName = sessionName;
-        appState = sessionsData.sessions[sessionName];
+        sessionsData = data;
+        appState = sessionsData.sessions[sessionsData.activeSessionName];
 
         updateUI(true);
         alert("Sessão retomada da nuvem com sucesso!");
@@ -571,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   configFirebaseWriteToken.addEventListener('input', (e) => {
-    appState.firebaseWriteToken = e.target.value;
+    sessionsData.firebaseWriteToken = e.target.value;
     saveState(false); // Sincronização em segundo plano enquanto digita
   });
 
