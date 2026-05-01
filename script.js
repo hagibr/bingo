@@ -403,12 +403,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   deleteSessionButton.addEventListener('click', () => {
     const names = Object.keys(sessionsData.sessions);
+    const currentName = sessionsData.activeSessionName;
+
     if (names.length <= 1) {
-      alert("Você deve ter pelo menos uma sessão.");
+      if (confirm(`Esta é a única sessão existente. Deseja resetá-la para o estado inicial?`)) {
+        delete sessionsData.sessions[currentName];
+        const defaultName = "Sessão Padrão";
+        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        sessionsData.activeSessionName = defaultName;
+        appState = sessionsData.sessions[defaultName];
+        updateUI();
+      }
       return;
     }
-    if (confirm(`Tem certeza que deseja excluir a sessão "${sessionsData.activeSessionName}"?`)) {
-      delete sessionsData.sessions[sessionsData.activeSessionName];
+
+    if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
+      delete sessionsData.sessions[currentName];
       sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
       appState = sessionsData.sessions[sessionsData.activeSessionName];
       updateUI();
@@ -490,7 +500,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   exportSessionButton.addEventListener('click', () => {
-    const dataStr = JSON.stringify(appState, null, 2); // Formata para leitura
+    // Criamos uma cópia para processar a exportação sem alterar o estado em memória
+    const stateToExport = JSON.parse(JSON.stringify(appState));
+
+    // Se a imagem for muito grande, quebramos em um array de strings (fatias de 5k caracteres)
+    if (typeof stateToExport.eventIcon === 'string' && stateToExport.eventIcon.length > 5000) {
+      stateToExport.eventIcon = stateToExport.eventIcon.match(/.{1,5000}/g);
+    }
+
+    const dataStr = JSON.stringify(stateToExport, null, 2); // Formata para leitura
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -516,6 +534,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const importedState = JSON.parse(event.target.result);
           // Validação básica para garantir que é um estado de bingo válido
           if (importedState && importedState.eventName && importedState.rounds) {
+
+            // Se o ícone foi exportado como array (múltiplas linhas), juntamos novamente
+            if (Array.isArray(importedState.eventIcon)) {
+              importedState.eventIcon = importedState.eventIcon.join('');
+            }
+
             sessionsData.sessions[importedState.eventName] = importedState;
             sessionsData.activeSessionName = importedState.eventName;
             appState = sessionsData.sessions[importedState.eventName];
