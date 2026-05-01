@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalX = document.getElementById('close-modal-x');
   const patternGrid = document.getElementById('pattern-grid');
   const patternSelect = document.getElementById('pattern-select');
+  const configSessionSelector = document.getElementById('config-session-selector');
+  const newSessionButton = document.getElementById('new-session-button');
+  const deleteSessionButton = document.getElementById('delete-session-button');
 
   // --- Definições de Padrões ---
   const BINGO_PATTERNS = [
@@ -54,51 +57,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const importSessionInput = document.getElementById('import-session-input');
 
   // --- Estado da Aplicação ---
-  let appState = {
-    eventName: "Bingo do Evento",
-    eventIcon: "default-icon.png", // Pode ser um URL ou base64
-    maxNumber: 75,
-    numRounds: 1,
-    currentRound: 1,
-    drawMode: "manual", // "manual" ou "automatic"
-    rounds: {
-      // Exemplo:
-      // "1": {
-      //     prize: "Um carro!",
-      //     drawnNumbers: [10, 25, 30],
-      //     lastDrawn: 30
-      // }
-    },
-    isSortedAscending: false // true para ordem crescente, false para ordem de sorteio
+  let sessionsData = {
+    activeSessionName: "Sessão Padrão",
+    sessions: {}
+  };
+  let appState = {};
+
+  // --- Funções Auxiliares ---
+  const createDefaultSessionState = (name) => {
+    const newState = {
+      eventName: name,
+      eventIcon: "default-icon.png",
+      maxNumber: 75,
+      numRounds: 1,
+      currentRound: 1,
+      drawMode: "manual",
+      rounds: {},
+      isSortedAscending: false
+    };
+    for (let i = 1; i <= newState.numRounds; i++) {
+      newState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
+    }
+    return newState;
   };
 
   // --- Funções de Persistência (Local Storage) ---
   const saveState = () => {
-    localStorage.setItem('bingoAppState', JSON.stringify(appState));
+    localStorage.setItem('bingoSessionsData', JSON.stringify(sessionsData));
   };
 
   const loadState = () => {
-    const storedState = localStorage.getItem('bingoAppState');
-    if (storedState) {
-      appState = JSON.parse(storedState);
-      // Garantir que a estrutura de rounds esteja completa
-      for (let i = 1; i <= appState.numRounds; i++) {
-        if (!appState.rounds[i]) {
-          appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
-        }
-      }
+    const storedData = localStorage.getItem('bingoSessionsData');
+    if (storedData) {
+      sessionsData = JSON.parse(storedData);
+      appState = sessionsData.sessions[sessionsData.activeSessionName];
     } else {
-      // Inicializar estado padrão se não houver nada salvo
-      initializeDefaultState();
+      // Migração de dados do formato antigo ou inicialização limpa
+      const legacyState = localStorage.getItem('bingoAppState');
+      if (legacyState) {
+        const parsedLegacy = JSON.parse(legacyState);
+        const name = parsedLegacy.eventName || "Sessão Antiga";
+        sessionsData.sessions[name] = parsedLegacy;
+        sessionsData.activeSessionName = name;
+      } else {
+        const defaultName = "Sessão Padrão";
+        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        sessionsData.activeSessionName = defaultName;
+      }
+      appState = sessionsData.sessions[sessionsData.activeSessionName];
     }
     updateUI();
-  };
-
-  const initializeDefaultState = () => {
-    appState.rounds = {};
-    for (let i = 1; i <= appState.numRounds; i++) {
-      appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
-    }
   };
 
   // --- Funções de Atualização da UI ---
@@ -143,11 +151,23 @@ document.addEventListener('DOMContentLoaded', () => {
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
+    updateSessionSelector();
 
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
 
     saveState();
+  };
+
+  const updateSessionSelector = () => {
+    configSessionSelector.innerHTML = '';
+    Object.keys(sessionsData.sessions).forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      if (name === sessionsData.activeSessionName) option.selected = true;
+      configSessionSelector.appendChild(option);
+    });
   };
 
   const updateRoundSelector = () => {
@@ -361,10 +381,51 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Config Modal Event Listeners
+  configSessionSelector.addEventListener('change', (e) => {
+    sessionsData.activeSessionName = e.target.value;
+    appState = sessionsData.sessions[sessionsData.activeSessionName];
+    updateUI();
+  });
+
+  newSessionButton.addEventListener('click', () => {
+    const name = prompt("Nome da nova sessão:");
+    if (name && name.trim() !== "") {
+      if (sessionsData.sessions[name]) {
+        alert("Já existe uma sessão com este nome.");
+        return;
+      }
+      sessionsData.sessions[name] = createDefaultSessionState(name);
+      sessionsData.activeSessionName = name;
+      appState = sessionsData.sessions[name];
+      updateUI();
+    }
+  });
+
+  deleteSessionButton.addEventListener('click', () => {
+    const names = Object.keys(sessionsData.sessions);
+    if (names.length <= 1) {
+      alert("Você deve ter pelo menos uma sessão.");
+      return;
+    }
+    if (confirm(`Tem certeza que deseja excluir a sessão "${sessionsData.activeSessionName}"?`)) {
+      delete sessionsData.sessions[sessionsData.activeSessionName];
+      sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
+      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      updateUI();
+    }
+  });
+
   configEventName.addEventListener('input', (e) => {
-    appState.eventName = e.target.value;
-    eventTitle.textContent = appState.eventName; // Atualiza imediatamente
-    saveState();
+    const newName = e.target.value;
+    const oldName = sessionsData.activeSessionName;
+    if (newName === oldName || !newName) return;
+
+    // Renomeia a chave no objeto de sessões
+    sessionsData.sessions[newName] = sessionsData.sessions[oldName];
+    delete sessionsData.sessions[oldName];
+    sessionsData.activeSessionName = newName;
+    appState.eventName = newName;
+    updateUI();
   });
 
   configNumRounds.addEventListener('change', (e) => {
@@ -455,7 +516,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const importedState = JSON.parse(event.target.result);
           // Validação básica para garantir que é um estado de bingo válido
           if (importedState && importedState.eventName && importedState.rounds) {
-            appState = importedState;
+            sessionsData.sessions[importedState.eventName] = importedState;
+            sessionsData.activeSessionName = importedState.eventName;
+            appState = sessionsData.sessions[importedState.eventName];
             updateUI();
             alert("Sessão importada com sucesso!");
           } else {

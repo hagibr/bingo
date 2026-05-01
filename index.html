@@ -60,6 +60,14 @@
 
       <div class="config-grid">
         <div class="config-full">
+          <label for="config-session-selector">Sessão Atual:</label>
+          <div style="display: flex; gap: 10px;">
+            <select id="config-session-selector" style="flex-grow: 1;"></select>
+            <button id="new-session-button" title="Nova Sessão">➕</button>
+            <button id="delete-session-button" class="undo-button" title="Excluir Sessão">🗑️</button>
+          </div>
+        </div>
+        <div class="config-full">
           <label for="config-event-name">Nome do Evento:</label>
           <input type="text" id="config-event-name">
         </div>
