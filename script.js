@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const loadFromFirebaseButton = document.getElementById('load-from-firebase-button');
 
   // --- Definições de Padrões ---
   const BINGO_PATTERNS = [
@@ -526,6 +527,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   closeQrModalX.addEventListener('click', closeQrModal);
   closeQrModalButton.addEventListener('click', closeQrModal);
+
+  loadFromFirebaseButton.addEventListener('click', async () => {
+    let id = configSessionId.value.trim().toUpperCase();
+    if (id.length !== 6) {
+      id = prompt("Digite o Código da Sessão (ID Público) para retomar:", id)?.toUpperCase().trim();
+    }
+    if (!id || id.length !== 6) return;
+
+    let token = configFirebaseWriteToken.value.trim();
+    if (!token) {
+      token = prompt("Digite o Token Secreto (Senha de Escrita) para esta sessão:");
+    }
+    if (!token) return;
+
+    if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+      alert("Firebase não configurado corretamente.");
+      return;
+    }
+
+    try {
+      const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+      const data = snapshot.val();
+
+      if (data) {
+        // Injetamos o token manual pois o Firebase não o retorna na leitura (devido às regras de segurança)
+        data.firebaseWriteToken = token;
+
+        const sessionName = data.eventName || `Nuvem_${id}`;
+        sessionsData.sessions[sessionName] = data;
+        sessionsData.activeSessionName = sessionName;
+        appState = sessionsData.sessions[sessionName];
+
+        updateUI(true);
+        alert("Sessão retomada da nuvem com sucesso!");
+      } else {
+        alert("Sessão não encontrada no servidor com este ID.");
+      }
+    } catch (error) {
+      console.error("Erro ao retomar da nuvem:", error);
+      alert("Erro ao acessar a nuvem: " + error.message);
+    }
+  });
 
   configFirebaseWriteToken.addEventListener('input', (e) => {
     appState.firebaseWriteToken = e.target.value;
