@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSessionButton = document.getElementById('delete-session-button');
   const configSessionId = document.getElementById('config-session-id');
   const regenerateIdButton = document.getElementById('regenerate-id-button');
+  const copyLinkButton = document.getElementById('copy-link-button');
+  const showQrButton = document.getElementById('show-qr-button');
+  const qrModal = document.getElementById('qr-modal');
+  const qrcodeLarge = document.getElementById('qrcode-large');
+  const closeQrModalX = document.getElementById('close-qr-modal-x');
+  const closeQrModalButton = document.getElementById('close-qr-modal-button');
 
   // --- Definições de Padrões ---
   const BINGO_PATTERNS = [
@@ -413,12 +419,19 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(); // Atualiza a UI principal caso algo tenha sido alterado
   };
 
+  const closeQrModal = () => {
+    qrModal.classList.add('hidden');
+  };
+
   closeConfigButton.addEventListener('click', closeModal);
   closeModalX.addEventListener('click', closeModal);
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !configModal.classList.contains('hidden')) {
       closeModal();
+    }
+    if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
+      closeQrModal();
     }
   });
 
@@ -483,6 +496,36 @@ document.addEventListener('DOMContentLoaded', () => {
     appState.sessionId = generateRandomId();
     updateUI(true);
   });
+
+  copyLinkButton.addEventListener('click', () => {
+    const shareLink = document.getElementById('config-share-link');
+    navigator.clipboard.writeText(shareLink.value).then(() => {
+      const originalText = copyLinkButton.textContent;
+      copyLinkButton.textContent = '✅';
+      setTimeout(() => copyLinkButton.textContent = originalText, 2000);
+    }).catch(err => {
+      console.error('Erro ao copiar:', err);
+      alert('Não foi possível copiar o link automaticamente.');
+    });
+  });
+
+  showQrButton.addEventListener('click', () => {
+    const shareLink = document.getElementById('config-share-link');
+
+    qrcodeLarge.innerHTML = ""; // Limpa QR anterior
+    new QRCode(qrcodeLarge, {
+      text: shareLink.value,
+      width: 256, // Tamanho maior
+      height: 256,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrModal.classList.remove('hidden');
+  });
+
+  closeQrModalX.addEventListener('click', closeQrModal);
+  closeQrModalButton.addEventListener('click', closeQrModal);
 
   configFirebaseWriteToken.addEventListener('input', (e) => {
     appState.firebaseWriteToken = e.target.value;

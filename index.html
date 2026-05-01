@@ -86,9 +86,13 @@
             title="Este token permite que a sessão atual seja escrita no Firebase.">
         </div>
         <div class="config-full">
-          <label>Link de Visualização Pública:</label>
-          <input type="text" id="config-share-link" readonly
-            style="background: #f0f0f0; cursor: pointer; font-size: 0.8em;" title="Clique para copiar">
+          <label>Link de Visualização:</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="config-share-link" readonly
+              style="background: #f0f0f0; cursor: pointer; font-size: 0.8em; flex-grow: 1;" title="Link da sessão">
+            <button id="copy-link-button" title="Copiar Link">📋</button>
+            <button id="show-qr-button" title="Mostrar QR Code">📱</button>
+          </div>
         </div>
 
         <div>
@@ -124,10 +128,23 @@
     </div>
   </div>
 
+  <!-- Modal de QR Code Ampliado -->
+  <div id="qr-modal" class="modal hidden">
+    <div class="modal-content" style="text-align: center; max-width: 350px;">
+      <button id="close-qr-modal-x" class="close-x">&times;</button>
+      <h2 style="color: #28a745; margin-bottom: 20px;">Compartilhar Bingo</h2>
+      <div id="qrcode-large" style="display: inline-block; background: white; padding: 10px; border: 1px solid #eee;">
+      </div>
+      <p style="margin-top: 15px; font-size: 0.9em; color: #666;">Aponte a câmera do celular para entrar na sessão.</p>
+      <button id="close-qr-modal-button" style="margin-top: 10px; width: 100%;">Fechar</button>
+    </div>
+  </div>
+
   <!-- Firebase SDKs (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <!-- Arquivo de configuração (Ignorado no Git) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="firebase-config.js"></script>
   <script src="script.js"></script>
 </body>
