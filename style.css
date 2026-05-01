@@ -357,6 +357,19 @@ button:hover {
   display: none !important;
 }
 
+.id-entry-section {
+  text-align: center;
+  padding: 40px 20px;
+  background: #fdfdfd;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+}
+
+.id-entry-section h2 {
+  color: #28a745;
+  margin-bottom: 10px;
+}
+
 /* Responsividade básica */
 @media (max-width: 600px) {
   .app-header {

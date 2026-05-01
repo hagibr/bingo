@@ -71,6 +71,25 @@
           <label for="config-event-name">Nome do Evento:</label>
           <input type="text" id="config-event-name">
         </div>
+        <div class="config-full">
+          <label for="config-session-id">Código da Sessão (ID Público):</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="config-session-id" maxlength="6" style="text-transform: uppercase; flex-grow: 1;"
+              placeholder="Ex: ABC123">
+            <button id="regenerate-id-button" title="Gerar novo ID" style="background-color: #6c757d;">🔄</button>
+          </div>
+        </div>
+        <div class="config-full">
+          <label for="config-firebase-write-token">Token Secreto Firebase (Escrita):</label>
+          <input type="password" id="config-firebase-write-token"
+            placeholder="Deixe em branco para acesso somente leitura"
+            title="Este token permite que a sessão atual seja escrita no Firebase.">
+        </div>
+        <div class="config-full">
+          <label>Link de Visualização Pública:</label>
+          <input type="text" id="config-share-link" readonly
+            style="background: #f0f0f0; cursor: pointer; font-size: 0.8em;" title="Clique para copiar">
+        </div>
 
         <div>
           <label for="config-num-rounds">Nº de Rodadas:</label>
@@ -105,6 +124,11 @@
     </div>
   </div>
 
+  <!-- Firebase SDKs (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- Arquivo de configuração (Ignorado no Git) -->
+  <script src="firebase-config.js"></script>
   <script src="script.js"></script>
 </body>
 

@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const configSessionSelector = document.getElementById('config-session-selector');
   const newSessionButton = document.getElementById('new-session-button');
   const deleteSessionButton = document.getElementById('delete-session-button');
+  const configSessionId = document.getElementById('config-session-id');
+  const regenerateIdButton = document.getElementById('regenerate-id-button');
 
   // --- Definições de Padrões ---
   const BINGO_PATTERNS = [
@@ -51,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const configMaxNumber = document.getElementById('config-max-number');
   const configDrawMode = document.getElementById('config-draw-mode');
   const configIconUpload = document.getElementById('config-icon-upload');
+  const configFirebaseWriteToken = document.getElementById('config-firebase-write-token');
   const configIconPreview = document.getElementById('config-icon-preview');
   const exportSessionButton = document.getElementById('export-session-button');
   const importSessionButton = document.getElementById('import-session-button');
@@ -64,14 +67,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let appState = {};
 
   // --- Funções Auxiliares ---
+  const generateRandomId = (length = 6) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   const createDefaultSessionState = (name) => {
     const newState = {
       eventName: name,
+      sessionId: generateRandomId(),
       eventIcon: "default-icon.png",
       maxNumber: 75,
       numRounds: 1,
       currentRound: 1,
       drawMode: "manual",
+      firebaseWriteToken: "", // Novo campo para o token secreto de escrita
       rounds: {},
       isSortedAscending: false
     };
@@ -81,9 +95,56 @@ document.addEventListener('DOMContentLoaded', () => {
     return newState;
   };
 
+  /**
+   * INFORMAÇÕES DE SEGURANÇA DO FIREBASE (MODO SIMPLES):
+   *
+   * Neste modo, não usamos Firebase Auth. Usamos uma regra de validação que compara
+   * o campo 'firebaseWriteToken' enviado com uma string fixa nas regras do Banco.
+   *
+   * Passos para configurar no Console do Firebase (Realtime Database -> Regras):
+   * 1. Vá na aba "Rules" (Regras) do seu Realtime Database.
+   * 2. Cole as seguintes regras (substitua 'MINHA_SENHA_MESTRA' pela sua senha):
+   *
+   * {
+   *   "rules": {
+   *     "sessions": {
+   *       "$session_id": {
+   *         ".read": true,
+   *         ".write": "newData.child('firebaseWriteToken').val() === 'MINHA_SENHA_MESTRA'",
+   *         "firebaseWriteToken": {
+   *           ".read": false // Protege o token para que espectadores não o vejam
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   */
+  // --- Firebase Sync ---
+  let syncTimeout = null;
+  const syncToFirebase = (immediate = false) => {
+    const performSync = () => {
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && appState && appState.sessionId) {
+        // Enviamos o appState que já contém o campo firebaseWriteToken.
+        firebase.database().ref('sessions/' + appState.sessionId).set(appState)
+          .catch(err => {
+            console.error("Erro ao sincronizar Firebase:", err.code, err.message);
+          });
+      }
+    };
+
+    if (syncTimeout) clearTimeout(syncTimeout);
+
+    if (immediate) {
+      performSync();
+    } else {
+      syncTimeout = setTimeout(performSync, 1000); // Debounce de 1 segundo para digitação
+    }
+  };
+
   // --- Funções de Persistência (Local Storage) ---
-  const saveState = () => {
+  const saveState = (immediate = false) => {
     localStorage.setItem('bingoSessionsData', JSON.stringify(sessionsData));
+    syncToFirebase(immediate);
   };
 
   const loadState = () => {
@@ -106,11 +167,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       appState = sessionsData.sessions[sessionsData.activeSessionName];
     }
-    updateUI();
+
+    // Garante que a sessão ativa tenha um ID (migração de dados antigos)
+    if (appState && !appState.sessionId) {
+      appState.sessionId = generateRandomId();
+      saveState(true);
+    }
+
+    // Inicializa Firebase se a configuração estiver disponível
+    if (typeof firebaseConfig !== 'undefined' && firebase.apps.length === 0) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    updateUI(true);
   };
 
   // --- Funções de Atualização da UI ---
-  const updateUI = () => {
+  const updateUI = (immediateSync = false) => {
     // Header
     eventTitle.textContent = appState.eventName;
     document.title = appState.eventName;
@@ -152,12 +225,21 @@ document.addEventListener('DOMContentLoaded', () => {
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
+    configFirebaseWriteToken.value = appState.firebaseWriteToken || '';
+    configSessionId.value = appState.sessionId || '';
     updateSessionSelector();
 
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
 
-    saveState();
+    // Link de Compartilhamento
+    const configShareLink = document.getElementById('config-share-link');
+    if (configShareLink) {
+      const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+      configShareLink.value = `${baseUrl}view.html?id=${appState.sessionId}`;
+    }
+
+    saveState(immediateSync);
   };
 
   const updateSessionSelector = () => {
@@ -246,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentRoundData.pattern.push(index);
     }
     patternSelect.value = 0; // Volta visualmente para "Personalizado"
-    saveState();
+    saveState(true);
   };
 
   const displayDrawnNumbers = () => {
@@ -288,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRoundData.drawnNumbers.push(number);
     currentRoundData.lastDrawn = number;
     manualNumberInput.value = ''; // Limpa o input
-    updateUI();
+    updateUI(true);
   };
 
   const undoLastDrawnNumber = () => {
@@ -298,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentRoundData.lastDrawn = currentRoundData.drawnNumbers.length > 0 ?
         currentRoundData.drawnNumbers[currentRoundData.drawnNumbers.length - 1] :
         null;
-      updateUI();
+      updateUI(true);
     }
   };
 
@@ -342,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   roundSelector.addEventListener('change', (e) => {
     appState.currentRound = parseInt(e.target.value);
-    updateUI();
+    updateUI(true);
   });
 
   prizeLabel.addEventListener('blur', (e) => {
@@ -350,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.target.textContent = `Prêmio da Rodada ${appState.currentRound}`;
     }
     appState.rounds[appState.currentRound].prize = e.target.textContent;
-    saveState();
+    saveState(true);
   });
 
   confirmNumberButton.addEventListener('click', () => {
@@ -368,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   toggleSortButton.addEventListener('click', () => {
     appState.isSortedAscending = !appState.isSortedAscending;
-    updateUI();
+    updateUI(true);
   });
 
   drawRandomButton.addEventListener('click', drawRandomNumber);
@@ -378,14 +460,33 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRoundData.patternIndex = parseInt(e.target.value);
     animationStep = 0;
     animationPhase = true;
-    saveState();
+    saveState(true);
   });
 
   // Config Modal Event Listeners
   configSessionSelector.addEventListener('change', (e) => {
     sessionsData.activeSessionName = e.target.value;
     appState = sessionsData.sessions[sessionsData.activeSessionName];
-    updateUI();
+    if (appState && !appState.sessionId) {
+      appState.sessionId = generateRandomId();
+      saveState(true);
+    }
+    updateUI(true);
+  });
+
+  configSessionId.addEventListener('input', (e) => {
+    appState.sessionId = e.target.value.toUpperCase();
+    updateUI(false); // Sincronização em segundo plano enquanto digita
+  });
+
+  regenerateIdButton.addEventListener('click', () => {
+    appState.sessionId = generateRandomId();
+    updateUI(true);
+  });
+
+  configFirebaseWriteToken.addEventListener('input', (e) => {
+    appState.firebaseWriteToken = e.target.value;
+    saveState(false); // Sincronização em segundo plano enquanto digita
   });
 
   newSessionButton.addEventListener('click', () => {
@@ -398,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionsData.sessions[name] = createDefaultSessionState(name);
       sessionsData.activeSessionName = name;
       appState = sessionsData.sessions[name];
-      updateUI();
+      updateUI(true);
     }
   });
 
@@ -413,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
         sessionsData.activeSessionName = defaultName;
         appState = sessionsData.sessions[defaultName];
-        updateUI();
+        updateUI(true);
       }
       return;
     }
@@ -422,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
       delete sessionsData.sessions[currentName];
       sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
       appState = sessionsData.sessions[sessionsData.activeSessionName];
-      updateUI();
+      updateUI(true);
     }
   });
 
@@ -436,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     delete sessionsData.sessions[oldName];
     sessionsData.activeSessionName = newName;
     appState.eventName = newName;
-    updateUI();
+    updateUI(false); // Sincronização em segundo plano enquanto digita
   });
 
   configNumRounds.addEventListener('change', (e) => {
@@ -466,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     appState.numRounds = newNumRounds;
-    updateUI();
+    updateUI(true);
   });
 
   configMaxNumber.addEventListener('change', (e) => {
@@ -478,12 +579,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // TODO: Adicionar lógica para verificar se números já sorteados excedem o novo maxNumber
     appState.maxNumber = newMax;
-    saveState();
+    saveState(true);
   });
 
   configDrawMode.addEventListener('change', (e) => {
     appState.drawMode = e.target.value;
-    updateUI(); // Atualiza a visibilidade dos controles de sorteio
+    updateUI(true);
   });
 
   configIconUpload.addEventListener('change', (e) => {
@@ -494,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.eventIcon = event.target.result; // Base64 string
         eventIcon.src = appState.eventIcon; // Atualiza imediatamente
         configIconPreview.src = appState.eventIcon; // Atualiza a prévia
-        saveState();
+        saveState(true);
       };
       reader.readAsDataURL(file); // Converte a imagem para Base64
     }
@@ -541,10 +642,13 @@ document.addEventListener('DOMContentLoaded', () => {
               importedState.eventIcon = importedState.eventIcon.join('');
             }
 
+            // Garante um ID se o arquivo importado for de uma versão anterior
+            if (!importedState.sessionId) importedState.sessionId = generateRandomId();
+
             sessionsData.sessions[importedState.eventName] = importedState;
             sessionsData.activeSessionName = importedState.eventName;
             appState = sessionsData.sessions[importedState.eventName];
-            updateUI();
+            updateUI(true);
             alert("Sessão importada com sucesso!");
           } else {
             alert("Arquivo JSON inválido para sessão de bingo.");

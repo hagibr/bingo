@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualização - Bingo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .drawn-numbers-header {
+      justify-content: center;
+    }
+
+    .bingo-main {
+      max-width: 800px;
+    }
+  </style>
+</head>
+
+<body class="viewer-mode">
+  <header class="app-header">
+    <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
+    <h1 id="event-title">Carregando Bingo...</h1>
+  </header>
+
+  <main id="main-content" class="bingo-main">
+    <!-- Seção de Entrada Manual -->
+    <section id="id-entry-section" class="id-entry-section hidden">
+      <h2>Entrar em uma Sessão</h2>
+      <p>Digite o código de 6 caracteres fornecido pelo organizador.</p>
+      <div class="draw-controls" style="justify-content: center; margin-top: 20px;">
+        <input type="text" id="manual-id-input" placeholder="Ex: A1B2C3" maxlength="6"
+          style="text-transform: uppercase; text-align: center; width: 150px;">
+        <button id="join-session-button">Entrar no Bingo</button>
+      </div>
+    </section>
+
+    <!-- Conteúdo do Bingo (escondido até carregar) -->
+    <div id="bingo-content" class="hidden">
+      <section class="round-section" style="text-align: center;">
+        <h2 id="current-round-label">Rodada</h2>
+        <div class="prize-display" style="cursor: default;">
+          <span id="prize-label">Aguardando prêmio...</span>
+        </div>
+        <div class="pattern-animator">
+          <div id="pattern-grid" class="pattern-grid"></div>
+        </div>
+      </section>
+
+      <section class="drawn-numbers-section">
+        <div class="drawn-numbers-header">
+          <h2>Números Sorteados <span id="numbers-count"></span></h2>
+        </div>
+        <div id="drawn-numbers-list" class="drawn-numbers-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="view.js"></script>
+</body>
+
+</html>
