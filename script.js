@@ -388,16 +388,20 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRoundData.lastDrawn = number;
     manualNumberInput.value = ''; // Limpa o input
     updateUI(true);
+    manualNumberInput.focus();
   };
 
   const undoLastDrawnNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
     if (currentRoundData && currentRoundData.drawnNumbers && currentRoundData.drawnNumbers.length > 0) {
-      currentRoundData.drawnNumbers.pop(); // Remove o último
-      currentRoundData.lastDrawn = currentRoundData.drawnNumbers.length > 0 ?
-        currentRoundData.drawnNumbers[currentRoundData.drawnNumbers.length - 1] :
-        null;
-      updateUI(true);
+      if (confirm("Tem certeza que deseja desfazer o último número sorteado?")) {
+        currentRoundData.drawnNumbers.pop(); // Remove o último
+        currentRoundData.lastDrawn = currentRoundData.drawnNumbers.length > 0 ?
+          currentRoundData.drawnNumbers[currentRoundData.drawnNumbers.length - 1] :
+          null;
+        updateUI(true);
+      }
+      manualNumberInput.focus();
     }
   };
 
