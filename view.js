@@ -232,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
   prevRoundButton.addEventListener('click', () => {
     viewedRound = Math.max(1, viewedRound - 1);
     followActive = (viewedRound === appState.currentRound);
+    animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
     updateUI();
   });
 
@@ -239,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
   nextRoundButton.addEventListener('click', () => {
     viewedRound = Math.min(appState.numRounds, viewedRound + 1);
     followActive = (viewedRound === appState.currentRound);
+    animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
     updateUI();
   });
 
