@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const qrLinkDisplay = document.getElementById('qr-link-display');
   const loadFromFirebaseButton = document.getElementById('load-from-firebase-button');
 
   // --- Definições de Padrões ---
@@ -534,6 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
+    qrLinkDisplay.textContent = shareLink.value; // Exibe o link abaixo do QR Code
   };
 
   if (headerQrButton) headerQrButton.addEventListener('click', openQrModal);

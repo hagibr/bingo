@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const qrLinkDisplay = document.getElementById('qr-link-display');
   const patternNameDisplay = document.getElementById('pattern-name-display');
 
   if (typeof firebaseConfig === 'undefined') {
@@ -168,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
+    qrLinkDisplay.textContent = url.toString(); // Exibe o link abaixo do QR Code
   });
 
   closeQrModalX.addEventListener('click', closeQrModal);

@@ -358,6 +358,23 @@ button:hover {
   display: none !important;
 }
 
+/* Estilos para o Modal de QR Code */
+#qr-modal .modal-content {
+  width: fit-content;
+  max-width: 90%;
+  align-items: center;
+  text-align: center;
+}
+
+#qrcode-large {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  padding: 10px;
+  border: 1px solid #eee;
+}
+
 .id-entry-section {
   text-align: center;
   padding: 40px 20px;
