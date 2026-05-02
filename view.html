@@ -40,6 +40,13 @@
     <div id="bingo-content" class="hidden">
       <!-- Navegação de Sessões -->
       <section class="session-nav-container">
+        <div class="switch-container" style="margin-bottom: 10px;">
+          <label class="switch">
+            <input type="checkbox" id="auto-follow-checkbox" checked>
+            <span class="slider"></span>
+          </label>
+          <span style="font-size: 0.9em; color: #666; font-weight: bold;">Acompanhar ao vivo</span>
+        </div>
         <div style="display: flex; align-items: center; gap: 15px;">
           <button id="prev-session" class="nav-button" title="Sessão Anterior">🔼</button>
           <div style="text-align: center;">
@@ -77,6 +84,7 @@
           <h2>Números Sorteados <span id="numbers-count"></span></h2>
         </div>
         <div id="drawn-numbers-list" class="drawn-numbers-list"></div>
+        <button id="toggle-sort-button" class="toggle-sort-button">Ordem: Sorteio</button>
       </section>
     </div>
   </main>

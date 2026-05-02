@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const goToLiveButton = document.getElementById('go-to-live');
   const viewedSessionNameDisplay = document.getElementById('viewed-session-name');
   const viewingActiveBadge = document.getElementById('viewing-active-badge');
+  const toggleSortButton = document.getElementById('toggle-sort-button');
+  const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
 
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let viewedSessionName = null; // Nome da sessão sendo visualizada
   let viewedRound = null; // Rodada que o usuário está olhando no momento
   let followActive = true; // Se o usuário está seguindo a rodada ativa do organizador
+  let localIsSortedAscending = false; // Controle local de ordenação
 
   const BINGO_PATTERNS = [
     { name: "Personalizado", sequences: [] },
@@ -57,6 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateUI = () => {
     if (!appState || !fullData) return;
 
+    // Sincroniza o estado de acompanhamento com o checkbox
+    if (autoFollowCheckbox) autoFollowCheckbox.checked = followActive;
+
+    // Se estiver em modo automático, força a visualização do que está ativo no servidor
+    if (followActive) {
+      viewedSessionName = fullData.activeSessionName;
+      appState = fullData.sessions[viewedSessionName];
+      viewedRound = appState.currentRound;
+      localIsSortedAscending = appState.isSortedAscending;
+    }
+
     // Atualiza o nome da sessão visualizada
     if (viewedSessionNameDisplay) viewedSessionNameDisplay.textContent = viewedSessionName;
 
@@ -71,13 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAtLiveState = (viewedSessionName === fullData.activeSessionName && roundToDisplay === appState.currentRound);
     if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
 
-    // Se o usuário navegou manualmente e agora coincide com o estado live, voltamos a seguir automaticamente
-    if (isAtLiveState && !followActive) {
-      followActive = true;
-    }
-
     // O botão "Ir para o Atual" aparece se o usuário não estiver seguindo o estado ativo (followActive === false)
-    if (goToLiveButton) goToLiveButton.classList.toggle('hidden', followActive);
+    if (goToLiveButton) goToLiveButton.classList.toggle('hidden', followActive || isAtLiveState);
 
     const currentRoundData = appState.rounds[roundToDisplay];
     if (!currentRoundData) return;
@@ -99,8 +108,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let nums = [...(currentRoundData.drawnNumbers || [])];
     document.getElementById('numbers-count').textContent = `(${nums.length})`;
 
-    if (appState.isSortedAscending) nums.sort((a, b) => a - b);
+    // Usa o estado local de ordenação em vez do appState vindo do Firebase
+    if (localIsSortedAscending) nums.sort((a, b) => a - b);
     else nums.reverse();
+
+    if (toggleSortButton) {
+      toggleSortButton.textContent = localIsSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
+    }
 
     nums.forEach(num => {
       const item = document.createElement('div');
@@ -111,14 +125,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Atualiza estado dos botões de navegação
-    prevRoundButton.disabled = roundToDisplay <= 1;
-    nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
+    const isLocked = followActive;
+    prevRoundButton.disabled = isLocked || roundToDisplay <= 1;
+    nextRoundButton.disabled = isLocked || roundToDisplay >= (appState.numRounds || 1);
 
     // Atualiza estado dos botões de navegação de sessões
     const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
     const currentSessIndex = sessionNames.indexOf(viewedSessionName);
-    prevSessionButton.disabled = currentSessIndex <= 0;
-    nextSessionButton.disabled = currentSessIndex >= sessionNames.length - 1;
+    prevSessionButton.disabled = isLocked || currentSessIndex <= 0;
+    nextSessionButton.disabled = isLocked || currentSessIndex >= sessionNames.length - 1;
+
+    if (toggleSortButton) toggleSortButton.disabled = isLocked;
   };
 
   /**
@@ -191,19 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
       if (fullData && fullData.sessions && fullData.activeSessionName) {
 
-        if (viewedSessionName === null) {
-          // Primeiro carregamento: sincroniza com o que está ativo no servidor
+        if (followActive || viewedSessionName === null) {
           viewedSessionName = fullData.activeSessionName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
-        } else if (followActive) {
-          // Se o administrador trocar de sessão no servidor, paramos de seguir automaticamente
-          // para não "puxar" a tela do usuário bruscamente.
-          if (viewedSessionName !== fullData.activeSessionName) {
-            followActive = false;
-          } else {
-            // Se a sessão for a mesma, continuamos seguindo as mudanças de rodada normalmente
-            viewedRound = fullData.sessions[viewedSessionName].currentRound;
-          }
         }
 
         // Fallback caso a sessão visualizada tenha sido deletada
@@ -267,6 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
     qrLinkDisplay.textContent = url.toString(); // Exibe o link abaixo do QR Code
   });
 
+  // Alterna o modo de acompanhamento automático
+  autoFollowCheckbox.addEventListener('change', (e) => {
+    followActive = e.target.checked;
+    updateUI();
+  });
+
   // Navegação de Sessões
   const navigateSession = (direction) => {
     const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
@@ -309,6 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
     viewedRound = Math.min(appState.numRounds, viewedRound + 1);
     followActive = (viewedSessionName === fullData.activeSessionName && viewedRound === appState.currentRound);
     animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
+    updateUI();
+  });
+
+  // Alterna entre ordem de sorteio e ordem crescente localmente na visualização
+  toggleSortButton.addEventListener('click', () => {
+    localIsSortedAscending = !localIsSortedAscending;
     updateUI();
   });
 
