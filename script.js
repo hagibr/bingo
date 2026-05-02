@@ -145,6 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const syncToFirebase = (immediate = false) => {
     const performSync = () => {
+      // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
+      // Isso garante que a restauração de dados e edições de ID/Token não causem conflitos ou sobrescritas acidentais.
+      if (configModal && !configModal.classList.contains('hidden')) return;
+
       if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData && sessionsData.sessionId) {
         // Enviamos o sessionsData que já contém o campo firebaseWriteToken na raiz.
         firebase.database().ref('sessions/' + sessionsData.sessionId).set(sessionsData)
