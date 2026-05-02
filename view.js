@@ -71,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAtLiveState = (viewedSessionName === fullData.activeSessionName && roundToDisplay === appState.currentRound);
     if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
 
+    // Se o usuário navegou manualmente e agora coincide com o estado live, voltamos a seguir automaticamente
+    if (isAtLiveState && !followActive) {
+      followActive = true;
+    }
+
     // O botão "Ir para o Atual" aparece se o usuário não estiver seguindo o estado ativo (followActive === false)
     if (goToLiveButton) goToLiveButton.classList.toggle('hidden', followActive);
 
@@ -110,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
 
     // Atualiza estado dos botões de navegação de sessões
-    const sessionNames = Object.keys(fullData.sessions);
+    const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
     const currentSessIndex = sessionNames.indexOf(viewedSessionName);
     prevSessionButton.disabled = currentSessIndex <= 0;
     nextSessionButton.disabled = currentSessIndex >= sessionNames.length - 1;
@@ -186,10 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
       // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
       if (fullData && fullData.sessions && fullData.activeSessionName) {
 
-        if (followActive) {
+        if (viewedSessionName === null) {
+          // Primeiro carregamento: sincroniza com o que está ativo no servidor
           viewedSessionName = fullData.activeSessionName;
-          const activeState = fullData.sessions[viewedSessionName];
-          viewedRound = activeState.currentRound;
+          viewedRound = fullData.sessions[viewedSessionName].currentRound;
+        } else if (followActive) {
+          // Se o administrador trocar de sessão no servidor, paramos de seguir automaticamente
+          // para não "puxar" a tela do usuário bruscamente.
+          if (viewedSessionName !== fullData.activeSessionName) {
+            followActive = false;
+          } else {
+            // Se a sessão for a mesma, continuamos seguindo as mudanças de rodada normalmente
+            viewedRound = fullData.sessions[viewedSessionName].currentRound;
+          }
         }
 
         // Fallback caso a sessão visualizada tenha sido deletada
@@ -255,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navegação de Sessões
   const navigateSession = (direction) => {
-    const sessionNames = Object.keys(fullData.sessions);
+    const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
     const currentIndex = sessionNames.indexOf(viewedSessionName);
     const nextIndex = currentIndex + direction;
 
