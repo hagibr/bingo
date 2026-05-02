@@ -318,6 +318,7 @@ button:hover {
 }
 
 .modal-content input[type="text"],
+.modal-content input[type="password"],
 .modal-content input[type="number"],
 .modal-content select {
   width: calc(100% - 22px);

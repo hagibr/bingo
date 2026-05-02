@@ -21,6 +21,7 @@
   <header class="app-header">
     <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
     <h1 id="event-title">Carregando Bingo...</h1>
+    <button id="show-qr-button" class="config-button" title="Compartilhar via QR Code">📱</button>
   </header>
 
   <main id="main-content" class="bingo-main">
@@ -56,8 +57,21 @@
     </div>
   </main>
 
+  <!-- Modal de QR Code Ampliado -->
+  <div id="qr-modal" class="modal hidden">
+    <div class="modal-content" style="text-align: center; max-width: 350px;">
+      <button id="close-qr-modal-x" class="close-x">&times;</button>
+      <h2 style="color: #28a745; margin-bottom: 20px;">Compartilhar Bingo</h2>
+      <div id="qrcode-large" style="display: inline-block; background: white; padding: 10px; border: 1px solid #eee;">
+      </div>
+      <p style="margin-top: 15px; font-size: 0.9em; color: #666;">Aponte a câmera do celular para entrar na sessão.</p>
+      <button id="close-qr-modal-button" style="margin-top: 10px; width: 100%;">Fechar</button>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="firebase-config.js"></script>
   <script src="view.js"></script>
 </body>

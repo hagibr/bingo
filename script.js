@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const configSessionId = document.getElementById('config-session-id');
   const regenerateIdButton = document.getElementById('regenerate-id-button');
   const copyLinkButton = document.getElementById('copy-link-button');
+  const headerQrButton = document.getElementById('header-qr-button');
   const showQrButton = document.getElementById('show-qr-button');
   const qrModal = document.getElementById('qr-modal');
   const qrcodeLarge = document.getElementById('qrcode-large');
@@ -248,7 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Link de Compartilhamento
     const configShareLink = document.getElementById('config-share-link');
     if (configShareLink) {
-      const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+      // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
+      const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('index.html', '');
       configShareLink.value = `${baseUrl}view.html?id=${sessionsData.sessionId}`;
     }
 
@@ -347,7 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const displayDrawnNumbers = () => {
     drawnNumbersList.innerHTML = '';
     const currentRoundData = appState.rounds[appState.currentRound];
-    let numbersToDisplay = [...currentRoundData.drawnNumbers];
+    if (!currentRoundData) return;
+    let numbersToDisplay = [...(currentRoundData.drawnNumbers || [])];
 
     numbersCountSpan.textContent = `(${numbersToDisplay.length})`;
 
@@ -371,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Funções de Lógica de Bingo ---
   const addDrawnNumber = (number) => {
     const currentRoundData = appState.rounds[appState.currentRound];
+    if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
     if (number < 1 || number > appState.maxNumber || isNaN(number)) {
       alert(`Por favor, digite um número válido entre 01 e ${appState.maxNumber.toString().padStart(2, '0')}.`);
       return;
@@ -388,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const undoLastDrawnNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
-    if (currentRoundData.drawnNumbers.length > 0) {
+    if (currentRoundData && currentRoundData.drawnNumbers && currentRoundData.drawnNumbers.length > 0) {
       currentRoundData.drawnNumbers.pop(); // Remove o último
       currentRoundData.lastDrawn = currentRoundData.drawnNumbers.length > 0 ?
         currentRoundData.drawnNumbers[currentRoundData.drawnNumbers.length - 1] :
@@ -399,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const drawRandomNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
+    if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
     const availableNumbers = [];
     for (let i = 1; i <= appState.maxNumber; i++) {
       if (!currentRoundData.drawnNumbers.includes(i)) {
@@ -512,20 +517,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  showQrButton.addEventListener('click', () => {
+  const openQrModal = () => {
     const shareLink = document.getElementById('config-share-link');
 
     qrcodeLarge.innerHTML = ""; // Limpa QR anterior
     new QRCode(qrcodeLarge, {
       text: shareLink.value,
-      width: 256, // Tamanho maior
+      width: 256,
       height: 256,
       colorDark: "#000000",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
-  });
+  };
+
+  if (headerQrButton) headerQrButton.addEventListener('click', openQrModal);
+  showQrButton.addEventListener('click', openQrModal);
 
   closeQrModalX.addEventListener('click', closeQrModal);
   closeQrModalButton.addEventListener('click', closeQrModal);

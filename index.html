@@ -12,6 +12,7 @@
   <header class="app-header">
     <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
     <h1 id="event-title">Nome do Evento de Bingo</h1>
+    <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
     <button id="config-button" class="config-button">⚙️ Configurações</button>
   </header>
 
@@ -71,7 +72,7 @@
           <label for="config-event-name">Nome do Evento:</label>
           <input type="text" id="config-event-name">
         </div>
-        <div class="config-full">
+        <div>
           <label for="config-session-id">Código da Sessão (ID Público):</label>
           <div style="display: flex; gap: 10px;">
             <input type="text" id="config-session-id" maxlength="6" style="text-transform: uppercase; flex-grow: 1;"
@@ -79,7 +80,7 @@
             <button id="regenerate-id-button" title="Gerar novo ID" style="background-color: #6c757d;">🔄</button>
           </div>
         </div>
-        <div class="config-full">
+        <div>
           <label for="config-firebase-write-token">Token Secreto Firebase (Escrita):</label>
           <input type="password" id="config-firebase-write-token"
             placeholder="Deixe em branco para acesso somente leitura"
