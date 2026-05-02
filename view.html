@@ -38,6 +38,18 @@
 
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
+      <!-- Navegação de Sessões -->
+      <section class="session-nav-container">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <button id="prev-session" class="nav-button" title="Sessão Anterior">🔼</button>
+          <div style="text-align: center;">
+            <div id="viewed-session-name" style="font-weight: bold; font-size: 1.1em; color: #28a745;">Sessão</div>
+            <button id="go-to-live" class="nav-button sync-button hidden">Ir para o Atual 🔴</button>
+          </div>
+          <button id="next-session" class="nav-button" title="Próxima Sessão">🔽</button>
+        </div>
+      </section>
+
       <section class="round-section" style="text-align: center;">
         <div class="round-nav-container">
           <button id="prev-round" class="nav-button" title="Rodada Anterior">&lt;&lt;</button>
