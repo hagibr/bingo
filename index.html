@@ -18,21 +18,32 @@
 
   <main class="bingo-main">
     <section class="round-section">
-      <label for="round-selector">Rodada:</label>
-      <select id="round-selector">
-        <!-- Opções de rodadas serão geradas via JS -->
-      </select>
-      <div class="prize-display">
-        <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada: [Clique para
-          editar]</span>
-      </div>
-      <label class="completed-round-label">
-        <input type="checkbox" id="round-completed-checkbox"> Rodada Concluída
-      </label>
-      <div class="pattern-animator">
-        <div id="pattern-grid" class="pattern-grid"
-          title="Clique nos quadrados para definir o padrão ou use o botão ao lado"></div>
-        <select id="pattern-select" class="pattern-select-input" title="Selecionar padrão"></select>
+      <div class="round-header-layout">
+        <div class="round-info-column">
+          <div class="round-selection-row">
+            <label for="round-selector">Rodada:</label>
+            <select id="round-selector">
+              <!-- Opções de rodadas serão geradas via JS -->
+            </select>
+            <div class="prize-display">
+              <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada:
+                [Clique para
+                editar]</span>
+            </div>
+          </div>
+          <div class="switch-container" style="margin-bottom: 10px;">
+            <label class="switch">
+              <input type="checkbox" id="round-completed-checkbox">
+              <span class="slider"></span>
+            </label>
+            <span style="font-size: 0.9em; color: #666; font-weight: bold;">Rodada Concluída</span>
+          </div>
+        </div>
+        <div class="pattern-animator">
+          <div id="pattern-grid" class="pattern-grid"
+            title="Clique nos quadrados para definir o padrão ou use o botão ao lado"></div>
+          <select id="pattern-select" class="pattern-select-input" title="Selecionar padrão"></select>
+        </div>
       </div>
     </section>
 

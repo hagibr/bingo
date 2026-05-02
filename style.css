@@ -125,6 +125,26 @@ body {
   border: 1px solid #ccc;
 }
 
+.round-header-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.round-info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.round-selection-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .round-section label,
 .round-section select,
 .prize-display {
