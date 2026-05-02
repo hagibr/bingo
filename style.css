@@ -154,6 +154,27 @@ body {
   display: inline-block;
 }
 
+.completed-round-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9em;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.completed-badge {
+  background-color: #dc3545;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6em;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
 .prize-display:focus {
   outline: 2px solid #007bff;
   background-color: #e2f0ff;

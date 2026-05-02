@@ -1,3 +1,4 @@
+// Inicializa a aplicação assim que o DOM estiver completamente carregado
 document.addEventListener('DOMContentLoaded', () => {
   // --- Elementos do DOM ---
   const eventIcon = document.getElementById('event-icon');
@@ -7,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const prizeLabel = document.getElementById('prize-label');
   const drawnNumbersList = document.getElementById('drawn-numbers-list');
   const toggleSortButton = document.getElementById('toggle-sort-button');
+  const roundCompletedCheckbox = document.getElementById('round-completed-checkbox');
   const manualNumberInput = document.getElementById('manual-number-input');
   const confirmNumberButton = document.getElementById('confirm-number-button');
   const undoLastButton = document.getElementById('undo-last-button');
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     patternSelect.appendChild(option);
   });
 
-  // Config Modal Elements
+  // --- Elementos do Modal de Configuração ---
   const configModal = document.getElementById('config-modal');
   const closeConfigButton = document.getElementById('close-config-button');
   const configEventName = document.getElementById('config-event-name');
@@ -68,7 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const importSessionButton = document.getElementById('import-session-button');
   const importSessionInput = document.getElementById('import-session-input');
 
-  // --- Gera um ID aleatório ---
+  /**
+   * Gera uma string aleatória de 6 caracteres (excluindo I e O) para identificação da sessão.
+   * @param {number} length - Tamanho do ID a ser gerado.
+   */
   const generateRandomId = (length = 6) => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
     let result = '';
@@ -87,7 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   let appState = {};
 
-  // --- Cria uma sessão com valores padrão ---
+  /**
+   * Cria um objeto de estado inicial para uma nova sessão de bingo com rodadas padrão.
+   * @param {string} name - Nome da sessão a ser criada.
+   */
   const createDefaultSessionState = (name) => {
     const newState = {
       eventName: name,
@@ -100,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       isSortedAscending: false
     };
     for (let i = 1; i <= newState.numRounds; i++) {
-      newState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
+      newState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0, isCompleted: false };
     }
     return newState;
   };
@@ -129,8 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
    *   }
    * }
    */
-  // --- Firebase Sync ---
+
   let syncTimeout = null;
+  /**
+   * Sincroniza o objeto sessionsData completo com o Firebase Realtime Database.
+   * @param {boolean} immediate - Se verdadeiro, ignora o debounce e executa a sincronização na hora.
+   */
   const syncToFirebase = (immediate = false) => {
     const performSync = () => {
       if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData && sessionsData.sessionId) {
@@ -151,12 +163,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- Funções de Persistência (Local Storage) ---
+  /**
+   * Salva o estado atual no localStorage do navegador e agenda a sincronização com o Firebase.
+   * @param {boolean} immediate - Define se a sincronização com o Firebase deve ser imediata.
+   */
   const saveState = (immediate = false) => {
     localStorage.setItem('bingoSessionsData', JSON.stringify(sessionsData));
     syncToFirebase(immediate);
   };
 
+  /**
+   * Recupera os dados salvos no localStorage ou realiza a migração de dados de versões antigas.
+   * Inicializa a sessão ativa e configura o Firebase.
+   */
   const loadState = () => {
     const storedData = localStorage.getItem('bingoSessionsData');
     if (storedData) {
@@ -197,7 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   };
 
-  // --- Funções de Atualização da UI ---
+  /**
+   * Atualiza todos os elementos visuais da interface (textos, listas, seletores e modais) com base no estado atual.
+   * @param {boolean} immediateSync - Define se as alterações devem ser salvas no Firebase imediatamente.
+   */
   const updateUI = (immediateSync = false) => {
     // Header
     eventTitle.textContent = appState.eventName;
@@ -208,6 +230,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Round Selector
     updateRoundSelector();
     roundSelector.value = appState.currentRound;
+
+    // Checkbox de Conclusão
+    const currentRoundData = appState.rounds[appState.currentRound];
+    roundCompletedCheckbox.checked = !!currentRoundData.isCompleted;
+
+    // Desabilita controles se a rodada estiver concluída
+    const isLocked = !!currentRoundData.isCompleted;
+    manualNumberInput.disabled = isLocked;
+    confirmNumberButton.disabled = isLocked;
+    drawRandomButton.disabled = isLocked;
+    undoLastButton.disabled = isLocked;
 
     // Prize Label
     prizeLabel.textContent = appState.rounds[appState.currentRound].prize;
@@ -258,6 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState(immediateSync);
   };
 
+  /**
+   * Preenche o menu suspenso de escolha de sessões dentro do modal de configurações.
+   */
   const updateSessionSelector = () => {
     configSessionSelector.innerHTML = '';
     Object.keys(sessionsData.sessions).forEach(name => {
@@ -269,6 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  /**
+   * Atualiza as opções do seletor de rodadas na interface principal.
+   */
   const updateRoundSelector = () => {
     roundSelector.innerHTML = ''; // Limpa opções existentes
     for (let i = 1; i <= appState.numRounds; i++) {
@@ -279,16 +318,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  /**
+   * Gera a grade 5x5 de células para a definição manual do padrão da rodada.
+   */
   const initPatternGrid = () => {
     patternGrid.innerHTML = '';
     for (let i = 0; i < 25; i++) {
       const cell = document.createElement('div');
       cell.classList.add('pattern-cell');
+      // Adiciona evento para alternar a marcação da célula no padrão manual
       cell.addEventListener('click', () => togglePatternCell(i));
       patternGrid.appendChild(cell);
     }
   };
 
+  /**
+   * Altera a aparência das células da grade de padrão para refletir quais estão ativas.
+   * @param {number[]} activeIndices - Lista de índices (0-24) que devem ser destacados.
+   */
   const updatePatternGridUI = (activeIndices) => {
     const cells = patternGrid.querySelectorAll('.pattern-cell');
     cells.forEach((cell, i) => {
@@ -300,6 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  /**
+   * Inicia o loop de animação da grade de padrão, alternando entre quadros para criar o efeito visual.
+   */
   const startAnimationLoop = () => {
     const run = () => {
       const currentRoundData = appState.rounds[appState.currentRound];
@@ -333,6 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
     run();
   };
 
+  /**
+   * Adiciona ou remove um índice da lista de padrão personalizado da rodada ativa ao clicar na grade.
+   * @param {number} index - O índice da célula clicada (0-24).
+   */
   const togglePatternCell = (index) => {
     const currentRoundData = appState.rounds[appState.currentRound];
     currentRoundData.patternIndex = 0; // Muda para personalizado ao clicar
@@ -347,6 +401,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState(true);
   };
 
+  /**
+   * Renderiza a lista de números sorteados na tela, aplicando destaques e ordenação.
+   */
   const displayDrawnNumbers = () => {
     drawnNumbersList.innerHTML = '';
     const currentRoundData = appState.rounds[appState.currentRound];
@@ -372,9 +429,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // --- Funções de Lógica de Bingo ---
+  /**
+   * Valida e registra um novo número sorteado na rodada atual.
+   * @param {number} number - O número digitado ou sorteado aleatoriamente.
+   */
   const addDrawnNumber = (number) => {
     const currentRoundData = appState.rounds[appState.currentRound];
+    if (currentRoundData.isCompleted) {
+      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      return;
+    }
     if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
     if (number < 1 || number > appState.maxNumber || isNaN(number)) {
       alert(`Por favor, digite um número válido entre 01 e ${appState.maxNumber.toString().padStart(2, '0')}.`);
@@ -392,8 +456,15 @@ document.addEventListener('DOMContentLoaded', () => {
     manualNumberInput.focus();
   };
 
+  /**
+   * Remove o último número sorteado da lista da rodada atual, após confirmação.
+   */
   const undoLastDrawnNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
+    if (currentRoundData.isCompleted) {
+      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      return;
+    }
     if (currentRoundData && currentRoundData.drawnNumbers && currentRoundData.drawnNumbers.length > 0) {
       if (confirm("Tem certeza que deseja desfazer o último número sorteado?")) {
         currentRoundData.drawnNumbers.pop(); // Remove o último
@@ -406,8 +477,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  /**
+   * Seleciona um número aleatório ainda não sorteado dentro do intervalo definido (1-MaxNumber).
+   */
   const drawRandomNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
+    if (currentRoundData.isCompleted) {
+      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      return;
+    }
     if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
     const availableNumbers = [];
     for (let i = 1; i <= appState.maxNumber; i++) {
@@ -427,22 +505,32 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- Event Listeners ---
+  // Abre o modal de configurações do evento
   configButton.addEventListener('click', () => {
     configModal.classList.remove('hidden');
   });
 
+  /**
+   * Fecha o modal de configurações e atualiza a interface.
+   */
   const closeModal = () => {
     configModal.classList.add('hidden');
     updateUI(); // Atualiza a UI principal caso algo tenha sido alterado
   };
 
+  /**
+   * Fecha o modal de exibição do QR Code.
+   */
   const closeQrModal = () => {
     qrModal.classList.add('hidden');
   };
 
+  // Fecha o modal de configurações ao clicar no botão "Fechar"
   closeConfigButton.addEventListener('click', closeModal);
+  // Fecha o modal de configurações ao clicar no "X"
   closeModalX.addEventListener('click', closeModal);
 
+  // Atalhos de teclado (Escape para fechar modais)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !configModal.classList.contains('hidden')) {
       closeModal();
@@ -452,11 +540,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Altera a rodada ativa quando o usuário seleciona outra no menu suspenso
   roundSelector.addEventListener('change', (e) => {
     appState.currentRound = parseInt(e.target.value);
     updateUI(true);
   });
 
+  // Marca ou desmarca a rodada como concluída
+  roundCompletedCheckbox.addEventListener('change', (e) => {
+    const currentRoundData = appState.rounds[appState.currentRound];
+    currentRoundData.isCompleted = e.target.checked;
+    updateUI(true);
+  });
+
+  // Salva o nome do prêmio quando o usuário para de editar o campo
   prizeLabel.addEventListener('blur', (e) => {
     if (e.target.textContent.trim() === '') {
       e.target.textContent = `Prêmio da Rodada ${appState.currentRound}`;
@@ -465,26 +562,32 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState(true);
   });
 
+  // Confirma a adição manual de um número digitado
   confirmNumberButton.addEventListener('click', () => {
     const number = parseInt(manualNumberInput.value);
     addDrawnNumber(number);
   });
 
+  // Permite adicionar número manual pressionando a tecla Enter
   manualNumberInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       confirmNumberButton.click();
     }
   });
 
+  // Desfaz o último número sorteado
   undoLastButton.addEventListener('click', undoLastDrawnNumber);
 
+  // Alterna entre ordem de sorteio e ordem crescente na exibição
   toggleSortButton.addEventListener('click', () => {
     appState.isSortedAscending = !appState.isSortedAscending;
     updateUI(true);
   });
 
+  // Sorteia um número aleatório (disponível no modo automático)
   drawRandomButton.addEventListener('click', drawRandomNumber);
 
+  // Altera o padrão visual da rodada (Linha, Coluna, etc.)
   patternSelect.addEventListener('change', (e) => {
     const currentRoundData = appState.rounds[appState.currentRound];
     currentRoundData.patternIndex = parseInt(e.target.value);
@@ -494,22 +597,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Config Modal Event Listeners
+  // Troca a sessão ativa dentro do modal de configurações
   configSessionSelector.addEventListener('change', (e) => {
     sessionsData.activeSessionName = e.target.value;
     appState = sessionsData.sessions[sessionsData.activeSessionName];
     updateUI(true);
   });
 
+  // Sincroniza o ID da sessão pública conforme o usuário digita
   configSessionId.addEventListener('input', (e) => {
     sessionsData.sessionId = e.target.value.toUpperCase();
     updateUI(false); // Sincronização em segundo plano enquanto digita
   });
 
+  // Gera um novo ID de sessão aleatório
   regenerateIdButton.addEventListener('click', () => {
     sessionsData.sessionId = generateRandomId();
     updateUI(true);
   });
 
+  // Copia o link de visualização para a área de transferência
   copyLinkButton.addEventListener('click', () => {
     const shareLink = document.getElementById('config-share-link');
     navigator.clipboard.writeText(shareLink.value).then(() => {
@@ -522,6 +629,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  /**
+   * Gera o QR Code para o link de visualização e abre o modal correspondente.
+   */
   const openQrModal = () => {
     const shareLink = document.getElementById('config-share-link');
 
@@ -538,12 +648,17 @@ document.addEventListener('DOMContentLoaded', () => {
     qrLinkDisplay.textContent = shareLink.value; // Exibe o link abaixo do QR Code
   };
 
+  // Abre o modal de QR Code a partir do botão no cabeçalho
   if (headerQrButton) headerQrButton.addEventListener('click', openQrModal);
+  // Abre o modal de QR Code a partir do botão no modal de configurações
   showQrButton.addEventListener('click', openQrModal);
 
+  // Fecha o modal de QR Code ao clicar no "X"
   closeQrModalX.addEventListener('click', closeQrModal);
+  // Fecha o modal de QR Code ao clicar no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
+  // Busca dados de uma sessão existente no Firebase usando ID e Token
   loadFromFirebaseButton.addEventListener('click', async () => {
     let id = configSessionId.value.trim().toUpperCase();
     if (id.length !== 6) {
@@ -583,11 +698,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Atualiza o token de escrita conforme o usuário digita
   configFirebaseWriteToken.addEventListener('input', (e) => {
     sessionsData.firebaseWriteToken = e.target.value;
     saveState(false); // Sincronização em segundo plano enquanto digita
   });
 
+  // Cria uma nova sessão no projeto atual
   newSessionButton.addEventListener('click', () => {
     const name = prompt("Nome da nova sessão:");
     if (name && name.trim() !== "") {
@@ -602,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Exclui a sessão ativa atual
   deleteSessionButton.addEventListener('click', () => {
     const names = Object.keys(sessionsData.sessions);
     const currentName = sessionsData.activeSessionName;
@@ -626,6 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Renomeia o evento e sincroniza com a chave da sessão
   configEventName.addEventListener('input', (e) => {
     const newName = e.target.value;
     const oldName = sessionsData.activeSessionName;
@@ -639,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(false); // Sincronização em segundo plano enquanto digita
   });
 
+  // Altera a quantidade de rodadas do evento
   configNumRounds.addEventListener('change', (e) => {
     const newNumRounds = parseInt(e.target.value);
     if (newNumRounds < 1) {
@@ -649,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionar ou remover rodadas conforme necessário
     if (newNumRounds > appState.numRounds) {
       for (let i = appState.numRounds + 1; i <= newNumRounds; i++) {
-        appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0 };
+        appState.rounds[i] = { prize: `Prêmio da Rodada ${i}`, drawnNumbers: [], lastDrawn: null, pattern: [], patternIndex: 0, isCompleted: false };
       }
     } else if (newNumRounds < appState.numRounds) {
       // Remover rodadas extras (cuidado para não perder dados se já houver sorteios)
@@ -669,23 +789,40 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   });
 
+  // Altera o limite máximo de números para o bingo (ex: 75 ou 90)
   configMaxNumber.addEventListener('change', (e) => {
     const newMax = parseInt(e.target.value);
-    if (newMax < 1 || newMax > 200) { // Limite arbitrário para max 200
-      alert("O número máximo deve ser entre 1 e 200.");
+    if (isNaN(newMax) || newMax < 1 || newMax > 90) {
+      alert("O número máximo deve ser entre 1 e 90.");
       configMaxNumber.value = appState.maxNumber;
       return;
     }
-    // TODO: Adicionar lógica para verificar se números já sorteados excedem o novo maxNumber
+
+    // Verifica se algum número sorteado em qualquer rodada excede o novo limite
+    let invalidNumber = null;
+    for (const roundId in appState.rounds) {
+      const drawn = appState.rounds[roundId].drawnNumbers || [];
+      invalidNumber = drawn.find(n => n > newMax);
+      if (invalidNumber) break;
+    }
+
+    if (invalidNumber) {
+      alert(`Não é possível reduzir o limite para ${newMax}, pois o número ${invalidNumber.toString().padStart(2, '0')} já foi sorteado em uma das rodadas.`);
+      configMaxNumber.value = appState.maxNumber;
+      return;
+    }
+
     appState.maxNumber = newMax;
     saveState(true);
   });
 
+  // Altera entre modo de sorteio manual (input) ou automático (botão)
   configDrawMode.addEventListener('change', (e) => {
     appState.drawMode = e.target.value;
     updateUI(true);
   });
 
+  // Processa o upload de uma imagem personalizada para o ícone do evento
   configIconUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -700,6 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Gera e baixa um arquivo JSON com todos os dados do projeto
   exportSessionButton.addEventListener('click', () => {
     // Criamos uma cópia para processar a exportação sem alterar o estado em memória
     const stateToExport = JSON.parse(JSON.stringify(appState));
@@ -722,10 +860,12 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
+  // Gatilho para o seletor de arquivo de importação
   importSessionButton.addEventListener('click', () => {
     importSessionInput.click(); // Dispara o clique no input de arquivo escondido
   });
 
+  // Lê e processa o arquivo JSON selecionado para importar dados
   importSessionInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {

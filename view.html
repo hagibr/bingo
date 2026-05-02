@@ -39,7 +39,10 @@
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
       <section class="round-section" style="text-align: center;">
-        <h2 id="current-round-label">Rodada</h2>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
+          <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
+          <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
+        </div>
         <div class="prize-display" style="cursor: default;">
           <span id="prize-label">Aguardando prêmio...</span>
         </div>

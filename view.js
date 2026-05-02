@@ -1,3 +1,4 @@
+// Inicializa a visualização do espectador assim que o DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   let sessionId = params.get('id');
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
   const qrLinkDisplay = document.getElementById('qr-link-display');
   const patternNameDisplay = document.getElementById('pattern-name-display');
+  const roundCompletedStatus = document.getElementById('round-completed-status');
 
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
@@ -37,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let animationPhase = true;
 
+  /**
+   * Atualiza todos os textos e a lista de números sorteados na tela do espectador.
+   */
   const updateUI = () => {
     if (!appState) return;
 
@@ -47,6 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentRoundData = appState.rounds[appState.currentRound];
     if (!currentRoundData) return;
+
+    // Status de Conclusão
+    if (roundCompletedStatus) {
+      if (currentRoundData.isCompleted) {
+        roundCompletedStatus.classList.remove('hidden');
+      } else {
+        roundCompletedStatus.classList.add('hidden');
+      }
+    }
 
     document.getElementById('prize-label').textContent = currentRoundData.prize || `Prêmio da Rodada ${appState.currentRound}`;
 
@@ -68,6 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  /**
+   * Inicializa a grade 5x5 de células de padrão para o espectador.
+   */
   const initGrid = () => {
     const grid = document.getElementById('pattern-grid');
     grid.innerHTML = '';
@@ -78,6 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  /**
+   * Atualiza visualmente o estado das células na grade do espectador.
+   * @param {number[]} indices - Índices das células que devem ser destacadas.
+   */
   const updateGridUI = (indices) => {
     const cells = document.querySelectorAll('.pattern-cell');
     cells.forEach((cell, i) => {
@@ -85,6 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  /**
+   * Inicia o loop de animação sincronizada do padrão de bingo para o espectador.
+   */
   const startAnimation = () => {
     setInterval(() => {
       if (!appState) return;
@@ -111,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   };
 
+  /**
+   * Conecta o Firebase para escutar atualizações em tempo real de uma sessão específica.
+   * @param {string} id - Código da sessão (ID Público).
+   */
   const connectToSession = (id) => {
     if (!id) return;
 
@@ -134,11 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  /**
+   * Fecha o modal de QR Code na visualização do espectador.
+   */
   const closeQrModal = () => {
     qrModal.classList.add('hidden');
   };
 
-  // Lógica de Entrada Manual
+  // Tenta conectar a uma sessão ao clicar no botão de entrada manual
   joinSessionButton.addEventListener('click', () => {
     const id = manualIdInput.value.trim().toUpperCase();
     if (id.length === 6) {
@@ -149,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Gera o QR Code de compartilhamento para outros espectadores
   showQrButton.addEventListener('click', () => {
     if (!sessionId) {
       alert("Entre em uma sessão primeiro para compartilhar.");
@@ -172,9 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
     qrLinkDisplay.textContent = url.toString(); // Exibe o link abaixo do QR Code
   });
 
+  // Fecha o modal de QR Code no "X"
   closeQrModalX.addEventListener('click', closeQrModal);
+  // Fecha o modal de QR Code no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
+  // Atalho para fechar o modal de QR Code com a tecla Escape
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
       closeQrModal();
