@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrLinkDisplay = document.getElementById('qr-link-display');
   const patternNameDisplay = document.getElementById('pattern-name-display');
   const roundCompletedStatus = document.getElementById('round-completed-status');
+  const prevRoundButton = document.getElementById('prev-round');
+  const nextRoundButton = document.getElementById('next-round');
+  const viewingActiveBadge = document.getElementById('viewing-active-badge');
 
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
@@ -27,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentRef = null;
 
   let appState = null;
+  let viewedRound = null; // Rodada que o usuário está olhando no momento
+  let followActive = true; // Se o usuário está seguindo a rodada ativa do organizador
+
   const BINGO_PATTERNS = [
     { name: "Personalizado", sequences: [] },
     { name: "Linha", sequences: [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24]] },
@@ -48,9 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('event-title').textContent = appState.eventName;
     document.title = "Bingo: " + appState.eventName;
     document.getElementById('event-icon').src = appState.eventIcon;
-    document.getElementById('current-round-label').textContent = "Rodada " + appState.currentRound;
 
-    const currentRoundData = appState.rounds[appState.currentRound];
+    const roundToDisplay = viewedRound || appState.currentRound;
+    document.getElementById('current-round-label').textContent = "Rodada " + roundToDisplay;
+
+    // Indicador de Rodada Atual
+    const isViewingActive = (roundToDisplay === appState.currentRound);
+    if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isViewingActive);
+
+    const currentRoundData = appState.rounds[roundToDisplay];
     if (!currentRoundData) return;
 
     // Status de Conclusão
@@ -62,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    document.getElementById('prize-label').textContent = currentRoundData.prize || `Prêmio da Rodada ${appState.currentRound}`;
+    document.getElementById('prize-label').textContent = currentRoundData.prize || `Prêmio da Rodada ${roundToDisplay}`;
 
     // Números sorteados
     const list = document.getElementById('drawn-numbers-list');
@@ -80,6 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (num === currentRoundData.lastDrawn) item.classList.add('last-drawn');
       list.appendChild(item);
     });
+
+    // Atualiza estado dos botões de navegação
+    prevRoundButton.disabled = roundToDisplay <= 1;
+    nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
   };
 
   /**
@@ -112,7 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const startAnimation = () => {
     setInterval(() => {
       if (!appState) return;
-      const rd = appState.rounds[appState.currentRound];
+      const roundToDisplay = viewedRound || appState.currentRound;
+      const rd = appState.rounds[roundToDisplay];
       if (!rd) return;
       const pIdx = rd.patternIndex || 0;
 
@@ -150,7 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = snapshot.val();
       // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
       if (data && data.sessions && data.activeSessionName) {
-        appState = data.sessions[data.activeSessionName];
+        const newState = data.sessions[data.activeSessionName];
+
+        // Se estiver seguindo a rodada ativa ou for o primeiro carregamento
+        if (followActive || viewedRound === null) {
+          viewedRound = newState.currentRound;
+        }
+
+        appState = newState;
         idEntrySection.classList.add('hidden');
         bingoContent.classList.remove('hidden');
         updateUI();
@@ -202,6 +226,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     qrModal.classList.remove('hidden');
     qrLinkDisplay.textContent = url.toString(); // Exibe o link abaixo do QR Code
+  });
+
+  // Navegação: Rodada Anterior
+  prevRoundButton.addEventListener('click', () => {
+    viewedRound = Math.max(1, viewedRound - 1);
+    followActive = (viewedRound === appState.currentRound);
+    updateUI();
+  });
+
+  // Navegação: Próxima Rodada
+  nextRoundButton.addEventListener('click', () => {
+    viewedRound = Math.min(appState.numRounds, viewedRound + 1);
+    followActive = (viewedRound === appState.currentRound);
+    updateUI();
   });
 
   // Fecha o modal de QR Code no "X"

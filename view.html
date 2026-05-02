@@ -39,12 +39,19 @@
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
       <section class="round-section" style="text-align: center;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
-          <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
-          <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
-        </div>
-        <div class="prize-display" style="cursor: default;">
-          <span id="prize-label">Aguardando prêmio...</span>
+        <div class="round-nav-container">
+          <button id="prev-round" class="nav-button" title="Rodada Anterior">&lt;&lt;</button>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
+              <span id="viewing-active-badge" class="active-badge hidden">ATUAL</span>
+              <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
+            </div>
+            <div class="prize-display" style="cursor: default;">
+              <span id="prize-label">Aguardando prêmio...</span>
+            </div>
+          </div>
+          <button id="next-round" class="nav-button" title="Próxima Rodada">&gt;&gt;</button>
         </div>
         <div class="pattern-animator">
           <div id="pattern-grid" class="pattern-grid"></div>
