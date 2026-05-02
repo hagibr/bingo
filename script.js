@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const patternGrid = document.getElementById('pattern-grid');
   const patternSelect = document.getElementById('pattern-select');
   const configSessionSelector = document.getElementById('config-session-selector');
+  const moveSessionUpButton = document.getElementById('move-session-up-button');
+  const moveSessionDownButton = document.getElementById('move-session-down-button');
   const newSessionButton = document.getElementById('new-session-button');
   const deleteSessionButton = document.getElementById('delete-session-button');
   const configSessionId = document.getElementById('config-session-id');
@@ -89,7 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionId: generateRandomId(),
     firebaseWriteToken: "",
     activeSessionName: "Sessão Padrão",
-    sessions: {}
+    sessions: {},
+    sessionOrder: []
   };
   let appState = {};
 
@@ -192,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionsData.sessionId = current?.sessionId || generateRandomId();
         sessionsData.firebaseWriteToken = current?.firebaseWriteToken || "";
       }
+      if (!sessionsData.sessionOrder) sessionsData.sessionOrder = Object.keys(sessionsData.sessions);
 
       appState = sessionsData.sessions[sessionsData.activeSessionName];
     } else {
@@ -203,11 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionsData.sessionId = parsedLegacy.sessionId || generateRandomId();
         sessionsData.firebaseWriteToken = parsedLegacy.firebaseWriteToken || "";
         sessionsData.sessions[name] = parsedLegacy;
+        sessionsData.sessionOrder = [name];
         sessionsData.activeSessionName = name;
       } else {
         sessionsData.sessionId = generateRandomId();
         const defaultName = "Sessão Padrão";
         sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        sessionsData.sessionOrder = [defaultName];
         sessionsData.activeSessionName = defaultName;
       }
       appState = sessionsData.sessions[sessionsData.activeSessionName];
@@ -282,6 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
     configSessionId.value = sessionsData.sessionId || '';
     updateSessionSelector();
 
+    // Desabilita botões de reordenação se necessário
+    const orderIdx = sessionsData.sessionOrder.indexOf(sessionsData.activeSessionName);
+    if (moveSessionUpButton) moveSessionUpButton.disabled = orderIdx <= 0;
+    if (moveSessionDownButton) moveSessionDownButton.disabled = orderIdx >= sessionsData.sessionOrder.length - 1;
+
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
 
@@ -301,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const updateSessionSelector = () => {
     configSessionSelector.innerHTML = '';
-    Object.keys(sessionsData.sessions).forEach(name => {
+    sessionsData.sessionOrder.forEach(name => {
+      if (!sessionsData.sessions[name]) return;
       const option = document.createElement('option');
       option.value = name;
       option.textContent = name;
@@ -512,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Event Listeners ---
   // Abre o modal de configurações do evento
   configButton.addEventListener('click', () => {
+    updateUI(); // Garante que os estados dos botões de reordenação estejam atualizados
     configModal.classList.remove('hidden');
   });
 
@@ -609,6 +622,25 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   });
 
+  /**
+   * Altera a ordem da sessão ativa na lista de sessões.
+   * @param {number} direction - -1 para subir, 1 para descer.
+   */
+  const moveSession = (direction) => {
+    const name = sessionsData.activeSessionName;
+    const index = sessionsData.sessionOrder.indexOf(name);
+    if (index === -1) return;
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= sessionsData.sessionOrder.length) return;
+
+    // Troca de posição no array de ordem
+    const temp = sessionsData.sessionOrder[index];
+    sessionsData.sessionOrder[index] = sessionsData.sessionOrder[newIndex];
+    sessionsData.sessionOrder[newIndex] = temp;
+
+    updateUI(true);
+  };
+
   // Sincroniza o ID da sessão pública conforme o usuário digita
   configSessionId.addEventListener('input', (e) => {
     sessionsData.sessionId = e.target.value.toUpperCase();
@@ -620,6 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionsData.sessionId = generateRandomId();
     updateUI(true);
   });
+
+  // Reordenação de sessões
+  moveSessionUpButton.addEventListener('click', () => moveSession(-1));
+  moveSessionDownButton.addEventListener('click', () => moveSession(1));
 
   // Copia o link de visualização para a área de transferência
   copyLinkButton.addEventListener('click', () => {
@@ -718,6 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       sessionsData.sessions[name] = createDefaultSessionState(name);
+      sessionsData.sessionOrder.push(name);
       sessionsData.activeSessionName = name;
       appState = sessionsData.sessions[name];
       updateUI(true);
@@ -734,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
         delete sessionsData.sessions[currentName];
         const defaultName = "Sessão Padrão";
         sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        sessionsData.sessionOrder = [defaultName];
         sessionsData.activeSessionName = defaultName;
         appState = sessionsData.sessions[defaultName];
         updateUI(true);
@@ -743,6 +781,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
       delete sessionsData.sessions[currentName];
+      sessionsData.sessionOrder = sessionsData.sessionOrder.filter(n => n !== currentName);
       sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
       appState = sessionsData.sessions[sessionsData.activeSessionName];
       updateUI(true);
@@ -758,6 +797,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renomeia a chave no objeto de sessões
     sessionsData.sessions[newName] = sessionsData.sessions[oldName];
     delete sessionsData.sessions[oldName];
+
+    // Atualiza o nome na lista de ordem
+    const orderIdx = sessionsData.sessionOrder.indexOf(oldName);
+    if (orderIdx !== -1) sessionsData.sessionOrder[orderIdx] = newName;
+
     sessionsData.activeSessionName = newName;
     appState.eventName = newName;
     updateUI(false); // Sincronização em segundo plano enquanto digita
