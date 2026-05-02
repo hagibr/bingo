@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const patternNameDisplay = document.getElementById('pattern-name-display');
 
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
@@ -89,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const rd = appState.rounds[appState.currentRound];
       if (!rd) return;
       const pIdx = rd.patternIndex || 0;
+
+      // Atualiza a legenda com o nome do padrão
+      if (patternNameDisplay) {
+        patternNameDisplay.textContent = BINGO_PATTERNS[pIdx]?.name || "Personalizado";
+      }
 
       if (animationPhase) {
         if (pIdx === 0) updateGridUI(rd.pattern || []);
