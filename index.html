@@ -75,6 +75,33 @@
           <label for="config-event-name">Nome do Evento:</label>
           <input type="text" id="config-event-name">
         </div>
+
+        <div>
+          <label for="config-num-rounds">Nº de Rodadas:</label>
+          <input type="number" id="config-num-rounds" min="1">
+        </div>
+        <div>
+          <label for="config-max-number">Nº Máximo:</label>
+          <input type="number" id="config-max-number" min="1" max="200">
+        </div>
+
+        <div>
+          <label for="config-draw-mode">Modo de Sorteio:</label>
+          <select id="config-draw-mode">
+            <option value="manual">Manual</option>
+            <option value="automatic">Automático</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="config-icon-upload">Upload de Ícone:</label>
+          <input type="file" id="config-icon-upload" accept="image/*">
+          <div class="icon-preview-wrapper">
+            <img id="config-icon-preview" src="default-icon.png" alt="Prévia do Ícone" class="event-icon-preview">
+            <button id="config-icon-remove" class="remove-icon-badge" title="Restaurar ícone padrão">&times;</button>
+          </div>
+        </div>
+
         <div>
           <label for="config-session-id">Código da Sessão (ID Público):</label>
           <div style="display: flex; gap: 10px;">
@@ -99,27 +126,6 @@
           </div>
         </div>
 
-        <div>
-          <label for="config-num-rounds">Nº de Rodadas:</label>
-          <input type="number" id="config-num-rounds" min="1">
-        </div>
-        <div>
-          <label for="config-max-number">Nº Máximo:</label>
-          <input type="number" id="config-max-number" min="1" max="200">
-        </div>
-
-        <div>
-          <label for="config-draw-mode">Modo de Sorteio:</label>
-          <select id="config-draw-mode">
-            <option value="manual">Manual</option>
-            <option value="automatic">Automático</option>
-          </select>
-        </div>
-        <div>
-          <label for="config-icon-upload">Upload de Ícone:</label>
-          <input type="file" id="config-icon-upload" accept="image/*">
-          <img id="config-icon-preview" src="default-icon.png" alt="Prévia do Ícone" class="event-icon-preview">
-        </div>
       </div>
 
 

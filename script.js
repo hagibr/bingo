@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const configMaxNumber = document.getElementById('config-max-number');
   const configDrawMode = document.getElementById('config-draw-mode');
   const configIconUpload = document.getElementById('config-icon-upload');
+  const configIconRemove = document.getElementById('config-icon-remove');
   const configFirebaseWriteToken = document.getElementById('config-firebase-write-token');
   const configIconPreview = document.getElementById('config-icon-preview');
   const exportSessionButton = document.getElementById('export-session-button');
@@ -840,6 +841,20 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsDataURL(file); // Converte a imagem para Base64
     }
   });
+
+  // Restaura o ícone padrão do evento
+  configIconRemove.addEventListener('click', () => {
+    // Se o ícone já for o padrão, não faz nada
+    if (appState.eventIcon === "default-icon.png") return;
+
+    appState.eventIcon = "default-icon.png";
+    eventIcon.src = appState.eventIcon;
+    configIconPreview.src = appState.eventIcon;
+    configIconUpload.value = ''; // Limpa o campo de upload
+    saveState(true);
+    alert("Ícone padrão restaurado.");
+  });
+
 
   // Gera e baixa um arquivo JSON com todos os dados do projeto
   exportSessionButton.addEventListener('click', () => {

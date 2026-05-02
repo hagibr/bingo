@@ -337,6 +337,8 @@ button:hover {
   flex-direction: column;
   gap: 15px;
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .close-x {
@@ -393,14 +395,43 @@ button:hover {
   padding: 5px 0;
 }
 
-.event-icon-preview {
+.icon-preview-wrapper {
+  position: relative;
   width: 80px;
   height: 80px;
+  margin-top: 10px;
+}
+
+.event-icon-preview {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #ccc;
-  margin-top: 10px;
   display: block;
+}
+
+.remove-icon-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background-color: #dc3545;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.remove-icon-badge:hover {
+  background-color: #c82333;
 }
 
 .modal-actions {
