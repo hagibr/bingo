@@ -19,9 +19,24 @@
 
 <body class="viewer-mode">
   <header class="app-header">
-    <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
-    <h1 id="event-title">Carregando Bingo...</h1>
-    <button id="show-qr-button" class="config-button" title="Compartilhar via QR Code">📱</button>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
+      <button id="prev-session" class="nav-button hidden" style="padding: 5px 8px; font-size: 0.8em;"
+        title="Sessão Anterior">🔼</button>
+      <h1 id="event-title" style="margin: 0">Carregando Bingo...</h1>
+      <button id="next-session" class="nav-button hidden" style="padding: 5px 8px; font-size: 0.8em;"
+        title="Próxima Sessão">🔽</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <div id="auto-follow-container" class="switch-container hidden">
+        <label class="switch">
+          <input type="checkbox" id="auto-follow-checkbox" checked>
+          <span class="slider"></span>
+        </label>
+        <span style="font-size: 0.8em; color: white; font-weight: bold; white-space: nowrap;">Ao Vivo</span>
+      </div>
+      <button id="show-qr-button" class="config-button hidden" title="Compartilhar via QR Code">📱</button>
+    </div>
   </header>
 
   <main id="main-content" class="bingo-main">
@@ -38,31 +53,13 @@
 
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
-      <!-- Navegação de Sessões -->
-      <section class="session-nav-container">
-        <div class="switch-container" style="margin-bottom: 10px;">
-          <label class="switch">
-            <input type="checkbox" id="auto-follow-checkbox" checked>
-            <span class="slider"></span>
-          </label>
-          <span style="font-size: 0.9em; color: #666; font-weight: bold;">Acompanhar ao vivo</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <button id="prev-session" class="nav-button" title="Sessão Anterior">🔼</button>
-          <div style="text-align: center;">
-            <div id="viewed-session-name" style="font-weight: bold; font-size: 1.1em; color: #28a745;">Sessão</div>
-            <button id="go-to-live" class="nav-button sync-button hidden">Ir para o Atual 🔴</button>
-          </div>
-          <button id="next-session" class="nav-button" title="Próxima Sessão">🔽</button>
-        </div>
-      </section>
-
       <section class="round-section" style="text-align: center;">
         <div class="round-nav-container">
           <button id="prev-round" class="nav-button" title="Rodada Anterior">&lt;&lt;</button>
           <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
               <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
+              <button id="go-to-live" class="nav-button sync-button hidden">Ir para o Atual 🔴</button>
               <span id="viewing-active-badge" class="active-badge hidden">ATUAL</span>
               <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
             </div>

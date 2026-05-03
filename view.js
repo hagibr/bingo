@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewingActiveBadge = document.getElementById('viewing-active-badge');
   const toggleSortButton = document.getElementById('toggle-sort-button');
   const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
+  const autoFollowContainer = document.getElementById('auto-follow-container');
 
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
@@ -124,18 +125,23 @@ document.addEventListener('DOMContentLoaded', () => {
       list.appendChild(item);
     });
 
-    // Atualiza estado dos botões de navegação
+    // Atualiza visibilidade e estado dos botões de navegação
     const isLocked = followActive;
-    prevRoundButton.disabled = isLocked || roundToDisplay <= 1;
-    nextRoundButton.disabled = isLocked || roundToDisplay >= (appState.numRounds || 1);
+
+    prevRoundButton.classList.toggle('hidden', isLocked);
+    nextRoundButton.classList.toggle('hidden', isLocked);
+    prevRoundButton.disabled = roundToDisplay <= 1;
+    nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
 
     // Atualiza estado dos botões de navegação de sessões
     const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
     const currentSessIndex = sessionNames.indexOf(viewedSessionName);
-    prevSessionButton.disabled = isLocked || currentSessIndex <= 0;
-    nextSessionButton.disabled = isLocked || currentSessIndex >= sessionNames.length - 1;
+    prevSessionButton.classList.toggle('hidden', isLocked);
+    nextSessionButton.classList.toggle('hidden', isLocked);
+    prevSessionButton.disabled = currentSessIndex <= 0;
+    nextSessionButton.disabled = currentSessIndex >= sessionNames.length - 1;
 
-    if (toggleSortButton) toggleSortButton.disabled = isLocked;
+    if (toggleSortButton) toggleSortButton.classList.toggle('hidden', isLocked);
   };
 
   /**
@@ -223,11 +229,17 @@ document.addEventListener('DOMContentLoaded', () => {
         appState = fullData.sessions[viewedSessionName];
         idEntrySection.classList.add('hidden');
         bingoContent.classList.remove('hidden');
+        if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
+        if (showQrButton) showQrButton.classList.remove('hidden');
         updateUI();
       } else {
         eventTitle.textContent = "Sessão não encontrada";
         idEntrySection.classList.remove('hidden');
         bingoContent.classList.add('hidden');
+        prevSessionButton.classList.add('hidden');
+        nextSessionButton.classList.add('hidden');
+        if (autoFollowContainer) autoFollowContainer.classList.add('hidden');
+        if (showQrButton) showQrButton.classList.add('hidden');
       }
     });
   };
@@ -291,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       appState = fullData.sessions[viewedSessionName];
       // Ao mudar de sessão, foca na primeira rodada dela ou na atual se for a ativa
       viewedRound = (viewedSessionName === fullData.activeSessionName) ? appState.currentRound : 1;
-      followActive = (viewedSessionName === fullData.activeSessionName && viewedRound === appState.currentRound);
+      followActive = false; // Navegação manual desativa o acompanhamento automático
       animationPhase = true;
       updateUI();
     }
@@ -302,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Botão de Atalho para o Vivo
   goToLiveButton.addEventListener('click', () => {
-    followActive = true;
+    followActive = false; // Apenas pula para o estado atual sem reativar o auto-follow
     viewedSessionName = fullData.activeSessionName;
     appState = fullData.sessions[viewedSessionName];
     viewedRound = appState.currentRound;
@@ -312,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Navegação: Rodada Anterior
   prevRoundButton.addEventListener('click', () => {
     viewedRound = Math.max(1, viewedRound - 1);
-    followActive = (viewedSessionName === fullData.activeSessionName && viewedRound === appState.currentRound);
+    followActive = false; // Navegação manual desativa o acompanhamento automático
     animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
     updateUI();
   });
@@ -320,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Navegação: Próxima Rodada
   nextRoundButton.addEventListener('click', () => {
     viewedRound = Math.min(appState.numRounds, viewedRound + 1);
-    followActive = (viewedSessionName === fullData.activeSessionName && viewedRound === appState.currentRound);
+    followActive = false; // Navegação manual desativa o acompanhamento automático
     animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
     updateUI();
   });
