@@ -28,6 +28,7 @@
     <div style="display: flex; gap: 10px; align-items: center;">
       <span id="user-info" style="font-size: 0.8em; color: white;" class="hidden"></span>
       <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
+      <button id="sessions-mgr-button" class="config-button" title="Gerenciar Sessões">📂 Minhas Sessões</button>
       <button id="config-button" class="config-button">⚙️ Configurações</button>
       <button id="logout-button" class="undo-button" style="padding: 10px;" title="Sair">🚪</button>
     </div>
@@ -135,7 +136,7 @@
         <div>
           <label for="config-session-id">Código da Sessão (ID Público):</label>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="config-session-id" maxlength="6" style="text-transform: uppercase; flex-grow: 1;"
+            <input type="text" id="config-session-id" maxlength="16" style="text-transform: uppercase; flex-grow: 1;"
               placeholder="Ex: ABC123">
             <button id="regenerate-id-button" title="Gerar novo ID" style="background-color: #6c757d;">🔄</button>
           </div>
@@ -159,6 +160,24 @@
         <input type="file" id="import-session-input" accept="application/json" style="display: none;">
         <button id="import-session-button">Importar Sessão (JSON)</button>
         <button id="close-config-button">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Gerenciamento de Sessões -->
+  <div id="sessions-mgr-modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="close-sessions-mgr-x" class="close-x">&times;</button>
+      <h2>Gerenciar Sessões Inclusas</h2>
+      <p style="font-size: 0.9em; color: #666; margin-bottom: 5px;">Código do Projeto: <strong id="mgr-project-id"></strong></p>
+      
+      <div id="sessions-list-container" style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
+        <!-- Lista de sessões será injetada aqui -->
+      </div>
+
+      <div class="modal-actions">
+        <button id="mgr-new-session-button" style="background-color: #28a745; margin-right: auto;">➕ Nova Sessão</button>
+        <button id="close-sessions-mgr-button">Fechar</button>
       </div>
     </div>
   </div>

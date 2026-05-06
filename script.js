@@ -34,6 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
   
+  // Elementos do Gerenciador de Sessões
+  const sessionsMgrButton = document.getElementById('sessions-mgr-button');
+  const sessionsMgrModal = document.getElementById('sessions-mgr-modal');
+  const closeSessionsMgrX = document.getElementById('close-sessions-mgr-x');
+  const closeSessionsMgrButton = document.getElementById('close-sessions-mgr-button');
+  const mgrNewSessionButton = document.getElementById('mgr-new-session-button');
+  const sessionsListContainer = document.getElementById('sessions-list-container');
+
   // Elementos de Autenticação
   const loginOverlay = document.getElementById('login-overlay');
   const adminHeader = document.getElementById('admin-header');
@@ -85,13 +93,25 @@ document.addEventListener('DOMContentLoaded', () => {
    * Gera uma string aleatória de 6 caracteres (excluindo I e O) para identificação da sessão.
    * @param {number} length - Tamanho do ID a ser gerado.
    */
-  const generateRandomId = (length = 6) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
+  const generateRandomId = (length = 16) => {
+    // Incluímos números (exceto 0 e 1) e removemos I e O para evitar confusão visual
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+  };
+
+  /**
+   * Verifica no Firebase se um ID de sessão já está em uso.
+   * @param {string} id - O ID a ser verificado.
+   * @returns {Promise<boolean>} - True se o ID já existir.
+   */
+  const checkIdExists = async (id) => {
+    if (typeof firebase === 'undefined' || firebase.apps.length === 0) return false;
+    const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+    return snapshot.exists();
   };
 
   // --- Estado da Aplicação ---
@@ -134,7 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const performSync = () => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
       // Isso garante que a restauração de dados e edições de ID/Token não causem conflitos ou sobrescritas acidentais.
-      if (configModal && !configModal.classList.contains('hidden')) return;
+      const isConfigOpen = configModal && !configModal.classList.contains('hidden');
+      const isMgrOpen = sessionsMgrModal && !sessionsMgrModal.classList.contains('hidden');
+      if (isConfigOpen || isMgrOpen) return;
 
       const user = firebase.auth().currentUser;
       if (!user) return; // Só sincroniza se estiver logado
@@ -665,16 +687,50 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   };
 
-  // Sincroniza o ID da sessão pública conforme o usuário digita
-  configSessionId.addEventListener('input', (e) => {
-    sessionsData.sessionId = e.target.value.toUpperCase();
-    updateUI(false); // Sincronização em segundo plano enquanto digita
+  // Permite que o usuário escolha manualmente o ID da sessão com validação de propriedade
+  configSessionId.addEventListener('change', async (e) => {
+    const newId = e.target.value.toUpperCase().trim();
+    const user = firebase.auth().currentUser;
+
+    if (!newId || newId === sessionsData.sessionId) return;
+
+    // Verifica se o ID já existe e quem é o dono no Firebase
+    try {
+      const snapshot = await firebase.database().ref('sessions/' + newId).once('value');
+      const existingData = snapshot.val();
+
+      if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
+        alert(`O código "${newId}" já está em uso por outro organizador. Por favor, escolha outro.`);
+        configSessionId.value = sessionsData.sessionId; // Reverte para o ID anterior no campo
+        return;
+      }
+
+      // Se o ID estiver livre ou pertencer ao usuário logado, atualiza
+      sessionsData.sessionId = newId;
+      saveState(true); // Sincroniza imediatamente com o novo ID
+      alert(`ID da sessão alterado para: ${newId}`);
+    } catch (error) {
+      console.error("Erro ao validar novo ID:", error);
+      alert("Erro ao verificar disponibilidade do ID. Tente novamente.");
+    }
   });
 
+
   // Gera um novo ID de sessão aleatório
-  regenerateIdButton.addEventListener('click', () => {
-    sessionsData.sessionId = generateRandomId();
-    updateUI(true);
+  regenerateIdButton.addEventListener('click', async () => {
+    let newId = generateRandomId();
+    let isTaken = await checkIdExists(newId);
+    
+    // Tenta gerar um novo ID até encontrar um que não esteja em uso (limite de 5 tentativas)
+    let attempts = 0;
+    while (isTaken && attempts < 5) {
+      newId = generateRandomId();
+      isTaken = await checkIdExists(newId);
+      attempts++;
+    }
+
+    sessionsData.sessionId = newId;
+    updateUI(true); // Salva e sincroniza o novo ID
   });
 
   // Reordenação de sessões
@@ -726,10 +782,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Busca dados de uma sessão existente no Firebase usando ID e Token
   loadFromFirebaseButton.addEventListener('click', async () => {
     let id = configSessionId.value.trim().toUpperCase();
-    if (id.length !== 6) {
-      id = prompt("Digite o Código da Sessão (ID Público) para retomar:", id)?.toUpperCase().trim();
+    if (!id || id.length > 16) {
+      id = prompt("Digite o Código da Sessão (ID Público) para retomar:")?.toUpperCase().trim();
     }
-    if (!id || id.length !== 6) return;
+    if (!id || id.length === 0 || id.length > 16) return;
 
     if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
       alert("Firebase não configurado corretamente.");

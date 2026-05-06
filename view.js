@@ -254,11 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tenta conectar a uma sessão ao clicar no botão de entrada manual
   joinSessionButton.addEventListener('click', () => {
     const id = manualIdInput.value.trim().toUpperCase();
-    if (id.length === 6) {
+    if (id.length >= 1 && id.length <= 16) {
       sessionId = id;
       connectToSession(id);
     } else {
-      alert("Por favor, digite um código válido de 6 caracteres.");
+      alert("Por favor, digite um código válido (máx 16 caracteres).");
     }
   });
 
