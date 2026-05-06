@@ -33,6 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  
+  // Elementos de Autenticação
+  const loginOverlay = document.getElementById('login-overlay');
+  const adminHeader = document.getElementById('admin-header');
+  const adminMain = document.getElementById('admin-main');
+  const googleLoginButton = document.getElementById('google-login-button');
+  const logoutButton = document.getElementById('logout-button');
+  const userInfoSpan = document.getElementById('user-info');
+
   const qrLinkDisplay = document.getElementById('qr-link-display');
   const loadFromFirebaseButton = document.getElementById('load-from-firebase-button');
 
@@ -67,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const configDrawMode = document.getElementById('config-draw-mode');
   const configIconUpload = document.getElementById('config-icon-upload');
   const configIconRemove = document.getElementById('config-icon-remove');
-  const configFirebaseWriteToken = document.getElementById('config-firebase-write-token');
   const configIconPreview = document.getElementById('config-icon-preview');
   const exportSessionButton = document.getElementById('export-session-button');
   const importSessionButton = document.getElementById('import-session-button');
@@ -78,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} length - Tamanho do ID a ser gerado.
    */
   const generateRandomId = (length = 6) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -89,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Estado da Aplicação ---
   let sessionsData = {
     sessionId: generateRandomId(),
-    firebaseWriteToken: "",
+    ownerUid: null, // Armazena o UID do criador
     activeSessionName: "Sessão Padrão",
     sessions: {},
     sessionOrder: []
@@ -117,31 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return newState;
   };
 
-  /**
-   * INFORMAÇÕES DE SEGURANÇA DO FIREBASE (MODO SIMPLES):
-   *
-   * Neste modo, não usamos Firebase Auth. Usamos uma regra de validação que compara
-   * o campo 'firebaseWriteToken' enviado com uma string fixa nas regras do Banco.
-   *
-   * Passos para configurar no Console do Firebase (Realtime Database -> Regras):
-   * 1. Vá na aba "Rules" (Regras) do seu Realtime Database.
-   * 2. Cole as seguintes regras (substitua 'MINHA_SENHA_MESTRA' pela sua senha):
-   *
-   * {
-   *   "rules": {
-   *     "sessions": {
-   *       "$session_id": {
-   *         ".read": true,
-   *         ".write": "newData.child('firebaseWriteToken').val() === 'MINHA_SENHA_MESTRA'",
-   *         "firebaseWriteToken": {
-   *           ".read": false // Protege o token para que espectadores não o vejam
-   *         }
-   *       }
-   *     }
-   *   }
-   * }
-   */
-
   let syncTimeout = null;
   /**
    * Sincroniza o objeto sessionsData completo com o Firebase Realtime Database.
@@ -153,11 +136,21 @@ document.addEventListener('DOMContentLoaded', () => {
       // Isso garante que a restauração de dados e edições de ID/Token não causem conflitos ou sobrescritas acidentais.
       if (configModal && !configModal.classList.contains('hidden')) return;
 
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData && sessionsData.sessionId) {
-        // Enviamos o sessionsData que já contém o campo firebaseWriteToken na raiz.
+      const user = firebase.auth().currentUser;
+      if (!user) return; // Só sincroniza se estiver logado
+
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData?.sessionId) {
+        // Se a sessão não tem dono, o usuário logado assume a propriedade
+        if (!sessionsData.ownerUid) {
+          sessionsData.ownerUid = user.uid;
+        }
+
         firebase.database().ref('sessions/' + sessionsData.sessionId).set(sessionsData)
           .catch(err => {
             console.error("Erro ao sincronizar Firebase:", err.code, err.message);
+            if (err.code === 'PERMISSION_DENIED') {
+              alert("Erro de Permissão: Você não é o proprietário deste ID de sessão ou não está autorizado.");
+            }
           });
       }
     };
@@ -193,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sessionsData.sessionId) {
         const current = sessionsData.sessions[sessionsData.activeSessionName];
         sessionsData.sessionId = current?.sessionId || generateRandomId();
-        sessionsData.firebaseWriteToken = current?.firebaseWriteToken || "";
       }
       if (!sessionsData.sessionOrder) sessionsData.sessionOrder = Object.keys(sessionsData.sessions);
 
@@ -205,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const parsedLegacy = JSON.parse(legacyState);
         const name = parsedLegacy.eventName || "Sessão Antiga";
         sessionsData.sessionId = parsedLegacy.sessionId || generateRandomId();
-        sessionsData.firebaseWriteToken = parsedLegacy.firebaseWriteToken || "";
         sessionsData.sessions[name] = parsedLegacy;
         sessionsData.sessionOrder = [name];
         sessionsData.activeSessionName = name;
@@ -219,13 +210,47 @@ document.addEventListener('DOMContentLoaded', () => {
       appState = sessionsData.sessions[sessionsData.activeSessionName];
     }
 
-    // Inicializa Firebase se a configuração estiver disponível
+    // Inicializa Firebase e Monitora Autenticação
     if (typeof firebaseConfig !== 'undefined' && firebase.apps.length === 0) {
       firebase.initializeApp(firebaseConfig);
     }
-
-    updateUI(true);
+    
+    const auth = firebase.auth();
+    
+    // Monitor de estado de login
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // Usuário logado
+        loginOverlay.classList.add('hidden');
+        adminHeader.classList.remove('hidden');
+        adminMain.classList.remove('hidden');
+        if (userInfoSpan) {
+          userInfoSpan.textContent = user.displayName || user.email;
+          userInfoSpan.classList.remove('hidden');
+        }
+        updateUI(true);
+      } else {
+        // Usuário deslogado
+        loginOverlay.classList.remove('hidden');
+        adminHeader.classList.add('hidden');
+        adminMain.classList.add('hidden');
+      }
+    });
   };
+
+  // Handlers de Autenticação
+  googleLoginButton.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch(error => {
+      alert("Erro ao logar: " + error.message);
+    });
+  });
+
+  logoutButton.addEventListener('click', () => {
+    if (confirm("Deseja realmente sair?")) {
+      firebase.auth().signOut();
+    }
+  });
 
   /**
    * Atualiza todos os elementos visuais da interface (textos, listas, seletores e modais) com base no estado atual.
@@ -284,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
-    configFirebaseWriteToken.value = sessionsData.firebaseWriteToken || '';
     configSessionId.value = sessionsData.sessionId || '';
     updateSessionSelector();
 
@@ -707,12 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (!id || id.length !== 6) return;
 
-    let token = configFirebaseWriteToken.value.trim();
-    if (!token) {
-      token = prompt("Digite o Token Secreto (Senha de Escrita) para esta sessão:");
-    }
-    if (!token) return;
-
     if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
       alert("Firebase não configurado corretamente.");
       return;
@@ -721,10 +739,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const snapshot = await firebase.database().ref('sessions/' + id).once('value');
       const data = snapshot.val();
+      const user = firebase.auth().currentUser;
 
       if (data) {
-        // Injetamos o token manual pois o Firebase não o retorna na leitura
-        data.firebaseWriteToken = token;
+        if (data.ownerUid && data.ownerUid !== user.uid) {
+          alert("Acesso Negado: Esta sessão pertence a outra conta Google.");
+          return;
+        }
+
         sessionsData = data;
         appState = sessionsData.sessions[sessionsData.activeSessionName];
 
@@ -737,12 +759,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Erro ao retomar da nuvem:", error);
       alert("Erro ao acessar a nuvem: " + error.message);
     }
-  });
-
-  // Atualiza o token de escrita conforme o usuário digita
-  configFirebaseWriteToken.addEventListener('input', (e) => {
-    sessionsData.firebaseWriteToken = e.target.value;
-    saveState(false); // Sincronização em segundo plano enquanto digita
   });
 
   // Cria uma nova sessão no projeto atual

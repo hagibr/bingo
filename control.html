@@ -7,16 +7,33 @@
   <title>Painel de Controle - Bingo</title>
   <link rel="stylesheet" href="style.css">
 </head>
+<body class="admin-body">
+  <!-- Tela de Login (Exibida quando não autenticado) -->
+  <div id="login-overlay" class="modal">
+    <div class="modal-content" style="text-align: center; max-width: 400px;">
+      <h2 style="color: #28a745;">Bingo Admin</h2>
+      <p>Acesse com sua conta Google para gerenciar as sessões.</p>
+      <button id="google-login-button" class="config-button" style="background-color: #4285f4; width: 100%; margin-top: 20px; font-weight: bold;">
+        Logar com Google
+      </button>
+    </div>
+  </div>
 
-<body>
-  <header class="app-header">
-    <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
-    <h1 id="event-title">Nome do Evento de Bingo</h1>
-    <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
-    <button id="config-button" class="config-button">⚙️ Configurações</button>
+  <!-- Conteúdo do Painel (Escondido por padrão) -->
+  <header id="admin-header" class="app-header hidden">
+    <div style="display: flex; align-items: center;">
+      <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
+      <h1 id="event-title">Nome do Evento de Bingo</h1>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span id="user-info" style="font-size: 0.8em; color: white;" class="hidden"></span>
+      <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
+      <button id="config-button" class="config-button">⚙️ Configurações</button>
+      <button id="logout-button" class="undo-button" style="padding: 10px;" title="Sair">🚪</button>
+    </div>
   </header>
 
-  <main class="bingo-main">
+  <main id="admin-main" class="bingo-main hidden">
     <section class="round-section">
       <div class="round-header-layout">
         <div class="round-info-column">
@@ -123,12 +140,6 @@
             <button id="regenerate-id-button" title="Gerar novo ID" style="background-color: #6c757d;">🔄</button>
           </div>
         </div>
-        <div>
-          <label for="config-firebase-write-token">Token Secreto Firebase (Escrita):</label>
-          <input type="password" id="config-firebase-write-token"
-            placeholder="Deixe em branco para acesso somente leitura"
-            title="Este token permite que a sessão atual seja escrita no Firebase.">
-        </div>
         <div class="config-full">
           <label>Link de Visualização:</label>
           <div style="display: flex; gap: 10px; align-items: center;">
@@ -166,6 +177,7 @@
 
   <!-- Firebase SDKs (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <!-- Arquivo de configuração (Ignorado no Git) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
