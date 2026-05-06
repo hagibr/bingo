@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const configShareLink = document.getElementById('config-share-link');
     if (configShareLink) {
       // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
-      const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('index.html', '');
+      const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('control.html', '').replace('index.html', '');
       configShareLink.value = `${baseUrl}view.html?id=${sessionsData.sessionId}`;
     }
 
