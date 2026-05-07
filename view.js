@@ -1,7 +1,7 @@
 // Inicializa a visualização do espectador assim que o DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
-  let sessionId = params.get('id');
+  let eventid = params.get('id');
 
   const idEntrySection = document.getElementById('id-entry-section');
   const bingoContent = document.getElementById('bingo-content');
@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Atualiza o nome da sessão visualizada
     if (viewedSessionNameDisplay) viewedSessionNameDisplay.textContent = viewedSessionName;
 
-    document.getElementById('event-title').textContent = appState.eventName;
-    document.title = "Bingo: " + appState.eventName;
+    document.getElementById('event-title').textContent = fullData.eventName || appState.eventName;
+    document.title = "Bingo: " + (fullData.eventName || appState.eventName);
     document.getElementById('event-icon').src = appState.eventIcon;
 
     const roundToDisplay = viewedRound || appState.currentRound;
@@ -211,17 +211,18 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRef = db.ref('sessions/' + id);
     currentRef.on('value', (snapshot) => {
       fullData = snapshot.val();
-      // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
-      if (fullData && fullData.sessions && fullData.activeSessionName) {
+      // Agora esperamos eventData, então buscamos a sessão de bingo ativa dentro dela
+      if (fullData && fullData.sessions && (fullData.activeBingoSessionName || fullData.activeSessionName)) {
+        const activeName = fullData.activeBingoSessionName || fullData.activeSessionName;
 
         if (followActive || viewedSessionName === null) {
-          viewedSessionName = fullData.activeSessionName;
+          viewedSessionName = activeName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
         }
 
         // Fallback caso a sessão visualizada tenha sido deletada
         if (!fullData.sessions[viewedSessionName]) {
-          viewedSessionName = fullData.activeSessionName;
+          viewedSessionName = activeName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
           followActive = true;
         }
@@ -302,7 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
       viewedSessionName = sessionNames[nextIndex];
       appState = fullData.sessions[viewedSessionName];
       // Ao mudar de sessão, foca na primeira rodada dela ou na atual se for a ativa
-      viewedRound = (viewedSessionName === fullData.activeSessionName) ? appState.currentRound : 1;
+      const activeName = fullData.activeBingoSessionName || fullData.activeSessionName;
+      viewedRound = (viewedSessionName === activeName) ? appState.currentRound : 1;
       followActive = false; // Navegação manual desativa o acompanhamento automático
       animationPhase = true;
       updateUI();
@@ -315,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Botão de Atalho para o Vivo
   goToLiveButton.addEventListener('click', () => {
     followActive = false; // Apenas pula para o estado atual sem reativar o auto-follow
-    viewedSessionName = fullData.activeSessionName;
+    viewedSessionName = fullData.activeBingoSessionName || fullData.activeSessionName;
     appState = fullData.sessions[viewedSessionName];
     viewedRound = appState.currentRound;
     updateUI();
@@ -356,8 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Inicialização
-  if (sessionId) {
-    connectToSession(sessionId);
+  if (eventid) {
+    connectToSession(eventid);
   } else {
     eventTitle.textContent = "Aguardando Código";
     idEntrySection.classList.remove('hidden');

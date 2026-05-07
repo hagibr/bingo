@@ -7,13 +7,15 @@
   <title>Painel de Controle - Bingo</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="admin-body">
   <!-- Tela de Login (Exibida quando não autenticado) -->
   <div id="login-overlay" class="modal">
     <div class="modal-content" style="text-align: center; max-width: 400px;">
       <h2 style="color: #28a745;">Bingo Admin</h2>
       <p>Acesse com sua conta Google para gerenciar as sessões.</p>
-      <button id="google-login-button" class="config-button" style="background-color: #4285f4; width: 100%; margin-top: 20px; font-weight: bold;">
+      <button id="google-login-button" class="config-button"
+        style="background-color: #4285f4; width: 100%; margin-top: 20px; font-weight: bold;">
         Logar com Google
       </button>
     </div>
@@ -28,8 +30,8 @@
     <div style="display: flex; gap: 10px; align-items: center;">
       <span id="user-info" style="font-size: 0.8em; color: white;" class="hidden"></span>
       <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
-      <button id="sessions-mgr-button" class="config-button" title="Gerenciar Sessões">📂 Minhas Sessões</button>
-      <button id="config-button" class="config-button">⚙️ Configurações</button>
+      <button id="events-mgr-button" class="config-button" title="Gerenciar Eventos">📂 Meus Eventos</button>
+      <button id="config-button" class="config-button">⚙️ Sessões</button>
       <button id="logout-button" class="undo-button" style="padding: 10px;" title="Sair">🚪</button>
     </div>
   </header>
@@ -93,7 +95,7 @@
 
       <div class="config-grid">
         <div class="config-full">
-          <label for="config-session-selector">Sessão Atual:</label>
+          <label for="config-session-selector">Sessão de Bingo Atual:</label>
           <div style="display: flex; gap: 10px;">
             <select id="config-session-selector" style="flex-grow: 1;"></select>
             <button id="move-session-up-button" class="nav-button" title="Mover para cima">🔼</button>
@@ -103,8 +105,12 @@
           </div>
         </div>
         <div class="config-full">
-          <label for="config-event-name">Nome do Evento:</label>
-          <input type="text" id="config-event-name">
+          <label for="config-event-title">Nome do Evento (Título Geral):</label>
+          <input type="text" id="config-event-title" placeholder="Ex: Bingo Beneficente">
+        </div>
+        <div class="config-full">
+          <label for="config-session-name">Nome da Sessão Selecionada:</label>
+          <input type="text" id="config-session-name" placeholder="Ex: Sessão das 14h">
         </div>
 
         <div>
@@ -134,7 +140,7 @@
         </div>
 
         <div>
-          <label for="config-session-id">Código da Sessão (ID Público):</label>
+          <label for="config-session-id">Código do Evento (ID Público):</label>
           <div style="display: flex; gap: 10px;">
             <input type="text" id="config-session-id" maxlength="16" style="text-transform: uppercase; flex-grow: 1;"
               placeholder="Ex: ABC123">
@@ -156,28 +162,28 @@
 
       <div class="modal-actions">
         <button id="load-from-firebase-button" style="background-color: #ffc107; color: #333;">Retomar da Nuvem</button>
-        <button id="export-session-button">Exportar Sessão (JSON)</button>
+        <button id="export-session-button">Exportar Evento (JSON)</button>
         <input type="file" id="import-session-input" accept="application/json" style="display: none;">
-        <button id="import-session-button">Importar Sessão (JSON)</button>
+        <button id="import-session-button">Importar Evento (JSON)</button>
         <button id="close-config-button">Fechar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Gerenciamento de Sessões -->
-  <div id="sessions-mgr-modal" class="modal hidden">
+  <!-- Modal de Gerenciamento de Eventos -->
+  <div id="events-mgr-modal" class="modal hidden">
     <div class="modal-content">
-      <button id="close-sessions-mgr-x" class="close-x">&times;</button>
-      <h2>Gerenciar Sessões Inclusas</h2>
-      <p style="font-size: 0.9em; color: #666; margin-bottom: 5px;">Código do Projeto: <strong id="mgr-project-id"></strong></p>
-      
-      <div id="sessions-list-container" style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
+      <button id="close-events-mgr-x" class="close-x">&times;</button>
+      <h2>Meus Eventos Cadastrados</h2>
+
+      <div id="sessions-list-container"
+        style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
         <!-- Lista de sessões será injetada aqui -->
       </div>
 
       <div class="modal-actions">
-        <button id="mgr-new-session-button" style="background-color: #28a745; margin-right: auto;">➕ Nova Sessão</button>
-        <button id="close-sessions-mgr-button">Fechar</button>
+        <button id="mgr-new-event-button" style="background-color: #28a745; margin-right: auto;">➕ Novo Evento</button>
+        <button id="close-events-mgr-button">Fechar</button>
       </div>
     </div>
   </div>

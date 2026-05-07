@@ -33,13 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
-  
-  // Elementos do Gerenciador de Sessões
-  const sessionsMgrButton = document.getElementById('sessions-mgr-button');
-  const sessionsMgrModal = document.getElementById('sessions-mgr-modal');
-  const closeSessionsMgrX = document.getElementById('close-sessions-mgr-x');
-  const closeSessionsMgrButton = document.getElementById('close-sessions-mgr-button');
-  const mgrNewSessionButton = document.getElementById('mgr-new-session-button');
+
+  // Elementos do Gerenciador de Eventos
+  const eventsMgrButton = document.getElementById('events-mgr-button');
+  const eventsMgrModal = document.getElementById('events-mgr-modal');
+  const closeEventsMgrX = document.getElementById('close-events-mgr-x');
+  const closeEventsMgrButton = document.getElementById('close-events-mgr-button');
+  const mgrNewEventButton = document.getElementById('mgr-new-event-button');
   const sessionsListContainer = document.getElementById('sessions-list-container');
 
   // Elementos de Autenticação
@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Elementos do Modal de Configuração ---
   const configModal = document.getElementById('config-modal');
   const closeConfigButton = document.getElementById('close-config-button');
-  const configEventName = document.getElementById('config-event-name');
+  const configEventTitle = document.getElementById('config-event-title');
+  const configSessionName = document.getElementById('config-session-name');
   const configNumRounds = document.getElementById('config-num-rounds');
   const configMaxNumber = document.getElementById('config-max-number');
   const configDrawMode = document.getElementById('config-draw-mode');
@@ -93,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * Gera uma string aleatória de 6 caracteres (excluindo I e O) para identificação da sessão.
    * @param {number} length - Tamanho do ID a ser gerado.
    */
-  const generateRandomId = (length = 16) => {
+  const generateRandomId = (length = 6) => {
     // Incluímos números (exceto 0 e 1) e removemos I e O para evitar confusão visual
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
@@ -115,18 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- Estado da Aplicação ---
-  let sessionsData = {
-    sessionId: generateRandomId(),
+  let eventData = {
+    eventid: generateRandomId(),
+    eventName: "Novo Evento de Bingo",
     ownerUid: null, // Armazena o UID do criador
-    activeSessionName: "Sessão Padrão",
+    activeBingoSessionName: "Sessão Padrão",
     sessions: {},
     sessionOrder: []
   };
   let appState = {};
 
   /**
-   * Cria um objeto de estado inicial para uma nova sessão de bingo com rodadas padrão.
-   * @param {string} name - Nome da sessão a ser criada.
+   * Cria um objeto de estado inicial para uma nova sessão de bingo (game).
+   * @param {string} name - Nome da sessão de bingo.
    */
   const createDefaultSessionState = (name) => {
     const newState = {
@@ -147,27 +149,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let syncTimeout = null;
   /**
-   * Sincroniza o objeto sessionsData completo com o Firebase Realtime Database.
+   * Sincroniza o objeto eventData completo com o Firebase Realtime Database.
    * @param {boolean} immediate - Se verdadeiro, ignora o debounce e executa a sincronização na hora.
    */
   const syncToFirebase = (immediate = false) => {
     const performSync = () => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
-      // Isso garante que a restauração de dados e edições de ID/Token não causem conflitos ou sobrescritas acidentais.
+      // Isso garante que a restauração de dados e edições de ID não causem conflitos.
       const isConfigOpen = configModal && !configModal.classList.contains('hidden');
-      const isMgrOpen = sessionsMgrModal && !sessionsMgrModal.classList.contains('hidden');
+      const isMgrOpen = eventsMgrModal && !eventsMgrModal.classList.contains('hidden');
       if (isConfigOpen || isMgrOpen) return;
 
       const user = firebase.auth().currentUser;
       if (!user) return; // Só sincroniza se estiver logado
 
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData?.sessionId) {
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && eventData?.eventid) {
         // Se a sessão não tem dono, o usuário logado assume a propriedade
-        if (!sessionsData.ownerUid) {
-          sessionsData.ownerUid = user.uid;
+        if (!eventData.ownerUid) {
+          eventData.ownerUid = user.uid;
         }
 
-        firebase.database().ref('sessions/' + sessionsData.sessionId).set(sessionsData)
+        firebase.database().ref('sessions/' + eventData.eventid).set(eventData)
           .catch(err => {
             console.error("Erro ao sincronizar Firebase:", err.code, err.message);
             if (err.code === 'PERMISSION_DENIED') {
@@ -187,11 +189,25 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
-   * Salva o estado atual no localStorage do navegador e agenda a sincronização com o Firebase.
+   * Registra o evento atual na lista de eventos conhecidos pelo usuário no localStorage.
+   */
+  const registerEventLocally = () => {
+    const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+    // Armazena o nome principal e a lista de todas as sessões para visualização no gerenciador
+    registry[eventData.eventid] = {
+      name: eventData.eventName || "Evento sem nome",
+      sessions: eventData.sessionOrder || []
+    };
+    localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
+  };
+
+  /**
+   * Salva o estado atual no localStorage e agenda a sincronização.
    * @param {boolean} immediate - Define se a sincronização com o Firebase deve ser imediata.
    */
   const saveState = (immediate = false) => {
-    localStorage.setItem('bingoSessionsData', JSON.stringify(sessionsData));
+    localStorage.setItem('bingoEventData', JSON.stringify(eventData));
+    registerEventLocally();
     syncToFirebase(immediate);
   };
 
@@ -200,45 +216,49 @@ document.addEventListener('DOMContentLoaded', () => {
    * Inicializa a sessão ativa e configura o Firebase.
    */
   const loadState = () => {
-    const storedData = localStorage.getItem('bingoSessionsData');
+    const storedData = localStorage.getItem('bingoEventData');
     if (storedData) {
-      sessionsData = JSON.parse(storedData);
+      eventData = JSON.parse(storedData);
 
-      // Migração: se os campos não estiverem na raiz, busca da sessão ativa
-      if (!sessionsData.sessionId) {
-        const current = sessionsData.sessions[sessionsData.activeSessionName];
-        sessionsData.sessionId = current?.sessionId || generateRandomId();
+      if (!eventData.eventName) {
+        eventData.eventName = eventData.sessions[eventData.activeBingoSessionName]?.eventName || "Evento de Bingo";
       }
-      if (!sessionsData.sessionOrder) sessionsData.sessionOrder = Object.keys(sessionsData.sessions);
 
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      // Compatibilidade: garante que as propriedades renomeadas existam
+      if (eventData.sessionId) { eventData.eventid = eventData.sessionId; delete eventData.sessionId; }
+      if (eventData.activeSessionName) { eventData.activeBingoSessionName = eventData.activeSessionName; delete eventData.activeSessionName; }
+      if (!eventData.sessionOrder) eventData.sessionOrder = Object.keys(eventData.sessions);
+
+      appState = eventData.sessions[eventData.activeBingoSessionName];
     } else {
-      // Migração de dados do formato antigo ou inicialização limpa
+      // Migração de dados do formato antigo (bingoAppState)
       const legacyState = localStorage.getItem('bingoAppState');
       if (legacyState) {
         const parsedLegacy = JSON.parse(legacyState);
         const name = parsedLegacy.eventName || "Sessão Antiga";
-        sessionsData.sessionId = parsedLegacy.sessionId || generateRandomId();
-        sessionsData.sessions[name] = parsedLegacy;
-        sessionsData.sessionOrder = [name];
-        sessionsData.activeSessionName = name;
+        eventData.eventid = parsedLegacy.sessionId || generateRandomId();
+        eventData.eventName = parsedLegacy.eventName || "Bingo";
+        eventData.sessions[name] = parsedLegacy;
+        eventData.sessionOrder = [name];
+        eventData.activeBingoSessionName = name;
       } else {
-        sessionsData.sessionId = generateRandomId();
+        eventData.eventid = generateRandomId();
+        eventData.eventName = "Bingo";
         const defaultName = "Sessão Padrão";
-        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
-        sessionsData.sessionOrder = [defaultName];
-        sessionsData.activeSessionName = defaultName;
+        eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        eventData.sessionOrder = [defaultName];
+        eventData.activeBingoSessionName = defaultName;
       }
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      appState = eventData.sessions[eventData.activeBingoSessionName];
     }
 
     // Inicializa Firebase e Monitora Autenticação
     if (typeof firebaseConfig !== 'undefined' && firebase.apps.length === 0) {
       firebase.initializeApp(firebaseConfig);
     }
-    
+
     const auth = firebase.auth();
-    
+
     // Monitor de estado de login
     auth.onAuthStateChanged(user => {
       if (user) {
@@ -280,8 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const updateUI = (immediateSync = false) => {
     // Header
-    eventTitle.textContent = appState.eventName;
-    document.title = appState.eventName;
+    eventTitle.textContent = eventData.eventName || appState.eventName;
+    document.title = eventData.eventName || appState.eventName;
     eventIcon.src = appState.eventIcon;
     configIconPreview.src = appState.eventIcon; // Atualiza a prévia no modal
 
@@ -327,17 +347,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Config Modal
-    configEventName.value = appState.eventName;
+    if (configEventTitle) configEventTitle.value = eventData.eventName || '';
+    if (configSessionName) configSessionName.value = appState.eventName || '';
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
-    configSessionId.value = sessionsData.sessionId || '';
+    configSessionId.value = eventData.eventid || '';
     updateSessionSelector();
 
     // Desabilita botões de reordenação se necessário
-    const orderIdx = sessionsData.sessionOrder.indexOf(sessionsData.activeSessionName);
+    const orderIdx = eventData.sessionOrder.indexOf(eventData.activeBingoSessionName);
     if (moveSessionUpButton) moveSessionUpButton.disabled = orderIdx <= 0;
-    if (moveSessionDownButton) moveSessionDownButton.disabled = orderIdx >= sessionsData.sessionOrder.length - 1;
+    if (moveSessionDownButton) moveSessionDownButton.disabled = orderIdx >= eventData.sessionOrder.length - 1;
 
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
@@ -347,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (configShareLink) {
       // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
       const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('control.html', '').replace('index.html', '');
-      configShareLink.value = `${baseUrl}view.html?id=${sessionsData.sessionId}`;
+      configShareLink.value = `${baseUrl}view.html?id=${eventData.eventid}`;
     }
 
     saveState(immediateSync);
@@ -358,13 +379,86 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const updateSessionSelector = () => {
     configSessionSelector.innerHTML = '';
-    sessionsData.sessionOrder.forEach(name => {
-      if (!sessionsData.sessions[name]) return;
+    eventData.sessionOrder.forEach(name => {
+      if (!eventData.sessions[name]) return;
       const option = document.createElement('option');
       option.value = name;
       option.textContent = name;
-      if (name === sessionsData.activeSessionName) option.selected = true;
+      if (name === eventData.activeBingoSessionName) option.selected = true;
       configSessionSelector.appendChild(option);
+    });
+  };
+
+  /**
+   * Renderiza a lista de Eventos (IDs diferentes) no modal de gerenciamento.
+   */
+  const renderEventsList = () => {
+    if (!sessionsListContainer) return;
+    sessionsListContainer.innerHTML = '';
+
+    const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+
+    Object.entries(registry).forEach(([id, data]) => {
+      const isCurrent = id === eventData.eventid;
+
+      let eventName = "Evento sem nome";
+      let sessionNames = [];
+
+      // Lida com dados legados (string) ou novo formato (objeto)
+      if (typeof data === 'string') {
+        eventName = data;
+      } else if (data && typeof data === 'object') {
+        eventName = data.name || "Evento sem nome";
+        sessionNames = data.sessions || [];
+      }
+
+      const item = document.createElement('div');
+      item.className = 'event-mgr-item';
+      item.style.alignItems = 'flex-start'; // Alinha no topo caso a lista seja grande
+
+      const nameSpan = document.createElement('span');
+      const sessionsHtml = sessionNames.length > 0
+        ? `<ul style="margin: 5px 0 0 15px; padding: 0; font-size: 0.85em; color: #777; list-style-type: disc;">` +
+        sessionNames.map(s => `<li>${s}</li>`).join('') + `</ul>`
+        : "";
+
+      nameSpan.innerHTML = `<strong>${eventName}</strong> <br><small style="color: #666">Código: ${id}</small>${sessionsHtml}`;
+      if (isCurrent) {
+        nameSpan.style.fontWeight = 'bold';
+        nameSpan.innerHTML += ' <small style="color: #28a745">(Ativa)</small>';
+      }
+
+      const actions = document.createElement('div');
+      actions.style.display = 'flex'; actions.style.gap = '5px';
+
+      if (!isCurrent) {
+        const selectBtn = document.createElement('button');
+        selectBtn.textContent = 'Abrir';
+        selectBtn.style.padding = '5px 10px'; selectBtn.style.fontSize = '0.8em';
+        selectBtn.onclick = () => {
+          configSessionId.value = id;
+          loadFromFirebaseButton.click();
+          closeEventsMgr();
+        };
+        actions.appendChild(selectBtn);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Remover da Lista';
+      deleteBtn.classList.add('undo-button');
+      deleteBtn.style.padding = '5px 10px'; deleteBtn.style.fontSize = '0.8em';
+      deleteBtn.onclick = () => {
+        if (confirm(`Remover o evento "${name}" da sua lista local?`)) {
+          const reg = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+          delete reg[id];
+          localStorage.setItem('bingoUserEvents', JSON.stringify(reg));
+          renderEventsList();
+        }
+      };
+
+      actions.appendChild(deleteBtn);
+      item.appendChild(nameSpan); item.appendChild(actions);
+      sessionsListContainer.appendChild(item);
     });
   };
 
@@ -583,6 +677,22 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Abre o gerenciador de sessões e renderiza a lista.
+   */
+  const openEventsMgr = () => {
+    renderEventsList();
+    eventsMgrModal.classList.remove('hidden');
+  };
+
+  /**
+   * Fecha o gerenciador de sessões.
+   */
+  const closeEventsMgr = () => {
+    eventsMgrModal.classList.add('hidden');
+    updateUI();
+  };
+
+  /**
    * Fecha o modal de exibição do QR Code.
    */
   const closeQrModal = () => {
@@ -601,6 +711,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
       closeQrModal();
+    }
+    if (e.key === 'Escape' && !eventsMgrModal.classList.contains('hidden')) {
+      closeEventsMgr();
     }
   });
 
@@ -663,8 +776,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Config Modal Event Listeners
   // Troca a sessão ativa dentro do modal de configurações
   configSessionSelector.addEventListener('change', (e) => {
-    sessionsData.activeSessionName = e.target.value;
-    appState = sessionsData.sessions[sessionsData.activeSessionName];
+    eventData.activeBingoSessionName = e.target.value;
+    appState = eventData.sessions[eventData.activeBingoSessionName];
     updateUI(true);
   });
 
@@ -673,16 +786,16 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} direction - -1 para subir, 1 para descer.
    */
   const moveSession = (direction) => {
-    const name = sessionsData.activeSessionName;
-    const index = sessionsData.sessionOrder.indexOf(name);
+    const name = eventData.activeBingoSessionName;
+    const index = eventData.sessionOrder.indexOf(name);
     if (index === -1) return;
     const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= sessionsData.sessionOrder.length) return;
+    if (newIndex < 0 || newIndex >= eventData.sessionOrder.length) return;
 
     // Troca de posição no array de ordem
-    const temp = sessionsData.sessionOrder[index];
-    sessionsData.sessionOrder[index] = sessionsData.sessionOrder[newIndex];
-    sessionsData.sessionOrder[newIndex] = temp;
+    const temp = eventData.sessionOrder[index];
+    eventData.sessionOrder[index] = eventData.sessionOrder[newIndex];
+    eventData.sessionOrder[newIndex] = temp;
 
     updateUI(true);
   };
@@ -692,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newId = e.target.value.toUpperCase().trim();
     const user = firebase.auth().currentUser;
 
-    if (!newId || newId === sessionsData.sessionId) return;
+    if (!newId || newId === eventData.eventid) return;
 
     // Verifica se o ID já existe e quem é o dono no Firebase
     try {
@@ -701,12 +814,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
         alert(`O código "${newId}" já está em uso por outro organizador. Por favor, escolha outro.`);
-        configSessionId.value = sessionsData.sessionId; // Reverte para o ID anterior no campo
+        configSessionId.value = eventData.eventid; // Reverte para o ID anterior no campo
         return;
       }
 
       // Se o ID estiver livre ou pertencer ao usuário logado, atualiza
-      sessionsData.sessionId = newId;
+      eventData.eventid = newId;
       saveState(true); // Sincroniza imediatamente com o novo ID
       alert(`ID da sessão alterado para: ${newId}`);
     } catch (error) {
@@ -720,7 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
   regenerateIdButton.addEventListener('click', async () => {
     let newId = generateRandomId();
     let isTaken = await checkIdExists(newId);
-    
+
     // Tenta gerar um novo ID até encontrar um que não esteja em uso (limite de 5 tentativas)
     let attempts = 0;
     while (isTaken && attempts < 5) {
@@ -729,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
       attempts++;
     }
 
-    sessionsData.sessionId = newId;
+    eventData.eventid = newId;
     updateUI(true); // Salva e sincroniza o novo ID
   });
 
@@ -779,6 +892,32 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fecha o modal de QR Code ao clicar no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
+  // --- Event Listeners do Gerenciador de Sessões ---
+  if (eventsMgrButton) eventsMgrButton.addEventListener('click', openEventsMgr);
+  if (closeEventsMgrX) closeEventsMgrX.addEventListener('click', closeEventsMgr);
+  if (closeEventsMgrButton) closeEventsMgrButton.addEventListener('click', closeEventsMgr);
+
+  if (mgrNewEventButton) {
+    mgrNewEventButton.addEventListener('click', () => {
+      if (!confirm("Isso criará um Evento totalmente novo com um novo Código ID. Deseja continuar?")) return;
+
+      const defaultName = "Novo Evento de Bingo";
+      eventData.eventid = generateRandomId();
+      eventData.sessions = {};
+      eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
+      eventData.sessionOrder = [defaultName];
+      eventData.activeBingoSessionName = defaultName;
+      appState = eventData.sessions[defaultName];
+      updateUI(true);
+      closeEventsMgr();
+    });
+  }
+
+  // Fecha o modal de sessões ao clicar no overlay (fora do conteúdo)
+  if (eventsMgrModal) {
+    eventsMgrModal.addEventListener('click', (e) => { if (e.target === eventsMgrModal) closeEventsMgr(); });
+  }
+
   // Busca dados de uma sessão existente no Firebase usando ID e Token
   loadFromFirebaseButton.addEventListener('click', async () => {
     let id = configSessionId.value.trim().toUpperCase();
@@ -803,8 +942,8 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        sessionsData = data;
-        appState = sessionsData.sessions[sessionsData.activeSessionName];
+        eventData = data;
+        appState = eventData.sessions[eventData.activeBingoSessionName];
 
         updateUI(true);
         alert("Sessão retomada da nuvem com sucesso!");
@@ -821,63 +960,76 @@ document.addEventListener('DOMContentLoaded', () => {
   newSessionButton.addEventListener('click', () => {
     const name = prompt("Nome da nova sessão:");
     if (name && name.trim() !== "") {
-      if (sessionsData.sessions[name]) {
+      if (eventData.sessions[name]) {
         alert("Já existe uma sessão com este nome.");
         return;
       }
-      sessionsData.sessions[name] = createDefaultSessionState(name);
-      sessionsData.sessionOrder.push(name);
-      sessionsData.activeSessionName = name;
-      appState = sessionsData.sessions[name];
+      eventData.sessions[name] = createDefaultSessionState(name);
+      eventData.sessionOrder.push(name);
+      eventData.activeBingoSessionName = name;
+      appState = eventData.sessions[name];
       updateUI(true);
     }
   });
 
   // Exclui a sessão ativa atual
   deleteSessionButton.addEventListener('click', () => {
-    const names = Object.keys(sessionsData.sessions);
-    const currentName = sessionsData.activeSessionName;
+    const names = Object.keys(eventData.sessions);
+    const currentName = eventData.activeBingoSessionName;
 
     if (names.length <= 1) {
       if (confirm(`Esta é a única sessão existente. Deseja resetá-la para o estado inicial?`)) {
-        delete sessionsData.sessions[currentName];
+        delete eventData.sessions[currentName];
         const defaultName = "Sessão Padrão";
-        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
-        sessionsData.sessionOrder = [defaultName];
-        sessionsData.activeSessionName = defaultName;
-        appState = sessionsData.sessions[defaultName];
+        eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        eventData.sessionOrder = [defaultName];
+        eventData.activeBingoSessionName = defaultName;
+        appState = eventData.sessions[defaultName];
         updateUI(true);
       }
       return;
     }
 
     if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
-      delete sessionsData.sessions[currentName];
-      sessionsData.sessionOrder = sessionsData.sessionOrder.filter(n => n !== currentName);
-      sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      delete eventData.sessions[currentName];
+      eventData.sessionOrder = eventData.sessionOrder.filter(n => n !== currentName);
+      eventData.activeBingoSessionName = Object.keys(eventData.sessions)[0];
+      appState = eventData.sessions[eventData.activeBingoSessionName];
       updateUI(true);
     }
   });
 
-  // Renomeia o evento e sincroniza com a chave da sessão
-  configEventName.addEventListener('input', (e) => {
-    const newName = e.target.value;
-    const oldName = sessionsData.activeSessionName;
-    if (newName === oldName || !newName) return;
+  // Listener para o Nome do Evento (Título Geral)
+  if (configEventTitle) {
+    configEventTitle.addEventListener('input', (e) => {
+      eventData.eventName = e.target.value;
+      updateUI(false);
+    });
+  }
 
-    // Renomeia a chave no objeto de sessões
-    sessionsData.sessions[newName] = sessionsData.sessions[oldName];
-    delete sessionsData.sessions[oldName];
+  // Listener para Renomear a Sessão Selecionada
+  if (configSessionName) {
+    configSessionName.addEventListener('change', (e) => {
+      const newName = e.target.value.trim();
+      const oldName = eventData.activeBingoSessionName;
+      if (!newName || newName === oldName) return;
 
-    // Atualiza o nome na lista de ordem
-    const orderIdx = sessionsData.sessionOrder.indexOf(oldName);
-    if (orderIdx !== -1) sessionsData.sessionOrder[orderIdx] = newName;
+      if (eventData.sessions[newName]) {
+        alert("Já existe uma sessão com este nome.");
+        e.target.value = oldName;
+        return;
+      }
 
-    sessionsData.activeSessionName = newName;
-    appState.eventName = newName;
-    updateUI(false); // Sincronização em segundo plano enquanto digita
-  });
+      eventData.sessions[newName] = eventData.sessions[oldName];
+      delete eventData.sessions[oldName];
+      const orderIdx = eventData.sessionOrder.indexOf(oldName);
+      if (orderIdx !== -1) eventData.sessionOrder[orderIdx] = newName;
+      eventData.activeBingoSessionName = newName;
+      appState = eventData.sessions[newName];
+      appState.eventName = newName;
+      updateUI(true);
+    });
+  }
 
   // Altera a quantidade de rodadas do evento
   configNumRounds.addEventListener('change', (e) => {
@@ -1017,11 +1169,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Garante um ID se o arquivo importado for de uma versão anterior
-            if (!importedState.sessionId) importedState.sessionId = generateRandomId();
+            if (!importedState.eventid) importedState.eventid = importedState.sessionId || generateRandomId();
 
-            sessionsData.sessions[importedState.eventName] = importedState;
-            sessionsData.activeSessionName = importedState.eventName;
-            appState = sessionsData.sessions[importedState.eventName];
+            eventData.sessions[importedState.eventName] = importedState;
+            eventData.activeBingoSessionName = importedState.eventName;
+            appState = eventData.sessions[importedState.eventName];
             updateUI(true);
             alert("Sessão importada com sucesso!");
           } else {
