@@ -475,6 +475,9 @@ button:hover {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1em;
+  background-color: #ffffff;
+  opacity: 1;
+  background-image: none;
 }
 
 .modal-content input[type="file"] {
@@ -533,6 +536,137 @@ button:hover {
 
 .hidden {
   display: none !important;
+}
+
+/* Menu do Usuário no Header */
+.user-menu-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-google-btn {
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+  padding: 0;
+  overflow: hidden;
+}
+
+.login-google-btn:hover { transform: scale(1.05); background: #f8f9fa; }
+.login-google-btn img { width: 22px; height: 22px; }
+
+.user-avatar-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background: white;
+  min-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  overflow: hidden;
+}
+
+.user-name-display { padding: 8px 16px; font-weight: bold; font-size: 0.85em; color: #666; border-bottom: 1px solid #eee; margin-bottom: 5px; }
+.dropdown-item { background: none; color: #333; text-align: left; padding: 10px 16px; border-radius: 0; font-size: 0.95em; width: 100%; border: none; cursor: pointer; }
+.dropdown-item:hover { background: #f4f4f4; color: #007bff; }
+.logout-item:hover { color: #dc3545; }
+
+.user-profile-area { position: relative; display: flex; align-items: center; }
+
+/* Seletor de Sessão no Header */
+.header-session-select {
+  padding: 2px 8px !important;
+  font-size: 0.85em !important;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  height: auto !important;
+  width: auto !important;
+  font-weight: bold;
+}
+
+.header-session-select option {
+  color: #333;
+  background: white;
+  font-weight: normal;
+}
+
+/* Sistema de Toasts (Notificações) */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background-color: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 0.9em;
+  min-width: 200px;
+  max-width: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  animation: toastFadeIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
+  border-left: 4px solid #28a745;
+}
+
+@keyframes toastFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+.toast:hover {
+  background-color: #444;
+}
+
+#id-options-modal .modal-content button {
+  font-weight: bold;
+  transition: filter 0.2s;
+}
+
+#id-options-modal .modal-content button:hover {
+  filter: brightness(1.1);
 }
 
 /* Estilos para o Modal de QR Code */

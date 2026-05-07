@@ -19,9 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalX = document.getElementById('close-modal-x');
   const patternGrid = document.getElementById('pattern-grid');
   const patternSelect = document.getElementById('pattern-select');
+  const mainSessionSelector = document.getElementById('main-session-selector');
   const configSessionSelector = document.getElementById('config-session-selector');
   const moveSessionUpButton = document.getElementById('move-session-up-button');
   const moveSessionDownButton = document.getElementById('move-session-down-button');
+  const renameSessionButton = document.getElementById('rename-session-button');
   const newSessionButton = document.getElementById('new-session-button');
   const deleteSessionButton = document.getElementById('delete-session-button');
   const configSessionId = document.getElementById('config-session-id');
@@ -33,8 +35,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const copyQrLinkButton = document.getElementById('copy-qr-link-button');
+
+  // Elementos do Gerenciador de Eventos
+  const eventsMgrButton = document.getElementById('sessions-mgr-button');
+  const eventsMgrModal = document.getElementById('sessions-mgr-modal');
+  const closeEventsMgrX = document.getElementById('close-sessions-mgr-x');
+  const closeEventsMgrButton = document.getElementById('close-sessions-mgr-button');
+  const mgrNewEventButton = document.getElementById('mgr-new-session-button');
+  const sessionsListContainer = document.getElementById('sessions-list-container');
+
+  // Elementos de Autenticação
+  const adminHeader = document.getElementById('admin-header');
+  const adminMain = document.getElementById('admin-main');
+  const googleLoginButton = document.getElementById('google-login-button');
+  const logoutButton = document.getElementById('logout-button');
+  
+  const userProfileArea = document.getElementById('user-profile-area');
+  const userPhoto = document.getElementById('user-photo');
+  const userDropdownMenu = document.getElementById('user-dropdown-menu');
+  const userNameDisplay = document.getElementById('user-name-display');
+
   const qrLinkDisplay = document.getElementById('qr-link-display');
-  const loadFromFirebaseButton = document.getElementById('load-from-firebase-button');
+
+  // Elementos do novo Modal de ID e Toasts
+  const idOptionsModal = document.getElementById('id-options-modal');
+  const idOptionsMessage = document.getElementById('id-options-message');
+  const idOptReplace = document.getElementById('id-opt-replace');
+  const idOptCopy = document.getElementById('id-opt-copy');
+  const idOptCancel = document.getElementById('id-opt-cancel');
+  const toastContainer = document.getElementById('toast-container');
+
+  /**
+   * Exibe uma notificação tipo toast na tela.
+   * @param {string} message - Mensagem a ser exibida.
+   */
+  const showToast = (message) => {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span>${message}</span><span style="margin-left:10px; opacity:0.6;">&times;</span>`;
+    
+    const removeToast = () => {
+      if (toast.parentNode) {
+        toast.style.animation = 'toastFadeOut 0.2s forwards';
+        setTimeout(() => toast.remove(), 200);
+      }
+    };
+
+    toast.onclick = removeToast;
+    toastContainer.appendChild(toast);
+    setTimeout(removeToast, 3000);
+  };
 
   // --- Definições de Padrões ---
   const BINGO_PATTERNS = [
@@ -61,13 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Elementos do Modal de Configuração ---
   const configModal = document.getElementById('config-modal');
   const closeConfigButton = document.getElementById('close-config-button');
-  const configEventName = document.getElementById('config-event-name');
+  const configEventTitle = document.getElementById('config-event-name');
+  const configSessionName = document.getElementById('config-session-name');
   const configNumRounds = document.getElementById('config-num-rounds');
   const configMaxNumber = document.getElementById('config-max-number');
   const configDrawMode = document.getElementById('config-draw-mode');
   const configIconUpload = document.getElementById('config-icon-upload');
   const configIconRemove = document.getElementById('config-icon-remove');
-  const configFirebaseWriteToken = document.getElementById('config-firebase-write-token');
   const configIconPreview = document.getElementById('config-icon-preview');
   const exportSessionButton = document.getElementById('export-session-button');
   const importSessionButton = document.getElementById('import-session-button');
@@ -78,7 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} length - Tamanho do ID a ser gerado.
    */
   const generateRandomId = (length = 6) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXY'; // Somente letras maiúsculas, sem I e O para evitar ambiguidade com 1 e 0
+    // Incluímos números (exceto 0 e 1) e removemos I e O para evitar confusão visual
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -86,19 +138,178 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   };
 
+  /**
+   * Verifica no Firebase se um ID de sessão já está em uso.
+   * @param {string} id - O ID a ser verificado.
+   * @returns {Promise<boolean>} - True se o ID já existir.
+   */
+  const checkIdExists = async (id) => {
+    const user = firebase.auth().currentUser;
+    if (!navigator.onLine || !user || typeof firebase === 'undefined' || firebase.apps.length === 0) return false;
+    const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+    return snapshot.exists();
+  };
+
+  /**
+   * Realiza a sincronização direta do objeto eventData com o Firebase Realtime Database.
+   * Esta função ignora as verificações de debounce e modais abertos, sendo usada para
+   * operações críticas que exigem sincronização imediata.
+   * @param {object} dataToSync - O objeto eventData completo a ser sincronizado.
+   */
+  const _performFirebaseSync = (dataToSync) => {
+    const user = firebase.auth().currentUser;
+    if (!user || !navigator.onLine || !dataToSync?.eventid) return; // Só sincroniza se estiver logado, online e com ID
+
+    // Bloqueio de segurança local: não tenta gravar se o proprietário do dado for outro usuário
+    if (dataToSync.ownerUid && dataToSync.ownerUid !== user.uid) {
+      console.warn("Sincronização abortada: O usuário atual não é o proprietário deste evento.");
+      return;
+    }
+
+    // Se a sessão não tem dono, o usuário logado assume a propriedade
+    if (!dataToSync.ownerUid) {
+      dataToSync.ownerUid = user.uid;
+    }
+
+    firebase.database().ref('sessions/' + dataToSync.eventid).set(dataToSync)
+      .catch(err => {
+        console.error("Erro ao sincronizar Firebase:", err.code, err.message);
+        if (err.code === 'PERMISSION_DENIED') {
+          showToast("Erro: Você não tem permissão para este código.");
+        }
+      });
+  };
+
+  /**
+   * Busca todos os eventos pertencentes ao usuário no Firebase e atualiza o registro local.
+   * Isso garante que eventos removidos localmente, mas que ainda existem na nuvem, reapareçam após o login.
+   * @param {string} uid - UID do usuário logado.
+   */
+  const syncRegistryWithFirebase = async (uid) => {
+    if (!navigator.onLine || !uid) return;
+
+    try {
+      const snapshot = await firebase.database().ref('sessions').orderByChild('ownerUid').equalTo(uid).once('value');
+      const data = snapshot.val();
+      
+      if (data) {
+        const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+        Object.entries(data).forEach(([id, event]) => {
+          registry[id] = {
+            name: event.eventName || "Evento sem nome",
+            sessions: event.sessionOrder || []
+          };
+        });
+        localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
+        renderEventsList(); // Sempre re-renderiza a lista interna se houver dados novos
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar lista de eventos:", error);
+    }
+  };
+
+  /**
+   * Gerencia a alteração do ID da sessão com lógica de substituir ou copiar.
+   * @param {string} newId - O novo código desejado.
+   * @param {string} oldId - O código atual.
+   * @param {boolean} forceRename - Se verdadeiro, ignora o modal de opções e força a criação de um novo ID (usado para resolução de conflito).
+   */
+  const processIdChange = async (newId, oldId, forceRename = false) => {
+    if (!newId || newId === oldId) return;
+    const user = firebase.auth().currentUser;
+
+    let choice;
+    if (forceRename) {
+      // Em caso de conflito de posse detectado no login ou ao carregar, tratamos como uma renomeação local forçada (cópia)
+      choice = '2';
+    } else {
+      // Mostra o modal customizado (sempre, mesmo offline)
+      idOptionsMessage.textContent = `O que deseja fazer com o código "${newId}"? (Atual: ${oldId})`;
+      idOptionsModal.classList.remove('hidden');
+
+      choice = await new Promise((resolve) => {
+        const handleChoice = (val) => {
+          idOptReplace.onclick = null;
+          idOptCopy.onclick = null;
+          idOptCancel.onclick = null;
+          idOptionsModal.classList.add('hidden');
+          resolve(val);
+        };
+        idOptReplace.onclick = () => handleChoice('1');
+        idOptCopy.onclick = () => handleChoice('2');
+        idOptCancel.onclick = () => handleChoice('0');
+        idOptionsModal.onclick = (e) => { if (e.target === idOptionsModal) handleChoice('0'); };
+      });
+    }
+
+    if (choice === '1') {
+      // SUBSTITUIR
+      // Só tenta validar e remover no Firebase se estiver online e logado
+      if (user && navigator.onLine) {
+        try {
+          const snapshot = await firebase.database().ref('sessions/' + newId).once('value');
+          const existingData = snapshot.val();
+          if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
+            showToast(`Código "${newId}" já em uso por outro organizador. Não foi possível substituir.`);
+            configSessionId.value = oldId;
+            return;
+          }
+          if (oldId) {
+            await firebase.database().ref('sessions/' + oldId).remove();
+            const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+            delete registry[oldId];
+            localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
+          }
+        } catch (error) {
+          console.error("Erro ao processar substituição no Firebase:", error);
+          showToast("Erro na nuvem. ID alterado apenas localmente.");
+        }
+      }
+      eventData.eventid = newId;
+      if (user && navigator.onLine) _performFirebaseSync(eventData);
+      updateUI(false);
+      const status = (user && navigator.onLine) ? ' (Sincronizado)' : ' (Local)';
+      showToast(`Código alterado para: ${newId}${status}`);
+    } else if (choice === '2') {
+      // COPIAR
+      if (user && navigator.onLine) {
+        try {
+          const snapshot = await firebase.database().ref('sessions/' + newId).once('value');
+          const existingData = snapshot.val();
+          if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
+            showToast(`Código "${newId}" já em uso. Não foi possível criar cópia.`);
+            configSessionId.value = oldId;
+            return;
+          }
+        } catch (error) {
+          console.error("Erro ao validar cópia no Firebase:", error);
+        }
+      }
+      eventData.eventid = newId;
+      if (user && navigator.onLine) _performFirebaseSync(eventData);
+      updateUI(false);
+      const status = (user && navigator.onLine) ? ' (Sincronizada)' : ' (Local)';
+      showToast(`Cópia criada no código: ${newId}${status}`);
+    } else {
+      configSessionId.value = oldId;
+      showToast("Alteração de código cancelada.");
+    }
+  };
+
   // --- Estado da Aplicação ---
-  let sessionsData = {
-    sessionId: generateRandomId(),
-    firebaseWriteToken: "",
-    activeSessionName: "Sessão Padrão",
+  let eventData = {
+    eventid: generateRandomId(),
+    eventName: "Novo Evento de Bingo",
+    ownerUid: null, // Armazena o UID do criador
+    activeBingoSessionName: "Sessão Padrão",
     sessions: {},
     sessionOrder: []
   };
   let appState = {};
 
   /**
-   * Cria um objeto de estado inicial para uma nova sessão de bingo com rodadas padrão.
-   * @param {string} name - Nome da sessão a ser criada.
+   * Cria um objeto de estado inicial para uma nova sessão de bingo (game).
+   * @param {string} name - Nome da sessão de bingo.
    */
   const createDefaultSessionState = (name) => {
     const newState = {
@@ -117,67 +328,29 @@ document.addEventListener('DOMContentLoaded', () => {
     return newState;
   };
 
-  /**
-   * INFORMAÇÕES DE SEGURANÇA DO FIREBASE (MODO SIMPLES):
-   *
-   * Neste modo, não usamos Firebase Auth. Usamos uma regra de validação que compara
-   * o campo 'firebaseWriteToken' enviado com uma string fixa nas regras do Banco.
-   *
-   * Passos para configurar no Console do Firebase (Realtime Database -> Regras):
-   * 1. Vá na aba "Rules" (Regras) do seu Realtime Database.
-   * 2. Cole as seguintes regras (substitua 'MINHA_SENHA_MESTRA' pela sua senha):
-   *
-   * {
-   *   "rules": {
-   *     "sessions": {
-   *       "$session_id": {
-   *         ".read": true,
-   *         ".write": "newData.child('firebaseWriteToken').val() === 'MINHA_SENHA_MESTRA'",
-   *         "firebaseWriteToken": {
-   *           ".read": false // Protege o token para que espectadores não o vejam
-   *         }
-   *       }
-   *     }
-   *   }
-   * }
-   */
-
   let syncTimeout = null;
   /**
-   * Sincroniza o objeto sessionsData completo com o Firebase Realtime Database.
+   * Sincroniza o objeto eventData completo com o Firebase Realtime Database.
    * @param {boolean} immediate - Se verdadeiro, ignora o debounce e executa a sincronização na hora.
    */
   const syncToFirebase = (immediate = false) => {
-    const performSync = () => {
+    const performSyncWithChecks = () => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
-      // Isso garante que a restauração de dados e edições de ID/Token não causem conflitos ou sobrescritas acidentais.
-      if (configModal && !configModal.classList.contains('hidden')) return;
+      // Isso garante que a restauração de dados e edições de ID não causem conflitos.
+      const isConfigOpen = configModal && !configModal.classList.contains('hidden');
+      const isMgrOpen = eventsMgrModal && !eventsMgrModal.classList.contains('hidden');
+      if (isConfigOpen || isMgrOpen) return;
 
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && sessionsData && sessionsData.sessionId) {
-        // Enviamos o sessionsData que já contém o campo firebaseWriteToken na raiz.
-        firebase.database().ref('sessions/' + sessionsData.sessionId).set(sessionsData)
-          .catch(err => {
-            console.error("Erro ao sincronizar Firebase:", err.code, err.message);
-          });
-      }
+      _performFirebaseSync(eventData);
     };
 
     if (syncTimeout) clearTimeout(syncTimeout);
 
     if (immediate) {
-      performSync();
+      performSyncWithChecks();
     } else {
-      syncTimeout = setTimeout(performSync, 1000); // Debounce de 1 segundo para digitação
+      syncTimeout = setTimeout(performSyncWithChecks, 1000); // Debounce de 1 segundo para digitação
     }
-  };
-
-  /**
-   * Salva o estado atual no localStorage do navegador e agenda a sincronização com o Firebase.
-   * @param {boolean} immediate - Define se a sincronização com o Firebase deve ser imediata.
-   */
-  const saveState = (immediate = false) => {
-    localStorage.setItem('bingoSessionsData', JSON.stringify(sessionsData));
-    syncToFirebase(immediate);
   };
 
   /**
@@ -185,46 +358,198 @@ document.addEventListener('DOMContentLoaded', () => {
    * Inicializa a sessão ativa e configura o Firebase.
    */
   const loadState = () => {
-    const storedData = localStorage.getItem('bingoSessionsData');
+    const storedData = localStorage.getItem('bingoEventData');
     if (storedData) {
-      sessionsData = JSON.parse(storedData);
+      eventData = JSON.parse(storedData);
 
-      // Migração: se os campos não estiverem na raiz, busca da sessão ativa
-      if (!sessionsData.sessionId) {
-        const current = sessionsData.sessions[sessionsData.activeSessionName];
-        sessionsData.sessionId = current?.sessionId || generateRandomId();
-        sessionsData.firebaseWriteToken = current?.firebaseWriteToken || "";
+      if (!eventData.eventName) {
+        eventData.eventName = eventData.sessions[eventData.activeBingoSessionName]?.eventName || "Evento de Bingo";
       }
-      if (!sessionsData.sessionOrder) sessionsData.sessionOrder = Object.keys(sessionsData.sessions);
 
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      // Compatibilidade: garante que as propriedades renomeadas existam
+      if (eventData.sessionId) { eventData.eventid = eventData.sessionId; delete eventData.sessionId; }
+      if (eventData.activeSessionName) { eventData.activeBingoSessionName = eventData.activeSessionName; delete eventData.activeSessionName; }
+      if (!eventData.sessionOrder) eventData.sessionOrder = Object.keys(eventData.sessions);
+      eventData.hasActiveEvent = true; // Marca que um evento foi carregado
+
+      appState = eventData.sessions[eventData.activeBingoSessionName];
     } else {
-      // Migração de dados do formato antigo ou inicialização limpa
+      // Migração de dados do formato antigo (bingoAppState)
       const legacyState = localStorage.getItem('bingoAppState');
       if (legacyState) {
         const parsedLegacy = JSON.parse(legacyState);
         const name = parsedLegacy.eventName || "Sessão Antiga";
-        sessionsData.sessionId = parsedLegacy.sessionId || generateRandomId();
-        sessionsData.firebaseWriteToken = parsedLegacy.firebaseWriteToken || "";
-        sessionsData.sessions[name] = parsedLegacy;
-        sessionsData.sessionOrder = [name];
-        sessionsData.activeSessionName = name;
+        eventData.eventid = parsedLegacy.sessionId || generateRandomId();
+        eventData.eventName = parsedLegacy.eventName || "Bingo";
+        eventData.sessions[name] = parsedLegacy;
+        eventData.sessionOrder = [name];
+        eventData.activeBingoSessionName = name;
+        eventData.hasActiveEvent = true; // Marca que um evento foi carregado
       } else {
-        sessionsData.sessionId = generateRandomId();
-        const defaultName = "Sessão Padrão";
-        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
-        sessionsData.sessionOrder = [defaultName];
-        sessionsData.activeSessionName = defaultName;
+        // NENHUMA CRIAÇÃO DE EVENTO PADRÃO AQUI.
+        // A aplicação iniciará sem um evento ativo,
+        // e o modal do gerenciador de eventos será exibido após o login.
+        eventData = {
+          eventid: null, // Nenhum ID de evento ativo inicialmente
+          eventName: "Nenhum Evento Ativo",
+          ownerUid: null,
+          sessions: {},
+          sessionOrder: [],
+          activeBingoSessionName: null,
+          hasActiveEvent: false // Flag para indicar que não há evento ativo
+        };
+        appState = null; // Nenhum appState ativo
       }
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+    
+    // Garante que o appState esteja vinculado à sessão ativa carregada
+    if (eventData.hasActiveEvent && eventData.activeBingoSessionName) {
+      appState = eventData.sessions[eventData.activeBingoSessionName];
+    }
     }
 
-    // Inicializa Firebase se a configuração estiver disponível
+    // Inicializa Firebase e Monitora Autenticação
     if (typeof firebaseConfig !== 'undefined' && firebase.apps.length === 0) {
       firebase.initializeApp(firebaseConfig);
     }
 
-    updateUI(true);
+    const auth = firebase.auth();
+
+    // Monitor de estado de login
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        // Usuário logado
+        googleLoginButton.classList.add('hidden');
+        userProfileArea.classList.remove('hidden');
+        
+        if (user.photoURL) {
+          userPhoto.src = user.photoURL;
+          userPhoto.onerror = () => {
+            userPhoto.src = 'default-icon.png';
+            userPhoto.onerror = null; // Evita loop infinito se o ícone padrão também falhar
+          };
+        } else {
+          userPhoto.src = 'default-icon.png';
+        }
+
+        if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email;
+        
+        // Resolução de propriedade ao logar
+        if (eventData.eventid && navigator.onLine) {
+          try {
+            const snapshot = await firebase.database().ref('sessions/' + eventData.eventid).once('value');
+            const remoteData = snapshot.val();
+
+            if (remoteData && remoteData.ownerUid && remoteData.ownerUid !== user.uid) {
+              // Conflito: O ID que você está usando localmente pertence a outra conta no servidor.
+              showToast(`Conflito: O código ${eventData.eventid} pertence a outro usuário.`);
+              const newId = generateRandomId();
+              // Forçamos a mudança para um novo ID aleatório para permitir sincronização na sua conta
+              await processIdChange(newId, eventData.eventid, true);
+            } else {
+              // Lógica de Sincronização Automática (Merge)
+              if (remoteData) {
+                // 1. Baixar o que tem na nuvem (Merge sessions)
+                Object.entries(remoteData.sessions || {}).forEach(([sName, sData]) => {
+                  if (!eventData.sessions[sName]) {
+                    eventData.sessions[sName] = sData;
+                  }
+                });
+                // Mesclar metadados e ordem
+                if (eventData.eventName === "Novo Evento de Bingo") {
+                  eventData.eventName = remoteData.eventName || eventData.eventName;
+                }
+                const combinedOrder = [...new Set([...(eventData.sessionOrder || []), ...(remoteData.sessionOrder || [])])];
+                eventData.sessionOrder = combinedOrder;
+                showToast("Sincronizado com a nuvem.");
+              }
+
+              // 2. Assumir propriedade e Subir o que tem local (Upload)
+              if (!eventData.ownerUid) eventData.ownerUid = user.uid;
+              saveState(true); 
+            }
+          } catch (e) {
+            console.error("Erro na verificação de posse ao logar:", e);
+          }
+        }
+
+        // Sincroniza a lista de todos os eventos do usuário para restaurar "atalhos" removidos localmente
+        showToast("Sincronizando seus eventos...");
+        await syncRegistryWithFirebase(user.uid);
+        if (!eventsMgrModal.classList.contains('hidden')) renderEventsList();
+      } else {
+        // Usuário deslogado
+        googleLoginButton.classList.remove('hidden');
+        userProfileArea.classList.add('hidden');
+        userDropdownMenu.classList.add('hidden');
+      }
+
+      // A aplicação SEMPRE carrega os dados locais, logado ou não
+      if (eventData.hasActiveEvent && appState) {
+        updateUI(false); 
+      } else {
+        openEventsMgr();
+      }
+    });
+  };
+
+  // Handlers de Autenticação
+  googleLoginButton.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch(error => {
+      showToast("Erro ao logar: " + error.message);
+    });
+  });
+
+  // Alternar Menu do Usuário
+  if (userPhoto) {
+    userPhoto.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdownMenu.classList.toggle('hidden');
+    });
+  }
+
+  logoutButton.addEventListener('click', () => {
+    if (confirm("Deseja realmente sair?")) {
+      firebase.auth().signOut();
+    }
+  });
+
+  /**
+   * Busca os dados completos de um evento no Firebase e o torna a sessão ativa.
+   * @param {string} id - O ID do evento a ser carregado.
+   */
+  const openEventById = async (id) => {
+    if (!id || !navigator.onLine) {
+      if (!navigator.onLine) showToast("Você precisa estar online para carregar eventos.");
+      return;
+    }
+
+    showToast("Baixando dados do evento...");
+    try {
+      const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+      const data = snapshot.val();
+
+      if (data) {
+        eventData = data;
+        eventData.hasActiveEvent = true;
+
+        // Define a sessão de bingo ativa (game) dentro do evento carregado
+        if (!eventData.activeBingoSessionName || !eventData.sessions[eventData.activeBingoSessionName]) {
+          eventData.activeBingoSessionName = eventData.sessionOrder[0] || Object.keys(eventData.sessions)[0];
+        }
+
+        appState = eventData.sessions[eventData.activeBingoSessionName];
+        
+        // Atualiza a interface e exibe o painel de controle
+        updateUI(false); 
+        showToast(`Evento "${eventData.eventName}" carregado com sucesso!`);
+      } else {
+        showToast("Erro: Evento não encontrado no servidor.");
+      }
+    } catch (error) {
+      console.error("Erro ao abrir evento:", error);
+      showToast("Erro de permissão ou rede ao carregar.");
+    }
   };
 
   /**
@@ -232,9 +557,23 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {boolean} immediateSync - Define se as alterações devem ser salvas no Firebase imediatamente.
    */
   const updateUI = (immediateSync = false) => {
+    // Se não houver evento ativo, atualiza o cabeçalho e oculta o conteúdo principal
+    if (!appState || !eventData.eventid || !eventData.activeBingoSessionName) {
+      eventTitle.textContent = eventData.eventName || "Nenhum Evento Ativo";
+      document.title = eventData.eventName || "Bingo";
+      eventIcon.src = "default-icon.png"; // Ícone de placeholder
+      adminMain.classList.add('hidden'); // Garante que o conteúdo principal esteja oculto
+      // Também oculta o modal de configuração se estiver aberto e não houver evento ativo
+      configModal.classList.add('hidden');
+      return;
+    }
+
+    // Garante que o conteúdo principal esteja visível após o carregamento
+    adminMain.classList.remove('hidden');
+
     // Header
-    eventTitle.textContent = appState.eventName;
-    document.title = appState.eventName;
+    eventTitle.textContent = eventData.eventName || appState.eventName;
+    document.title = eventData.eventName || appState.eventName;
     eventIcon.src = appState.eventIcon;
     configIconPreview.src = appState.eventIcon; // Atualiza a prévia no modal
 
@@ -280,18 +619,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Config Modal
-    configEventName.value = appState.eventName;
+    if (configEventTitle) configEventTitle.value = eventData.eventName || '';
+    if (configSessionName) configSessionName.value = appState.eventName || '';
     configNumRounds.value = appState.numRounds;
     configMaxNumber.value = appState.maxNumber;
     configDrawMode.value = appState.drawMode;
-    configFirebaseWriteToken.value = sessionsData.firebaseWriteToken || '';
-    configSessionId.value = sessionsData.sessionId || '';
-    updateSessionSelector();
+    configSessionId.value = eventData.eventid || '';
+    updateSessionSelector(); // Agora atualiza o seletor principal do header
 
     // Desabilita botões de reordenação se necessário
-    const orderIdx = sessionsData.sessionOrder.indexOf(sessionsData.activeSessionName);
+    const orderIdx = eventData.sessionOrder.indexOf(eventData.activeBingoSessionName);
     if (moveSessionUpButton) moveSessionUpButton.disabled = orderIdx <= 0;
-    if (moveSessionDownButton) moveSessionDownButton.disabled = orderIdx >= sessionsData.sessionOrder.length - 1;
+    if (moveSessionDownButton) moveSessionDownButton.disabled = orderIdx >= eventData.sessionOrder.length - 1;
 
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
@@ -301,24 +640,125 @@ document.addEventListener('DOMContentLoaded', () => {
     if (configShareLink) {
       // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
       const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('control.html', '').replace('index.html', '');
-      configShareLink.value = `${baseUrl}view.html?id=${sessionsData.sessionId}`;
+      configShareLink.value = `${baseUrl}view.html?id=${eventData.eventid}`;
     }
 
     saveState(immediateSync);
   };
 
   /**
-   * Preenche o menu suspenso de escolha de sessões dentro do modal de configurações.
+   * Preenche os menus suspensos de escolha de sessões (Header e Configurações).
    */
   const updateSessionSelector = () => {
-    configSessionSelector.innerHTML = '';
-    sessionsData.sessionOrder.forEach(name => {
-      if (!sessionsData.sessions[name]) return;
-      const option = document.createElement('option');
-      option.value = name;
-      option.textContent = name;
-      if (name === sessionsData.activeSessionName) option.selected = true;
-      configSessionSelector.appendChild(option);
+    [mainSessionSelector, configSessionSelector].forEach(sel => {
+      if (!sel) return;
+      sel.innerHTML = '';
+      eventData.sessionOrder.forEach(name => {
+        if (!eventData.sessions[name]) return;
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        if (name === eventData.activeBingoSessionName) option.selected = true;
+        sel.appendChild(option);
+      });
+    });
+  };
+
+  /**
+   * Renderiza a lista de Eventos (IDs diferentes) no modal de gerenciamento.
+   */
+  const renderEventsList = () => {
+    if (!sessionsListContainer) return;
+    sessionsListContainer.innerHTML = '';
+
+    const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+
+    Object.entries(registry).forEach(([id, data]) => {
+      const isCurrent = id === eventData.eventid;
+
+      let eventName = "Evento sem nome";
+      let sessionNames = [];
+
+      // Lida com dados legados (string) ou novo formato (objeto)
+      if (typeof data === 'string') {
+        eventName = data;
+      } else if (data && typeof data === 'object') {
+        eventName = data.name || "Evento sem nome";
+        sessionNames = data.sessions || [];
+      }
+
+      const item = document.createElement('div');
+      item.className = 'event-mgr-item';
+      item.style.alignItems = 'flex-start'; // Alinha no topo caso a lista seja grande
+
+      const nameSpan = document.createElement('span');
+      const sessionsHtml = sessionNames.length > 0
+        ? `<ul style="margin: 5px 0 0 15px; padding: 0; font-size: 0.85em; color: #777; list-style-type: disc;">` +
+        sessionNames.map(s => `<li>${s}</li>`).join('') + `</ul>`
+        : "";
+
+      nameSpan.innerHTML = `<strong>${eventName}</strong> <br><small style="color: #666">Código: ${id}</small>${sessionsHtml}`;
+      if (isCurrent) {
+        nameSpan.style.fontWeight = 'bold';
+        nameSpan.innerHTML += ' <small style="color: #28a745">(Ativa)</small>';
+      }
+
+      const actions = document.createElement('div');
+      actions.style.display = 'flex'; actions.style.gap = '5px';
+
+      if (!isCurrent) {
+        const selectBtn = document.createElement('button');
+        selectBtn.textContent = 'Abrir';
+        selectBtn.style.padding = '5px 10px'; selectBtn.style.fontSize = '0.8em';
+        selectBtn.onclick = () => {
+          openEventById(id);
+          closeEventsMgr();
+        };
+        actions.appendChild(selectBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Remover';
+        deleteBtn.classList.add('undo-button');
+        deleteBtn.style.padding = '5px 10px'; deleteBtn.style.fontSize = '0.8em';
+        deleteBtn.onclick = async () => { // Tornar a função assíncrona
+          const user = firebase.auth().currentUser;
+          const isOnline = navigator.onLine;
+
+          let confirmMessage = `Remover o evento "${eventName}" (Código: ${id}) da sua lista local?`;
+          if (user && isOnline) {
+            confirmMessage += `\n\nATENÇÃO: Isso também o removerá do Firebase (nuvem) se você for o proprietário.`;
+          } else {
+            confirmMessage += `\n\nVocê está offline ou não logado. A remoção será apenas local.`;
+          }
+
+          if (confirm(confirmMessage)) {
+            if (user && isOnline) {
+              try {
+                await firebase.database().ref('sessions/' + id).remove();
+                showToast(`Evento "${eventName}" removido do Firebase e localmente.`);
+              } catch (error) {
+                console.error("Erro ao remover evento do Firebase:", error);
+                if (error.code === 'PERMISSION_DENIED') {
+                  showToast(`Erro: Você não tem permissão para remover "${eventName}" do Firebase. Removendo apenas localmente.`);
+                } else {
+                  showToast(`Erro ao remover do Firebase: ${error.message}. Removendo apenas localmente.`);
+                }
+              }
+            } else {
+              showToast(`Evento "${eventName}" removido localmente.`);
+            }
+
+            const reg = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+            delete reg[id];
+            localStorage.setItem('bingoUserEvents', JSON.stringify(reg));
+            renderEventsList();
+          }
+        };
+        actions.appendChild(deleteBtn);
+      }
+
+      item.appendChild(nameSpan); item.appendChild(actions);
+      sessionsListContainer.appendChild(item);
     });
   };
 
@@ -369,6 +809,11 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const startAnimationLoop = () => {
     const run = () => {
+      // Cláusula de guarda para quando nenhum appState é carregado
+      if (!appState || !appState.rounds || !appState.rounds[appState.currentRound]) {
+        return setTimeout(run, 1000);
+      }
+
       const currentRoundData = appState.rounds[appState.currentRound];
       if (!currentRoundData) return setTimeout(run, 1000);
 
@@ -453,16 +898,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const addDrawnNumber = (number) => {
     const currentRoundData = appState.rounds[appState.currentRound];
     if (currentRoundData.isCompleted) {
-      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      showToast("Rodada concluída. Desmarque para alterar.");
       return;
     }
     if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
     if (number < 1 || number > appState.maxNumber || isNaN(number)) {
-      alert(`Por favor, digite um número válido entre 01 e ${appState.maxNumber.toString().padStart(2, '0')}.`);
+      showToast(`Digite um número válido (01-${appState.maxNumber.toString().padStart(2, '0')})`);
       return;
     }
     if (currentRoundData.drawnNumbers.includes(number)) {
-      alert(`O número ${number.toString().padStart(2, '0')} já foi sorteado nesta rodada.`);
+      showToast(`Número ${number.toString().padStart(2, '0')} já sorteado.`);
       return;
     }
 
@@ -479,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const undoLastDrawnNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
     if (currentRoundData.isCompleted) {
-      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      showToast("Rodada concluída. Desmarque para alterar.");
       return;
     }
     if (currentRoundData && currentRoundData.drawnNumbers && currentRoundData.drawnNumbers.length > 0) {
@@ -500,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const drawRandomNumber = () => {
     const currentRoundData = appState.rounds[appState.currentRound];
     if (currentRoundData.isCompleted) {
-      alert("Esta rodada está marcada como concluída. Desmarque para alterar.");
+      showToast("Rodada concluída. Desmarque para alterar.");
       return;
     }
     if (!currentRoundData.drawnNumbers) currentRoundData.drawnNumbers = [];
@@ -512,7 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (availableNumbers.length === 0) {
-      alert("Todos os números já foram sorteados nesta rodada!");
+      showToast("Todos os números já sorteados!");
       return;
     }
 
@@ -537,6 +982,22 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Abre o gerenciador de sessões e renderiza a lista.
+   */
+  const openEventsMgr = () => {
+    renderEventsList();
+    eventsMgrModal.classList.remove('hidden');
+  };
+
+  /**
+   * Fecha o gerenciador de sessões.
+   */
+  const closeEventsMgr = () => {
+    eventsMgrModal.classList.add('hidden');
+    updateUI();
+  };
+
+  /**
    * Fecha o modal de exibição do QR Code.
    */
   const closeQrModal = () => {
@@ -556,6 +1017,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
       closeQrModal();
     }
+    if (e.key === 'Escape' && !eventsMgrModal.classList.contains('hidden')) {
+      closeEventsMgr();
+    }
+    if (e.key === 'Escape' && !idOptionsModal.classList.contains('hidden')) {
+      idOptCancel.click();
+    }
+  });
+
+  // Fechar dropdown ao clicar fora
+  window.addEventListener('click', () => {
+    if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
   });
 
   // Altera a rodada ativa quando o usuário seleciona outra no menu suspenso
@@ -615,11 +1087,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Config Modal Event Listeners
-  // Troca a sessão ativa dentro do modal de configurações
-  configSessionSelector.addEventListener('change', (e) => {
-    sessionsData.activeSessionName = e.target.value;
-    appState = sessionsData.sessions[sessionsData.activeSessionName];
-    updateUI(true);
+  // Troca a sessão ativa (tanto no cabeçalho quanto no modal)
+  [mainSessionSelector, configSessionSelector].forEach(sel => {
+    if (sel) {
+      sel.addEventListener('change', (e) => {
+        eventData.activeBingoSessionName = e.target.value;
+        appState = eventData.sessions[eventData.activeBingoSessionName];
+        updateUI(true);
+      });
+    }
   });
 
   /**
@@ -627,35 +1103,43 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} direction - -1 para subir, 1 para descer.
    */
   const moveSession = (direction) => {
-    const name = sessionsData.activeSessionName;
-    const index = sessionsData.sessionOrder.indexOf(name);
+    const name = eventData.activeBingoSessionName;
+    const index = eventData.sessionOrder.indexOf(name);
     if (index === -1) return;
     const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= sessionsData.sessionOrder.length) return;
+    if (newIndex < 0 || newIndex >= eventData.sessionOrder.length) return;
 
     // Troca de posição no array de ordem
-    const temp = sessionsData.sessionOrder[index];
-    sessionsData.sessionOrder[index] = sessionsData.sessionOrder[newIndex];
-    sessionsData.sessionOrder[newIndex] = temp;
+    const temp = eventData.sessionOrder[index];
+    eventData.sessionOrder[index] = eventData.sessionOrder[newIndex];
+    eventData.sessionOrder[newIndex] = temp;
 
     updateUI(true);
   };
 
-  // Sincroniza o ID da sessão pública conforme o usuário digita
-  configSessionId.addEventListener('input', (e) => {
-    sessionsData.sessionId = e.target.value.toUpperCase();
-    updateUI(false); // Sincronização em segundo plano enquanto digita
+  // Altera o ID da sessão via input manual
+  configSessionId.addEventListener('change', async (e) => {
+    const newId = e.target.value.toUpperCase().trim();
+    await processIdChange(newId, eventData.eventid);
   });
 
   // Gera um novo ID de sessão aleatório
-  regenerateIdButton.addEventListener('click', () => {
-    sessionsData.sessionId = generateRandomId();
-    updateUI(true);
-  });
+  regenerateIdButton.addEventListener('click', async () => {
+    let newId = generateRandomId();
+    const user = firebase.auth().currentUser; // Verifica se o usuário está logado
 
-  // Reordenação de sessões
-  moveSessionUpButton.addEventListener('click', () => moveSession(-1));
-  moveSessionDownButton.addEventListener('click', () => moveSession(1));
+    if (user && navigator.onLine) { // Só checa o Firebase se o usuário estiver online
+      let isTaken = await checkIdExists(newId);
+      // Tenta gerar um novo ID até encontrar um que não esteja em uso (limite de 5 tentativas)
+      let attempts = 0;
+      while (isTaken && attempts < 5) {
+        newId = generateRandomId();
+        isTaken = await checkIdExists(newId);
+        attempts++;
+      }
+    }
+    await processIdChange(newId, eventData.eventid); // Usa a nova lógica de processamento
+  });
 
   // Copia o link de visualização para a área de transferência
   copyLinkButton.addEventListener('click', () => {
@@ -666,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => copyLinkButton.textContent = originalText, 2000);
     }).catch(err => {
       console.error('Erro ao copiar:', err);
-      alert('Não foi possível copiar o link automaticamente.');
+      showToast('Erro ao copiar o link.');
     });
   });
 
@@ -699,119 +1183,150 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fecha o modal de QR Code ao clicar no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
-  // Busca dados de uma sessão existente no Firebase usando ID e Token
-  loadFromFirebaseButton.addEventListener('click', async () => {
-    let id = configSessionId.value.trim().toUpperCase();
-    if (id.length !== 6) {
-      id = prompt("Digite o Código da Sessão (ID Público) para retomar:", id)?.toUpperCase().trim();
-    }
-    if (!id || id.length !== 6) return;
+  // Copia a URL de visualização de dentro do modal de QR Code
+  if (copyQrLinkButton) {
+    copyQrLinkButton.addEventListener('click', () => {
+      const url = qrLinkDisplay.textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const originalText = copyQrLinkButton.textContent;
+        copyQrLinkButton.textContent = 'Copiado! ✅';
+        setTimeout(() => copyQrLinkButton.textContent = originalText, 2000);
+      });
+    });
+  }
 
-    let token = configFirebaseWriteToken.value.trim();
-    if (!token) {
-      token = prompt("Digite o Token Secreto (Senha de Escrita) para esta sessão:");
-    }
-    if (!token) return;
+  // --- Event Listeners do Gerenciador de Sessões ---
+  if (eventsMgrButton) eventsMgrButton.addEventListener('click', openEventsMgr);
+  if (closeEventsMgrX) closeEventsMgrX.addEventListener('click', closeEventsMgr);
+  if (closeEventsMgrButton) closeEventsMgrButton.addEventListener('click', closeEventsMgr);
 
-    if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
-      alert("Firebase não configurado corretamente.");
-      return;
-    }
+  if (mgrNewEventButton) {
+    mgrNewEventButton.addEventListener('click', () => {
+      if (!confirm("Isso criará um Evento totalmente novo com um novo Código ID. Deseja continuar?")) return;
 
-    try {
-      const snapshot = await firebase.database().ref('sessions/' + id).once('value');
-      const data = snapshot.val();
+      const defaultName = "Novo Evento de Bingo";
+      eventData.eventid = generateRandomId();
+      eventData.sessions = {};
+      eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
+      eventData.sessionOrder = [defaultName];
+      eventData.activeBingoSessionName = defaultName;
+      eventData.hasActiveEvent = true; // Marca que um evento está agora ativo
+      appState = eventData.sessions[defaultName];
+      updateUI(true);
+      closeEventsMgr();
+    });
+  }
 
-      if (data) {
-        // Injetamos o token manual pois o Firebase não o retorna na leitura
-        data.firebaseWriteToken = token;
-        sessionsData = data;
-        appState = sessionsData.sessions[sessionsData.activeSessionName];
-
-        updateUI(true);
-        alert("Sessão retomada da nuvem com sucesso!");
-      } else {
-        alert("Sessão não encontrada no servidor com este ID.");
-      }
-    } catch (error) {
-      console.error("Erro ao retomar da nuvem:", error);
-      alert("Erro ao acessar a nuvem: " + error.message);
-    }
-  });
-
-  // Atualiza o token de escrita conforme o usuário digita
-  configFirebaseWriteToken.addEventListener('input', (e) => {
-    sessionsData.firebaseWriteToken = e.target.value;
-    saveState(false); // Sincronização em segundo plano enquanto digita
-  });
+  // Fecha o modal de sessões ao clicar no overlay (fora do conteúdo)
+  if (eventsMgrModal) {
+    eventsMgrModal.addEventListener('click', (e) => { if (e.target === eventsMgrModal) closeEventsMgr(); });
+  }
 
   // Cria uma nova sessão no projeto atual
   newSessionButton.addEventListener('click', () => {
     const name = prompt("Nome da nova sessão:");
     if (name && name.trim() !== "") {
-      if (sessionsData.sessions[name]) {
-        alert("Já existe uma sessão com este nome.");
+      if (eventData.sessions[name]) {
+        showToast("Já existe uma sessão com este nome.");
         return;
       }
-      sessionsData.sessions[name] = createDefaultSessionState(name);
-      sessionsData.sessionOrder.push(name);
-      sessionsData.activeSessionName = name;
-      appState = sessionsData.sessions[name];
+      eventData.sessions[name] = createDefaultSessionState(name);
+      eventData.sessionOrder.push(name);
+      eventData.activeBingoSessionName = name;
+      appState = eventData.sessions[name];
       updateUI(true);
     }
   });
 
+  // Listener para Renomear a Sessão Selecionada via botão
+  if (renameSessionButton) {
+    renameSessionButton.addEventListener('click', () => {
+      const oldName = eventData.activeBingoSessionName;
+      const newName = prompt("Novo nome para a sessão:", oldName);
+      
+      if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+        const cleanName = newName.trim();
+        if (eventData.sessions[cleanName]) {
+          showToast("Já existe uma sessão com este nome.");
+          return;
+        }
+
+        eventData.sessions[cleanName] = eventData.sessions[oldName];
+        delete eventData.sessions[oldName];
+        const orderIdx = eventData.sessionOrder.indexOf(oldName);
+        if (orderIdx !== -1) eventData.sessionOrder[orderIdx] = cleanName;
+        eventData.activeBingoSessionName = cleanName;
+        appState = eventData.sessions[cleanName];
+        appState.eventName = cleanName;
+        updateUI(true);
+      }
+    });
+  }
+
   // Exclui a sessão ativa atual
   deleteSessionButton.addEventListener('click', () => {
-    const names = Object.keys(sessionsData.sessions);
-    const currentName = sessionsData.activeSessionName;
+    const names = Object.keys(eventData.sessions);
+    const currentName = eventData.activeBingoSessionName;
 
     if (names.length <= 1) {
       if (confirm(`Esta é a única sessão existente. Deseja resetá-la para o estado inicial?`)) {
-        delete sessionsData.sessions[currentName];
+        delete eventData.sessions[currentName];
         const defaultName = "Sessão Padrão";
-        sessionsData.sessions[defaultName] = createDefaultSessionState(defaultName);
-        sessionsData.sessionOrder = [defaultName];
-        sessionsData.activeSessionName = defaultName;
-        appState = sessionsData.sessions[defaultName];
+        eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
+        eventData.sessionOrder = [defaultName];
+        eventData.activeBingoSessionName = defaultName;
+        appState = eventData.sessions[defaultName];
         updateUI(true);
       }
       return;
     }
 
     if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
-      delete sessionsData.sessions[currentName];
-      sessionsData.sessionOrder = sessionsData.sessionOrder.filter(n => n !== currentName);
-      sessionsData.activeSessionName = Object.keys(sessionsData.sessions)[0];
-      appState = sessionsData.sessions[sessionsData.activeSessionName];
+      delete eventData.sessions[currentName];
+      eventData.sessionOrder = eventData.sessionOrder.filter(n => n !== currentName);
+      eventData.activeBingoSessionName = Object.keys(eventData.sessions)[0];
+      appState = eventData.sessions[eventData.activeBingoSessionName];
       updateUI(true);
     }
   });
 
-  // Renomeia o evento e sincroniza com a chave da sessão
-  configEventName.addEventListener('input', (e) => {
-    const newName = e.target.value;
-    const oldName = sessionsData.activeSessionName;
-    if (newName === oldName || !newName) return;
+  // Listener para o Nome do Evento (Título Geral)
+  if (configEventTitle) {
+    configEventTitle.addEventListener('input', (e) => {
+      eventData.eventName = e.target.value;
+      updateUI(false);
+    });
+  }
 
-    // Renomeia a chave no objeto de sessões
-    sessionsData.sessions[newName] = sessionsData.sessions[oldName];
-    delete sessionsData.sessions[oldName];
+  // Listener para Renomear a Sessão Selecionada
+  if (configSessionName) {
+    configSessionName.addEventListener('change', (e) => {
+      const newName = e.target.value.trim();
+      const oldName = eventData.activeBingoSessionName;
+      if (!newName || newName === oldName) return;
 
-    // Atualiza o nome na lista de ordem
-    const orderIdx = sessionsData.sessionOrder.indexOf(oldName);
-    if (orderIdx !== -1) sessionsData.sessionOrder[orderIdx] = newName;
+      if (eventData.sessions[newName]) {
+        showToast("Já existe uma sessão com este nome.");
+        e.target.value = oldName;
+        return;
+      }
 
-    sessionsData.activeSessionName = newName;
-    appState.eventName = newName;
-    updateUI(false); // Sincronização em segundo plano enquanto digita
-  });
+      eventData.sessions[newName] = eventData.sessions[oldName];
+      delete eventData.sessions[oldName];
+      const orderIdx = eventData.sessionOrder.indexOf(oldName);
+      if (orderIdx !== -1) eventData.sessionOrder[orderIdx] = newName;
+      eventData.activeBingoSessionName = newName;
+      appState = eventData.sessions[newName];
+      appState.eventName = newName;
+      updateUI(true);
+    });
+  }
 
   // Altera a quantidade de rodadas do evento
   configNumRounds.addEventListener('change', (e) => {
     const newNumRounds = parseInt(e.target.value);
     if (newNumRounds < 1) {
-      alert("O número de rodadas deve ser pelo menos 1.");
+      showToast("Mínimo de 1 rodada.");
       configNumRounds.value = appState.numRounds; // Reverte para o valor anterior
       return;
     }
@@ -842,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configMaxNumber.addEventListener('change', (e) => {
     const newMax = parseInt(e.target.value);
     if (isNaN(newMax) || newMax < 1 || newMax > 90) {
-      alert("O número máximo deve ser entre 1 e 90.");
+      showToast("Máximo deve ser entre 1 e 90.");
       configMaxNumber.value = appState.maxNumber;
       return;
     }
@@ -856,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (invalidNumber) {
-      alert(`Não é possível reduzir o limite para ${newMax}, pois o número ${invalidNumber.toString().padStart(2, '0')} já foi sorteado em uma das rodadas.`);
+      showToast(`Erro: Número ${invalidNumber} já sorteado.`);
       configMaxNumber.value = appState.maxNumber;
       return;
     }
@@ -896,7 +1411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configIconPreview.src = appState.eventIcon;
     configIconUpload.value = ''; // Limpa o campo de upload
     saveState(true);
-    alert("Ícone padrão restaurado.");
+    showToast("Ícone padrão restaurado.");
   });
 
 
@@ -945,24 +1460,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Garante um ID se o arquivo importado for de uma versão anterior
-            if (!importedState.sessionId) importedState.sessionId = generateRandomId();
+            if (!importedState.eventid) importedState.eventid = importedState.sessionId || generateRandomId();
+            // Garante um ID se o arquivo importado não possuir um
+            if (!importedState.eventid) importedState.eventid = generateRandomId();
 
-            sessionsData.sessions[importedState.eventName] = importedState;
-            sessionsData.activeSessionName = importedState.eventName;
-            appState = sessionsData.sessions[importedState.eventName];
+            eventData.sessions[importedState.eventName] = importedState;
+            eventData.activeBingoSessionName = importedState.eventName;
+            appState = eventData.sessions[importedState.eventName];
             updateUI(true);
-            alert("Sessão importada com sucesso!");
+            showToast("Sessão importada!");
           } else {
-            alert("Arquivo JSON inválido para sessão de bingo.");
+            showToast("JSON inválido.");
           }
         } catch (error) {
-          alert("Erro ao ler o arquivo JSON: " + error.message);
+          showToast("Erro ao ler JSON.");
         }
       };
       reader.readAsText(file);
     }
   });
 
+
+  /**
+   * Registra o evento atual na lista de eventos conhecidos pelo usuário no localStorage.
+   */
+  const registerEventLocally = () => {
+    if (!eventData.eventid) return; // Guarda contra nenhum evento ativo
+    const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+    // Armazena o nome principal e a lista de todas as sessões para visualização no gerenciador
+    registry[eventData.eventid] = {
+      name: eventData.eventName || "Evento sem nome",
+      sessions: eventData.sessionOrder || []
+    };
+    localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
+  };
+
+  /**
+   * Salva o estado atual no localStorage e agenda a sincronização.
+   * @param {boolean} immediate - Define se a sincronização com o Firebase deve ser imediata.
+   */
+  const saveState = (immediate = false) => {
+    if (!eventData.eventid) return; // Guarda contra nenhum evento ativo
+    localStorage.setItem('bingoEventData', JSON.stringify(eventData));
+    registerEventLocally();
+    syncToFirebase(immediate);
+  };
 
   // --- Inicialização ---
   loadState(); // Carrega o estado salvo ao iniciar
