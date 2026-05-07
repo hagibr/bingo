@@ -515,6 +515,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
+   * Busca os dados completos de um evento no Firebase e o torna a sessão ativa.
+   * @param {string} id - O ID do evento a ser carregado.
+   */
+  const openEventById = async (id) => {
+    if (!id || !navigator.onLine) {
+      if (!navigator.onLine) showToast("Você precisa estar online para carregar eventos.");
+      return;
+    }
+
+    showToast("Baixando dados do evento...");
+    try {
+      const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+      const data = snapshot.val();
+
+      if (data) {
+        eventData = data;
+        eventData.hasActiveEvent = true;
+
+        // Define a sessão de bingo ativa (game) dentro do evento carregado
+        if (!eventData.activeBingoSessionName || !eventData.sessions[eventData.activeBingoSessionName]) {
+          eventData.activeBingoSessionName = eventData.sessionOrder[0] || Object.keys(eventData.sessions)[0];
+        }
+
+        appState = eventData.sessions[eventData.activeBingoSessionName];
+        
+        // Atualiza a interface e exibe o painel de controle
+        updateUI(false); 
+        showToast(`Evento "${eventData.eventName}" carregado com sucesso!`);
+      } else {
+        showToast("Erro: Evento não encontrado no servidor.");
+      }
+    } catch (error) {
+      console.error("Erro ao abrir evento:", error);
+      showToast("Erro de permissão ou rede ao carregar.");
+    }
+  };
+
+  /**
    * Atualiza todos os elementos visuais da interface (textos, listas, seletores e modais) com base no estado atual.
    * @param {boolean} immediateSync - Define se as alterações devem ser salvas no Firebase imediatamente.
    */
@@ -529,6 +567,10 @@ document.addEventListener('DOMContentLoaded', () => {
       configModal.classList.add('hidden');
       return;
     }
+
+    // Garante que o conteúdo principal esteja visível após o carregamento
+    adminMain.classList.remove('hidden');
+
     // Header
     eventTitle.textContent = eventData.eventName || appState.eventName;
     document.title = eventData.eventName || appState.eventName;
@@ -675,11 +717,37 @@ document.addEventListener('DOMContentLoaded', () => {
         actions.appendChild(selectBtn);
 
         const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Remover da Lista';
+        deleteBtn.textContent = 'Remover';
         deleteBtn.classList.add('undo-button');
         deleteBtn.style.padding = '5px 10px'; deleteBtn.style.fontSize = '0.8em';
-        deleteBtn.onclick = () => {
-          if (confirm(`Remover o evento "${eventName}" (Código: ${id}) da sua lista local?`)) {
+        deleteBtn.onclick = async () => { // Tornar a função assíncrona
+          const user = firebase.auth().currentUser;
+          const isOnline = navigator.onLine;
+
+          let confirmMessage = `Remover o evento "${eventName}" (Código: ${id}) da sua lista local?`;
+          if (user && isOnline) {
+            confirmMessage += `\n\nATENÇÃO: Isso também o removerá do Firebase (nuvem) se você for o proprietário.`;
+          } else {
+            confirmMessage += `\n\nVocê está offline ou não logado. A remoção será apenas local.`;
+          }
+
+          if (confirm(confirmMessage)) {
+            if (user && isOnline) {
+              try {
+                await firebase.database().ref('sessions/' + id).remove();
+                showToast(`Evento "${eventName}" removido do Firebase e localmente.`);
+              } catch (error) {
+                console.error("Erro ao remover evento do Firebase:", error);
+                if (error.code === 'PERMISSION_DENIED') {
+                  showToast(`Erro: Você não tem permissão para remover "${eventName}" do Firebase. Removendo apenas localmente.`);
+                } else {
+                  showToast(`Erro ao remover do Firebase: ${error.message}. Removendo apenas localmente.`);
+                }
+              }
+            } else {
+              showToast(`Evento "${eventName}" removido localmente.`);
+            }
+
             const reg = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
             delete reg[id];
             localStorage.setItem('bingoUserEvents', JSON.stringify(reg));

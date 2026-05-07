@@ -3,6 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   let sessionId = params.get('id');
 
+  // Se o ID foi passado via URL, salvamos no storage para persistência 
+  // e limpamos a barra de endereços imediatamente.
+  if (sessionId) {
+    sessionStorage.setItem('activeBingoId', sessionId);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else {
+    // Tenta recuperar do storage caso o usuário dê refresh na página
+    sessionId = sessionStorage.getItem('activeBingoId');
+  }
+
   const idEntrySection = document.getElementById('id-entry-section');
   const bingoContent = document.getElementById('bingo-content');
   const manualIdInput = document.getElementById('manual-id-input');
@@ -257,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const id = manualIdInput.value.trim().toUpperCase();
     if (id.length >= 1 && id.length <= 16) {
       sessionId = id;
+      sessionStorage.setItem('activeBingoId', id); // Salva para manter no refresh
       connectToSession(id);
     } else {
       alert("Por favor, digite um código válido (máx 16 caracteres).");
