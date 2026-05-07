@@ -7,36 +7,44 @@
   <title>Painel de Controle - Bingo</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body class="admin-body">
-  <!-- Tela de Login (Exibida quando não autenticado) -->
-  <div id="login-overlay" class="modal">
-    <div class="modal-content" style="text-align: center; max-width: 400px;">
-      <h2 style="color: #28a745;">Bingo Admin</h2>
-      <p>Acesse com sua conta Google para gerenciar as sessões.</p>
-      <button id="google-login-button" class="config-button"
-        style="background-color: #4285f4; width: 100%; margin-top: 20px; font-weight: bold;">
-        Logar com Google
-      </button>
-    </div>
-  </div>
-
-  <!-- Conteúdo do Painel (Escondido por padrão) -->
-  <header id="admin-header" class="app-header hidden">
-    <div style="display: flex; align-items: center;">
+  <!-- Conteúdo do Painel -->
+  <header id="admin-header" class="app-header">
+    <div style="display: flex; align-items: center; gap: 15px;">
       <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
-      <h1 id="event-title">Nome do Evento de Bingo</h1>
+      <div style="display: flex; flex-direction: column;">
+        <h1 id="event-title" style="margin: 0; line-height: 1;">Nome do Evento de Bingo</h1>
+        <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+          <label for="main-session-selector" style="font-size: 0.7em; opacity: 0.8; font-weight: bold; white-space: nowrap;">SESSÃO ATIVA:</label>
+          <select id="main-session-selector" class="header-session-select"></select>
+        </div>
+      </div>
     </div>
     <div style="display: flex; gap: 10px; align-items: center;">
-      <span id="user-info" style="font-size: 0.8em; color: white;" class="hidden"></span>
-      <button id="header-qr-button" class="config-button" title="Mostrar QR Code">📱</button>
-      <button id="events-mgr-button" class="config-button" title="Gerenciar Eventos">📂 Meus Eventos</button>
-      <button id="config-button" class="config-button">⚙️ Sessões</button>
-      <button id="logout-button" class="undo-button" style="padding: 10px;" title="Sair">🚪</button>
+      <button id="header-qr-button" class="config-button" title="Mostrar QR Code">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 7h.01"></path><path d="M17 7h.01"></path><path d="M17 17h.01"></path><path d="M7 17h.01"></path>
+        </svg>
+      </button>
+      <button id="sessions-mgr-button" class="config-button">📂 Eventos</button>
+      <button id="config-button" class="config-button">⚙️ Configurações</button>
+      
+      <div class="user-menu-wrapper">
+        <button id="google-login-button" class="login-google-btn" title="Logar com Google">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; height: 20px;">
+        </button>
+        <div id="user-profile-area" class="user-profile-area hidden">
+          <img id="user-photo" src="default-icon.png" alt="User" class="user-avatar-btn" referrerpolicy="no-referrer">
+          <div id="user-dropdown-menu" class="user-dropdown-menu hidden">
+            <div id="user-name-display" class="user-name-display"></div>
+            <button id="logout-button" class="dropdown-item logout-item">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main id="admin-main" class="bingo-main hidden">
+  <main id="admin-main" class="bingo-main">
     <section class="round-section">
       <div class="round-header-layout">
         <div class="round-info-column">
@@ -95,22 +103,21 @@
 
       <div class="config-grid">
         <div class="config-full">
-          <label for="config-session-selector">Sessão de Bingo Atual:</label>
-          <div style="display: flex; gap: 10px;">
-            <select id="config-session-selector" style="flex-grow: 1;"></select>
-            <button id="move-session-up-button" class="nav-button" title="Mover para cima">🔼</button>
-            <button id="move-session-down-button" class="nav-button" title="Mover para baixo">🔽</button>
-            <button id="new-session-button" title="Nova Sessão">➕</button>
-            <button id="delete-session-button" class="undo-button" title="Excluir Sessão">🗑️</button>
+          <label for="config-event-name">Nome do Evento:</label>
+          <input type="text" id="config-event-name">
+        </div>
+        <div class="config-full">
+          <label for="config-session-selector">Sessões Cadastradas:</label>
+          <select id="config-session-selector" style="width: 100%; margin-bottom: 10px;"></select>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button id="new-session-button" style="background-color: #28a745;" title="Criar Nova Sessão">➕ Nova Sessão</button>
+            <button id="rename-session-button" title="Renomear Sessão Selecionada">✏️ Renomear</button>
+            <button id="delete-session-button" class="undo-button" title="Excluir Sessão Selecionada">🗑️ Excluir</button>
+            <div style="display: flex; gap: 5px; margin-left: auto;">
+              <button id="move-session-up-button" class="nav-button" title="Mover para cima">🔼</button>
+              <button id="move-session-down-button" class="nav-button" title="Mover para baixo">🔽</button>
+            </div>
           </div>
-        </div>
-        <div class="config-full">
-          <label for="config-event-title">Nome do Evento (Título Geral):</label>
-          <input type="text" id="config-event-title" placeholder="Ex: Bingo Beneficente">
-        </div>
-        <div class="config-full">
-          <label for="config-session-name">Nome da Sessão Selecionada:</label>
-          <input type="text" id="config-session-name" placeholder="Ex: Sessão das 14h">
         </div>
 
         <div>
@@ -140,7 +147,7 @@
         </div>
 
         <div>
-          <label for="config-session-id">Código do Evento (ID Público):</label>
+          <label for="config-session-id">Código da Sessão (ID Público):</label>
           <div style="display: flex; gap: 10px;">
             <input type="text" id="config-session-id" maxlength="16" style="text-transform: uppercase; flex-grow: 1;"
               placeholder="Ex: ABC123">
@@ -153,7 +160,11 @@
             <input type="text" id="config-share-link" readonly
               style="background: #f0f0f0; cursor: pointer; font-size: 0.8em; flex-grow: 1;" title="Link da sessão">
             <button id="copy-link-button" title="Copiar Link">📋</button>
-            <button id="show-qr-button" title="Mostrar QR Code">📱</button>
+            <button id="show-qr-button" title="Mostrar QR Code">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+                <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 7h.01"></path><path d="M17 7h.01"></path><path d="M17 17h.01"></path><path d="M7 17h.01"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -161,29 +172,27 @@
 
 
       <div class="modal-actions">
-        <button id="load-from-firebase-button" style="background-color: #ffc107; color: #333;">Retomar da Nuvem</button>
-        <button id="export-session-button">Exportar Evento (JSON)</button>
+        <button id="export-session-button">Exportar Sessão (JSON)</button>
         <input type="file" id="import-session-input" accept="application/json" style="display: none;">
-        <button id="import-session-button">Importar Evento (JSON)</button>
+        <button id="import-session-button">Importar Sessão (JSON)</button>
         <button id="close-config-button">Fechar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Gerenciamento de Eventos -->
-  <div id="events-mgr-modal" class="modal hidden">
+  <!-- Modal de Gerenciamento de Sessões -->
+  <div id="sessions-mgr-modal" class="modal hidden">
     <div class="modal-content">
-      <button id="close-events-mgr-x" class="close-x">&times;</button>
-      <h2>Meus Eventos Cadastrados</h2>
-
-      <div id="sessions-list-container"
-        style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
+      <button id="close-sessions-mgr-x" class="close-x">&times;</button>
+      <h2>Gerenciar Eventos</h2>
+     
+      <div id="sessions-list-container" style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
         <!-- Lista de sessões será injetada aqui -->
       </div>
 
       <div class="modal-actions">
-        <button id="mgr-new-event-button" style="background-color: #28a745; margin-right: auto;">➕ Novo Evento</button>
-        <button id="close-events-mgr-button">Fechar</button>
+        <button id="mgr-new-session-button" style="background-color: #28a745; margin-right: auto;">➕ Nova Sessão</button>
+        <button id="close-sessions-mgr-button">Fechar</button>
       </div>
     </div>
   </div>
@@ -196,9 +205,31 @@
       <div id="qrcode-large"></div>
       <p id="qr-link-display" style="margin-top: 10px; font-size: 0.8em; color: #555; white-space: nowrap;"></p>
       <p style="margin-top: 15px; font-size: 0.9em; color: #666;">Aponte a câmera do celular para entrar na sessão.</p>
+      <button id="copy-qr-link-button" style="margin-top: 10px; width: 100%; background-color: #6c757d;">Copiar URL</button>
       <button id="close-qr-modal-button" style="margin-top: 10px; width: 100%;">Fechar</button>
     </div>
   </div>
+
+  <!-- Modal de Opções de Troca de ID -->
+  <div id="id-options-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <h2 style="color: #007bff;">Alterar Código do Evento</h2>
+      <p id="id-options-message" style="margin-bottom: 20px; color: #555;"></p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="id-opt-replace" style="background-color: #dc3545; padding: 12px;">1 - SUBSTITUIR (Apaga o antigo)</button>
+        <button id="id-opt-copy" style="background-color: #28a745; padding: 12px;">2 - CRIAR CÓPIA (Mantém ambos)</button>
+        <button id="id-opt-cancel" style="background-color: #6c757d; padding: 12px;">CANCELAR (Manter atual)</button>
+      </div>
+      
+      <p style="font-size: 0.8em; color: #888; margin-top: 15px;">
+        Dica: Substituir limpa o servidor, Copiar é ideal para backups.
+      </p>
+    </div>
+  </div>
+
+  <!-- Contêiner de Notificações (Toasts) -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Firebase SDKs (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

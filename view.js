@@ -1,7 +1,7 @@
 // Inicializa a visualização do espectador assim que o DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
-  let eventid = params.get('id');
+  let sessionId = params.get('id');
 
   const idEntrySection = document.getElementById('id-entry-section');
   const bingoContent = document.getElementById('bingo-content');
@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrcodeLarge = document.getElementById('qrcode-large');
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
+  const copyQrLinkButton = document.getElementById('copy-qr-link-button');
   const qrLinkDisplay = document.getElementById('qr-link-display');
   const patternNameDisplay = document.getElementById('pattern-name-display');
   const roundCompletedStatus = document.getElementById('round-completed-status');
@@ -66,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Se estiver em modo automático, força a visualização do que está ativo no servidor
     if (followActive) {
-      viewedSessionName = fullData.activeSessionName;
+      viewedSessionName = fullData.activeBingoSessionName;
       appState = fullData.sessions[viewedSessionName];
       viewedRound = appState.currentRound;
       localIsSortedAscending = appState.isSortedAscending;
@@ -83,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('current-round-label').textContent = "Rodada " + roundToDisplay;
 
     // O selo "ATUAL" deve aparecer apenas se for a SESSÃO ativa E a RODADA ativa do organizador
-    const isAtLiveState = (viewedSessionName === fullData.activeSessionName && roundToDisplay === appState.currentRound);
+    const isAtLiveState = (viewedSessionName === fullData.activeBingoSessionName && roundToDisplay === appState.currentRound);
     if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
 
     // O botão "Ir para o Atual" aparece se o usuário não estiver seguindo o estado ativo (followActive === false)
@@ -211,18 +212,17 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRef = db.ref('sessions/' + id);
     currentRef.on('value', (snapshot) => {
       fullData = snapshot.val();
-      // Agora esperamos eventData, então buscamos a sessão de bingo ativa dentro dela
-      if (fullData && fullData.sessions && (fullData.activeBingoSessionName || fullData.activeSessionName)) {
-        const activeName = fullData.activeBingoSessionName || fullData.activeSessionName;
+      // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
+      if (fullData && fullData.sessions && fullData.activeBingoSessionName) {
 
         if (followActive || viewedSessionName === null) {
-          viewedSessionName = activeName;
+          viewedSessionName = fullData.activeBingoSessionName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
         }
 
         // Fallback caso a sessão visualizada tenha sido deletada
         if (!fullData.sessions[viewedSessionName]) {
-          viewedSessionName = activeName;
+          viewedSessionName = fullData.activeBingoSessionName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
           followActive = true;
         }
@@ -303,8 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       viewedSessionName = sessionNames[nextIndex];
       appState = fullData.sessions[viewedSessionName];
       // Ao mudar de sessão, foca na primeira rodada dela ou na atual se for a ativa
-      const activeName = fullData.activeBingoSessionName || fullData.activeSessionName;
-      viewedRound = (viewedSessionName === activeName) ? appState.currentRound : 1;
+      viewedRound = (viewedSessionName === fullData.activeBingoSessionName) ? appState.currentRound : 1;
       followActive = false; // Navegação manual desativa o acompanhamento automático
       animationPhase = true;
       updateUI();
@@ -317,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Botão de Atalho para o Vivo
   goToLiveButton.addEventListener('click', () => {
     followActive = false; // Apenas pula para o estado atual sem reativar o auto-follow
-    viewedSessionName = fullData.activeBingoSessionName || fullData.activeSessionName;
+    viewedSessionName = fullData.activeBingoSessionName;
     appState = fullData.sessions[viewedSessionName];
     viewedRound = appState.currentRound;
     updateUI();
@@ -350,6 +349,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fecha o modal de QR Code no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
+  // Copia a URL de visualização de dentro do modal de QR Code
+  if (copyQrLinkButton) {
+    copyQrLinkButton.addEventListener('click', () => {
+      const url = qrLinkDisplay.textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const originalText = copyQrLinkButton.textContent;
+        copyQrLinkButton.textContent = 'Copiado! ✅';
+        setTimeout(() => copyQrLinkButton.textContent = originalText, 2000);
+      });
+    });
+  }
+
   // Atalho para fechar o modal de QR Code com a tecla Escape
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
@@ -358,8 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Inicialização
-  if (eventid) {
-    connectToSession(eventid);
+  if (sessionId) {
+    connectToSession(sessionId);
   } else {
     eventTitle.textContent = "Aguardando Código";
     idEntrySection.classList.remove('hidden');

@@ -21,11 +21,7 @@
   <header class="app-header">
     <div style="display: flex; align-items: center; gap: 10px;">
       <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
-      <button id="prev-session" class="nav-button hidden" style="padding: 5px 8px; font-size: 0.8em;"
-        title="Sessão Anterior">🔼</button>
       <h1 id="event-title" style="margin: 0">Carregando Bingo...</h1>
-      <button id="next-session" class="nav-button hidden" style="padding: 5px 8px; font-size: 0.8em;"
-        title="Próxima Sessão">🔽</button>
     </div>
     <div style="display: flex; align-items: center; gap: 15px;">
       <div id="auto-follow-container" class="switch-container hidden">
@@ -35,15 +31,19 @@
         </label>
         <span style="font-size: 0.8em; color: white; font-weight: bold; white-space: nowrap;">Ao Vivo</span>
       </div>
-      <button id="show-qr-button" class="config-button hidden" title="Compartilhar via QR Code">📱</button>
+      <button id="show-qr-button" class="config-button hidden" title="Compartilhar via QR Code">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 7h.01"></path><path d="M17 7h.01"></path><path d="M17 17h.01"></path><path d="M7 17h.01"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
   <main id="main-content" class="bingo-main">
     <!-- Seção de Entrada Manual -->
     <section id="id-entry-section" class="id-entry-section hidden">
-      <h2>Entrar em um Evento</h2>
-      <p>Digite o código do evento fornecido pelo organizador.</p>
+      <h2>Entrar em uma Sessão</h2>
+      <p>Digite o código fornecido pelo organizador (até 16 caracteres).</p>
       <div class="draw-controls" style="justify-content: center; margin-top: 20px;">
         <input type="text" id="manual-id-input" placeholder="Ex: ABCDEF123456" maxlength="16"
           style="text-transform: uppercase; text-align: center; width: 150px;">
@@ -54,6 +54,12 @@
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
       <section class="round-section" style="text-align: center;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+          <button id="prev-session" class="nav-button hidden" style="padding: 5px 12px;" title="Sessão Anterior">🔼</button>
+          <h3 id="viewed-session-name" style="margin: 0; color: #28a745;">Sessão</h3>
+          <button id="next-session" class="nav-button hidden" style="padding: 5px 12px;" title="Próxima Sessão">🔽</button>
+        </div>
+
         <div class="round-nav-container">
           <button id="prev-round" class="nav-button" title="Rodada Anterior">&lt;&lt;</button>
           <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
@@ -94,6 +100,7 @@
       <div id="qrcode-large"></div>
       <p id="qr-link-display" style="margin-top: 10px; font-size: 0.8em; color: #555; white-space: nowrap;"></p>
       <p style="margin-top: 15px; font-size: 0.9em; color: #666;">Aponte a câmera do celular para entrar na sessão.</p>
+      <button id="copy-qr-link-button" style="margin-top: 10px; width: 100%; background-color: #6c757d;">Copiar URL</button>
       <button id="close-qr-modal-button" style="margin-top: 10px; width: 100%;">Fechar</button>
     </div>
   </div>
