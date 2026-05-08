@@ -45,7 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  let currentRef = null;
+  let rootRef = null;
+  let activeSessionRef = null;
+  let activeRoundRef = null;
 
   let fullData = null; // Dados brutos do Firebase (sessionsData)
   let appState = null;
@@ -216,41 +218,92 @@ document.addEventListener('DOMContentLoaded', () => {
   const connectToSession = (id) => {
     if (!id) return;
 
-    // Remove listener anterior se existir
-    if (currentRef) currentRef.off();
+    // Limpa ouvintes anteriores para evitar vazamento de memória e tráfego duplicado
+    if (rootRef) rootRef.off();
+    if (activeSessionRef) activeSessionRef.off();
+    if (activeRoundRef) activeRoundRef.off();
 
-    currentRef = db.ref('sessions/' + id);
-    currentRef.on('value', (snapshot) => {
+    rootRef = db.ref('sessions/' + id);
+
+    // 1. Carregamento inicial completo (Uma única vez)
+    // Permite que o usuário tenha todos os dados de sessões e rodadas passadas sem baixar tudo novamente a cada sorteio.
+    rootRef.once('value').then((snapshot) => {
       fullData = snapshot.val();
-      // Agora esperamos sessionsData, então buscamos a sessão ativa dentro dela
       if (fullData && fullData.sessions && fullData.activeBingoSessionName) {
-
+        
+        // Inicializa o estado de visualização
         if (followActive || viewedSessionName === null) {
           viewedSessionName = fullData.activeBingoSessionName;
           viewedRound = fullData.sessions[viewedSessionName].currentRound;
         }
-
-        // Fallback caso a sessão visualizada tenha sido deletada
-        if (!fullData.sessions[viewedSessionName]) {
-          viewedSessionName = fullData.activeBingoSessionName;
-          viewedRound = fullData.sessions[viewedSessionName].currentRound;
-          followActive = true;
-        }
-
         appState = fullData.sessions[viewedSessionName];
+
+        // Ativa interface
         idEntrySection.classList.add('hidden');
         bingoContent.classList.remove('hidden');
         if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
         if (showQrButton) showQrButton.classList.remove('hidden');
+
+        // 2. Inicia ouvintes granulares para tráfego reduzido em tempo real
+        setupGranularListeners(id);
         updateUI();
       } else {
-        eventTitle.textContent = "Sessão não encontrada";
-        idEntrySection.classList.remove('hidden');
-        bingoContent.classList.add('hidden');
-        prevSessionButton.classList.add('hidden');
-        nextSessionButton.classList.add('hidden');
-        if (autoFollowContainer) autoFollowContainer.classList.add('hidden');
-        if (showQrButton) showQrButton.classList.add('hidden');
+        handleSessionError();
+      }
+    }).catch(() => handleSessionError());
+  };
+
+  const handleSessionError = () => {
+    eventTitle.textContent = "Sessão não encontrada";
+    idEntrySection.classList.remove('hidden');
+    bingoContent.classList.add('hidden');
+    if (autoFollowContainer) autoFollowContainer.classList.add('hidden');
+    if (showQrButton) showQrButton.classList.add('hidden');
+  };
+
+  /**
+   * Configura ouvintes para apenas campos específicos que mudam durante o sorteio (Economia de Dados).
+   */
+  const setupGranularListeners = (id) => {
+    // Escuta mudanças nos metadados globais (raras)
+    rootRef.child('activeBingoSessionName').on('value', snap => {
+      if (!fullData) return;
+      fullData.activeBingoSessionName = snap.val();
+      syncLiveSessionListeners(id);
+      updateUI();
+    });
+
+    rootRef.child('eventName').on('value', snap => {
+      if (fullData) { fullData.eventName = snap.val(); updateUI(); }
+    });
+
+    syncLiveSessionListeners(id);
+  };
+
+  const syncLiveSessionListeners = (id) => {
+    const sessName = fullData.activeBingoSessionName;
+    if (!sessName || !fullData.sessions[sessName]) return;
+
+    // Escuta qual a rodada atual da sessão ativa
+    if (activeSessionRef) activeSessionRef.off();
+    activeSessionRef = db.ref(`sessions/${id}/sessions/${sessName}/currentRound`);
+    activeSessionRef.on('value', snap => {
+      const currentRound = snap.val();
+      fullData.sessions[sessName].currentRound = currentRound;
+      syncLiveRoundDataListener(id, sessName, currentRound);
+      updateUI();
+    });
+  };
+
+  const syncLiveRoundDataListener = (id, sessName, roundNum) => {
+    // Escuta apenas os dados da rodada que está sendo sorteada
+    if (activeRoundRef) activeRoundRef.off();
+    activeRoundRef = db.ref(`sessions/${id}/sessions/${sessName}/rounds/${roundNum}`);
+    activeRoundRef.on('value', snap => {
+      if (fullData && fullData.sessions[sessName]) {
+        if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
+        fullData.sessions[sessName].rounds[roundNum] = snap.val();
+        updateUI();
       }
     });
   };
