@@ -171,6 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dataToSync.ownerUid = user.uid;
     }
 
+    // Adiciona o timestamp de modificação para controle de banda dos clientes
+    dataToSync.lastModified = firebase.database.ServerValue.TIMESTAMP;
+
     firebase.database().ref('sessions/' + dataToSync.eventid).set(dataToSync)
       .catch(err => {
         console.error("Erro ao sincronizar Firebase:", err.code, err.message);
@@ -1501,6 +1504,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const saveState = (immediate = false) => {
     if (!eventData.eventid) return; // Guarda contra nenhum evento ativo
+    // Atualiza o timestamp local para persistência e controle de versão
+    eventData.lastModified = Date.now();
     localStorage.setItem('bingoEventData', JSON.stringify(eventData));
     registerEventLocally();
     syncToFirebase(immediate);

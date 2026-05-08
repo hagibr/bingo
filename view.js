@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeRoundRef = null;
 
   let fullData = null; // Dados brutos do Firebase (sessionsData)
+  let localLastModified = 0; // Controle local da última atualização
   let appState = null;
   let viewedSessionName = null; // Nome da sessão sendo visualizada
   let viewedRound = null; // Rodada que o usuário está olhando no momento
@@ -230,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rootRef.once('value').then((snapshot) => {
       fullData = snapshot.val();
       if (fullData && fullData.sessions && fullData.activeBingoSessionName) {
+        localLastModified = fullData.lastModified || 0;
         
         // Inicializa o estado de visualização
         if (followActive || viewedSessionName === null) {
@@ -265,6 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * Configura ouvintes para apenas campos específicos que mudam durante o sorteio (Economia de Dados).
    */
   const setupGranularListeners = (id) => {
+    // Monitora o timestamp global de modificação
+    rootRef.child('lastModified').on('value', snap => {
+      localLastModified = snap.val() || 0;
+    });
+
     // Escuta mudanças nos metadados globais (raras)
     rootRef.child('activeBingoSessionName').on('value', snap => {
       if (!fullData) return;
@@ -443,9 +450,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Redução de conexão quando não está aberto
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      db.goOffline(); // Corta a conexão WebSocket e libera o slot
+      db.goOffline(); 
     } else {
-      db.goOnline();  // Reconecta assim que ele abrir a tela
+      db.goOnline();
+      
+      // Ao voltar a ficar visível, fazemos uma checagem rápida no timestamp
+      // antes de permitir que os listeners pesados processem qualquer coisa.
+      if (rootRef) {
+        rootRef.child('lastModified').once('value').then(snap => {
+          const remoteTimestamp = snap.val() || 0;
+          
+          if (remoteTimestamp > localLastModified) {
+            // Se houve mudança real, fazemos um fetch único para sincronizar o estado base
+            rootRef.once('value').then(fullSnap => {
+              fullData = fullSnap.val();
+              localLastModified = remoteTimestamp;
+              updateUI();
+            });
+          } else {
+            console.log("Sem mudanças desde a última visualização. Economizando processamento.");
+          }
+        });
+      }
     }
   });
 
