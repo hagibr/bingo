@@ -440,6 +440,15 @@ document.addEventListener('DOMContentLoaded', () => {
     idEntrySection.classList.remove('hidden');
   }
 
+  // Redução de conexão quando não está aberto
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      db.goOffline(); // Corta a conexão WebSocket e libera o slot
+    } else {
+      db.goOnline();  // Reconecta assim que ele abrir a tela
+    }
+  });
+
   initGrid();
   startAnimation();
 });
