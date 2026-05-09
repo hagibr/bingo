@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminMain = document.getElementById('admin-main');
   const googleLoginButton = document.getElementById('google-login-button');
   const logoutButton = document.getElementById('logout-button');
-  
+
   const userProfileArea = document.getElementById('user-profile-area');
   const userPhoto = document.getElementById('user-photo');
   const userDropdownMenu = document.getElementById('user-dropdown-menu');
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<span>${message}</span><span style="margin-left:10px; opacity:0.6;">&times;</span>`;
-    
+
     const removeToast = () => {
       if (toast.parentNode) {
         toast.style.animation = 'toastFadeOut 0.2s forwards';
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const snapshot = await firebase.database().ref('sessions').orderByChild('ownerUid').equalTo(uid).once('value');
       const data = snapshot.val();
-      
+
       if (data) {
         const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
         Object.entries(data).forEach(([id, event]) => {
@@ -403,11 +403,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         appState = null; // Nenhum appState ativo
       }
-    
-    // Garante que o appState esteja vinculado à sessão ativa carregada
-    if (eventData.hasActiveEvent && eventData.activeBingoSessionName) {
-      appState = eventData.sessions[eventData.activeBingoSessionName];
-    }
+
+      // Garante que o appState esteja vinculado à sessão ativa carregada
+      if (eventData.hasActiveEvent && eventData.activeBingoSessionName) {
+        appState = eventData.sessions[eventData.activeBingoSessionName];
+      }
     }
 
     // Inicializa Firebase e Monitora Autenticação
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Usuário logado
         googleLoginButton.classList.add('hidden');
         userProfileArea.classList.remove('hidden');
-        
+
         if (user.photoURL) {
           userPhoto.src = user.photoURL;
           userPhoto.onerror = () => {
@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email;
-        
+
         // Resolução de propriedade ao logar
         if (eventData.eventid && navigator.onLine) {
           try {
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
               // 2. Assumir propriedade e Subir o que tem local (Upload)
               if (!eventData.ownerUid) eventData.ownerUid = user.uid;
-              saveState(true); 
+              saveState(true);
             }
           } catch (e) {
             console.error("Erro na verificação de posse ao logar:", e);
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // A aplicação SEMPRE carrega os dados locais, logado ou não
       if (eventData.hasActiveEvent && appState) {
-        updateUI(false); 
+        updateUI(false);
       } else {
         openEventsMgr();
       }
@@ -542,9 +542,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         appState = eventData.sessions[eventData.activeBingoSessionName];
-        
+
         // Atualiza a interface e exibe o painel de controle
-        updateUI(false); 
+        updateUI(false);
         showToast(`Evento "${eventData.eventName}" carregado com sucesso!`);
       } else {
         showToast("Erro: Evento não encontrado no servidor.");
@@ -1120,6 +1120,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   };
 
+  // Garante que o ID digitado manualmente siga as regras de maiúsculas e caracteres alfanuméricos
+  configSessionId.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
   // Altera o ID da sessão via input manual
   configSessionId.addEventListener('change', async (e) => {
     const newId = e.target.value.toUpperCase().trim();
@@ -1246,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renameSessionButton.addEventListener('click', () => {
       const oldName = eventData.activeBingoSessionName;
       const newName = prompt("Novo nome para a sessão:", oldName);
-      
+
       if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
         const cleanName = newName.trim();
         if (eventData.sessions[cleanName]) {

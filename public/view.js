@@ -339,6 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Converte automaticamente para maiúsculas e remove caracteres que não sejam A-Z ou 0-9
+  manualIdInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
   // Permite entrar na sessão ao pressionar a tecla Enter no campo de input
   manualIdInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
