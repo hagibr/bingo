@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let viewedRound = null; // Rodada que o usuário está olhando no momento
   let followActive = true; // Se o usuário está seguindo a rodada ativa do organizador
   let localIsSortedAscending = false; // Controle local de ordenação
+  let disconnectTimer = null; // Timer para desconexão programada
+  let isOffline = false; // Rastreia o estado da conexão
 
   const BINGO_PATTERNS = [
     { name: "Personalizado", sequences: [] },
@@ -232,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fullData = snapshot.val();
       if (fullData && fullData.sessions && fullData.activeBingoSessionName) {
         localLastModified = fullData.lastModified || 0;
-        
+
         // Inicializa o estado de visualização
         if (followActive || viewedSessionName === null) {
           viewedSessionName = fullData.activeBingoSessionName;
@@ -450,27 +452,38 @@ document.addEventListener('DOMContentLoaded', () => {
   // Redução de conexão quando não está aberto
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      db.goOffline(); 
+      // Programa a desconexão para daqui a 1 minuto (60000ms)
+      disconnectTimer = setTimeout(() => {
+        db.goOffline();
+        isOffline = true;
+        console.log("Desconectado do Firebase por inatividade.");
+      }, 60000);
     } else {
-      db.goOnline();
-      
-      // Ao voltar a ficar visível, fazemos uma checagem rápida no timestamp
-      // antes de permitir que os listeners pesados processem qualquer coisa.
-      if (rootRef) {
-        rootRef.child('lastModified').once('value').then(snap => {
-          const remoteTimestamp = snap.val() || 0;
-          
-          if (remoteTimestamp > localLastModified) {
-            // Se houve mudança real, fazemos um fetch único para sincronizar o estado base
-            rootRef.once('value').then(fullSnap => {
-              fullData = fullSnap.val();
-              localLastModified = remoteTimestamp;
-              updateUI();
-            });
-          } else {
-            console.log("Sem mudanças desde a última visualização. Economizando processamento.");
-          }
-        });
+      // Se o usuário voltou antes de 1 minuto, cancela a desconexão programada
+      if (disconnectTimer) {
+        clearTimeout(disconnectTimer);
+        disconnectTimer = null;
+      }
+
+      // Só reconecta se realmente tiver chegado a desconectar
+      if (isOffline) {
+        db.goOnline();
+        isOffline = false;
+        console.log("Reconectado ao Firebase.");
+
+        // Após reconectar, verifica se houve mudanças para atualizar a UI
+        if (rootRef) {
+          rootRef.child('lastModified').once('value').then(snap => {
+            const remoteTimestamp = snap.val() || 0;
+            if (remoteTimestamp > localLastModified) {
+              rootRef.once('value').then(fullSnap => {
+                fullData = fullSnap.val();
+                localLastModified = remoteTimestamp;
+                updateUI();
+              });
+            }
+          });
+        }
       }
     }
   });
