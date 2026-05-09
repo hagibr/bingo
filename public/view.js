@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const manualIdInput = document.getElementById('manual-id-input');
   const joinSessionButton = document.getElementById('join-session-button');
   const eventTitle = document.getElementById('event-title');
+  const leaveEventButton = document.getElementById('leave-event-button');
   const showQrButton = document.getElementById('show-qr-button');
   const qrModal = document.getElementById('qr-modal');
   const qrcodeLarge = document.getElementById('qrcode-large');
@@ -247,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bingoContent.classList.remove('hidden');
         if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
         if (showQrButton) showQrButton.classList.remove('hidden');
+        if (leaveEventButton) leaveEventButton.classList.remove('hidden');
 
         // 2. Inicia ouvintes granulares para tráfego reduzido em tempo real
         setupGranularListeners(id);
@@ -263,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bingoContent.classList.add('hidden');
     if (autoFollowContainer) autoFollowContainer.classList.add('hidden');
     if (showQrButton) showQrButton.classList.add('hidden');
+    if (leaveEventButton) leaveEventButton.classList.add('hidden');
   };
 
   /**
@@ -333,6 +336,34 @@ document.addEventListener('DOMContentLoaded', () => {
       connectToSession(id);
     } else {
       alert("Por favor, digite um código válido (máx 16 caracteres).");
+    }
+  });
+
+  // Permite entrar na sessão ao pressionar a tecla Enter no campo de input
+  manualIdInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      joinSessionButton.click();
+    }
+  });
+
+  // Botão para sair do evento atual e retornar à tela de entrada
+  leaveEventButton.addEventListener('click', () => {
+    if (confirm("Deseja realmente sair desta sessão de bingo?")) {
+      sessionStorage.removeItem('activeBingoId');
+      sessionId = null;
+      manualIdInput.value = '';
+
+      // Remove todos os listeners do Firebase para economizar tráfego
+      if (rootRef) rootRef.off();
+      if (activeSessionRef) activeSessionRef.off();
+      if (activeRoundRef) activeRoundRef.off();
+
+      fullData = null;
+      appState = null;
+
+      handleSessionError(); // Esconde o conteúdo e mostra a entrada manual
+      eventTitle.textContent = "Aguardando Código";
+      document.title = "Visualização - Bingo";
     }
   });
 
