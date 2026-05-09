@@ -2,7 +2,7 @@
 // IMPORTANTE: Adicione o arquivo firebase-config.js ao seu .gitignore
 const firebaseConfig = {
   apiKey: "AIzaSyBHICV7qvVUVwQ1XAD7xV4Q5W3-S440ZgA",
-  authDomain: "bingo-f1a5b.firebaseapp.com",
+  authDomain: "bingo-f1a5b.web.app",
   databaseURL: "https://bingo-f1a5b-default-rtdb.firebaseio.com",
   projectId: "bingo-f1a5b",
   storageBucket: "bingo-f1a5b.firebasestorage.app",
