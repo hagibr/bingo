@@ -1,1 +1,7 @@
 .vscode
+.agents
+.firebase
+.firebaserc
+firebase.json
+firebase-debug.log
+skills-lock.json
