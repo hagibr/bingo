@@ -174,7 +174,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adiciona o timestamp de modificação para controle de banda dos clientes
     dataToSync.lastModified = firebase.database.ServerValue.TIMESTAMP;
 
-    firebase.database().ref('sessions/' + dataToSync.eventid).set(dataToSync)
+    const sessionId = dataToSync.eventid;
+    const activeName = dataToSync.activeBingoSessionName;
+    const updates = {};
+
+    // Metadados da raiz
+    updates[`sessions/${sessionId}/eventName`] = dataToSync.eventName;
+    updates[`sessions/${sessionId}/eventIcon`] = dataToSync.eventIcon;
+    updates[`sessions/${sessionId}/activeBingoSessionName`] = activeName;
+    updates[`sessions/${sessionId}/sessionOrder`] = dataToSync.sessionOrder;
+    updates[`sessions/${sessionId}/ownerUid`] = dataToSync.ownerUid;
+    updates[`sessions/${sessionId}/lastModified`] = dataToSync.lastModified;
+
+    // Sincroniza APENAS a sessão ativa. Isso evita enviar dados de outras sessões salvas.
+    if (activeName && dataToSync.sessions[activeName]) {
+      updates[`sessions/${sessionId}/sessions/${activeName}`] = dataToSync.sessions[activeName];
+    }
+
+    firebase.database().ref().update(updates)
       .catch(err => {
         console.error("Erro ao sincronizar Firebase:", err.code, err.message);
         if (err.code === 'PERMISSION_DENIED') {
@@ -303,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let eventData = {
     eventid: generateRandomId(),
     eventName: "Novo Evento de Bingo",
+    eventIcon: "default-icon.png",
     ownerUid: null, // Armazena o UID do criador
     activeBingoSessionName: "Sessão Padrão",
     sessions: {},
@@ -317,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const createDefaultSessionState = (name) => {
     const newState = {
       eventName: name,
-      eventIcon: "default-icon.png",
       maxNumber: 75,
       numRounds: 1,
       currentRound: 1,
@@ -367,6 +384,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!eventData.eventName) {
         eventData.eventName = eventData.sessions[eventData.activeBingoSessionName]?.eventName || "Evento de Bingo";
+      }
+
+      // Migração: move o ícone da sessão para o nível do evento se necessário
+      if (!eventData.eventIcon) {
+        eventData.eventIcon = eventData.sessions[eventData.activeBingoSessionName]?.eventIcon || "default-icon.png";
       }
 
       // Compatibilidade: garante que as propriedades renomeadas existam
@@ -451,17 +473,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               // Lógica de Sincronização Automática (Merge)
               if (remoteData) {
-                // 1. Baixar o que tem na nuvem (Merge sessions)
-                Object.entries(remoteData.sessions || {}).forEach(([sName, sData]) => {
-                  if (!eventData.sessions[sName]) {
-                    eventData.sessions[sName] = sData;
-                  }
-                });
-                // Mesclar metadados e ordem
-                if (eventData.eventName === "Novo Evento de Bingo") {
-                  eventData.eventName = remoteData.eventName || eventData.eventName;
+                // 1. Sincroniza os dados locais com os da nuvem, priorizando a nuvem para carregar números sorteados
+                eventData.sessions = { ...eventData.sessions, ...remoteData.sessions };
+                eventData.eventIcon = remoteData.eventIcon || eventData.eventIcon;
+                eventData.eventName = remoteData.eventName || eventData.eventName;
+                eventData.activeBingoSessionName = remoteData.activeBingoSessionName || eventData.activeBingoSessionName;
+                
+                // Atualiza a referência do estado ativo para os novos dados carregados
+                if (eventData.activeBingoSessionName && eventData.sessions[eventData.activeBingoSessionName]) {
+                  appState = eventData.sessions[eventData.activeBingoSessionName];
                 }
-                const combinedOrder = [...new Set([...(eventData.sessionOrder || []), ...(remoteData.sessionOrder || [])])];
+
+                const combinedOrder = [...new Set([...(remoteData.sessionOrder || []), ...(eventData.sessionOrder || [])])];
                 eventData.sessionOrder = combinedOrder;
                 showToast("Sincronizado com a nuvem.");
               }
@@ -577,8 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Header
     eventTitle.textContent = eventData.eventName || appState.eventName;
     document.title = eventData.eventName || appState.eventName;
-    eventIcon.src = appState.eventIcon;
-    configIconPreview.src = appState.eventIcon; // Atualiza a prévia no modal
+    eventIcon.src = eventData.eventIcon || "default-icon.png";
+    configIconPreview.src = eventData.eventIcon || "default-icon.png"; // Atualiza a prévia no modal
 
     // Round Selector
     updateRoundSelector();
@@ -1290,6 +1313,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
+      // Remove explicitamente do Firebase antes de atualizar localmente
+      if (navigator.onLine && firebase.auth().currentUser && eventData.eventid) {
+        firebase.database().ref(`sessions/${eventData.eventid}/sessions/${currentName}`).remove();
+      }
+      
       delete eventData.sessions[currentName];
       eventData.sessionOrder = eventData.sessionOrder.filter(n => n !== currentName);
       eventData.activeBingoSessionName = Object.keys(eventData.sessions)[0];
@@ -1400,9 +1428,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        appState.eventIcon = event.target.result; // Base64 string
-        eventIcon.src = appState.eventIcon; // Atualiza imediatamente
-        configIconPreview.src = appState.eventIcon; // Atualiza a prévia
+        eventData.eventIcon = event.target.result; // Base64 string
+        eventIcon.src = eventData.eventIcon; // Atualiza imediatamente
+        configIconPreview.src = eventData.eventIcon; // Atualiza a prévia
         saveState(true);
       };
       reader.readAsDataURL(file); // Converte a imagem para Base64
@@ -1412,11 +1440,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Restaura o ícone padrão do evento
   configIconRemove.addEventListener('click', () => {
     // Se o ícone já for o padrão, não faz nada
-    if (appState.eventIcon === "default-icon.png") return;
+    if (eventData.eventIcon === "default-icon.png") return;
 
-    appState.eventIcon = "default-icon.png";
-    eventIcon.src = appState.eventIcon;
-    configIconPreview.src = appState.eventIcon;
+    eventData.eventIcon = "default-icon.png";
+    eventIcon.src = eventData.eventIcon;
+    configIconPreview.src = eventData.eventIcon;
     configIconUpload.value = ''; // Limpa o campo de upload
     saveState(true);
     showToast("Ícone padrão restaurado.");
@@ -1427,6 +1455,7 @@ document.addEventListener('DOMContentLoaded', () => {
   exportSessionButton.addEventListener('click', () => {
     // Criamos uma cópia para processar a exportação sem alterar o estado em memória
     const stateToExport = JSON.parse(JSON.stringify(appState));
+    stateToExport.eventIcon = eventData.eventIcon;
 
     // Se a imagem for muito grande, quebramos em um array de strings (fatias de 5k caracteres)
     if (typeof stateToExport.eventIcon === 'string' && stateToExport.eventIcon.length > 5000) {
@@ -1466,6 +1495,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Array.isArray(importedState.eventIcon)) {
               importedState.eventIcon = importedState.eventIcon.join('');
             }
+            eventData.eventIcon = importedState.eventIcon || "default-icon.png";
 
             // Garante um ID se o arquivo importado for de uma versão anterior
             if (!importedState.eventid) importedState.eventid = importedState.sessionId || generateRandomId();

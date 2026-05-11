@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('event-title').textContent = fullData.eventName || appState.eventName;
     document.title = "Bingo: " + (fullData.eventName || appState.eventName);
-    document.getElementById('event-icon').src = appState.eventIcon;
+    document.getElementById('event-icon').src = fullData.eventIcon || "default-icon.png";
 
     const roundToDisplay = viewedRound || appState.currentRound;
     document.getElementById('current-round-label').textContent = "Rodada " + roundToDisplay;
@@ -287,6 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rootRef.child('eventName').on('value', snap => {
       if (fullData) { fullData.eventName = snap.val(); updateUI(); }
+    });
+
+    rootRef.child('eventIcon').on('value', snap => {
+      if (fullData) { fullData.eventIcon = snap.val(); updateUI(); }
     });
 
     syncLiveSessionListeners(id);
