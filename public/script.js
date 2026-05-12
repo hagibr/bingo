@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const checkIdExists = async (id) => {
     const user = firebase.auth().currentUser;
     if (!navigator.onLine || !user || typeof firebase === 'undefined' || firebase.apps.length === 0) return false;
-    const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+    const snapshot = await firebase.database().ref('events/' + id).once('value');
     return snapshot.exists();
   };
 
@@ -174,21 +174,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adiciona o timestamp de modificação para controle de banda dos clientes
     dataToSync.lastModified = firebase.database.ServerValue.TIMESTAMP;
 
-    const sessionId = dataToSync.eventid;
+    const eventId = dataToSync.eventid;
     const activeName = dataToSync.activeBingoSessionName;
     const updates = {};
 
     // Metadados da raiz
-    updates[`sessions/${sessionId}/eventName`] = dataToSync.eventName;
-    updates[`sessions/${sessionId}/eventIcon`] = dataToSync.eventIcon;
-    updates[`sessions/${sessionId}/activeBingoSessionName`] = activeName;
-    updates[`sessions/${sessionId}/sessionOrder`] = dataToSync.sessionOrder;
-    updates[`sessions/${sessionId}/ownerUid`] = dataToSync.ownerUid;
-    updates[`sessions/${sessionId}/lastModified`] = dataToSync.lastModified;
+    updates[`events/${eventId}/eventName`] = dataToSync.eventName;
+    updates[`events/${eventId}/eventIcon`] = dataToSync.eventIcon;
+    updates[`events/${eventId}/activeBingoSessionName`] = activeName;
+    updates[`events/${eventId}/sessionOrder`] = dataToSync.sessionOrder;
+    updates[`events/${eventId}/ownerUid`] = dataToSync.ownerUid;
+    updates[`events/${eventId}/lastModified`] = dataToSync.lastModified;
 
     // Sincroniza APENAS a sessão ativa. Isso evita enviar dados de outras sessões salvas.
     if (activeName && dataToSync.sessions[activeName]) {
-      updates[`sessions/${sessionId}/sessions/${activeName}`] = dataToSync.sessions[activeName];
+      updates[`events/${eventId}/sessions/${activeName}`] = dataToSync.sessions[activeName];
     }
 
     firebase.database().ref().update(updates)
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navigator.onLine || !uid) return;
 
     try {
-      const snapshot = await firebase.database().ref('sessions').orderByChild('ownerUid').equalTo(uid).once('value');
+      const snapshot = await firebase.database().ref('events').orderByChild('ownerUid').equalTo(uid).once('value');
       const data = snapshot.val();
 
       if (data) {
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Só tenta validar e remover no Firebase se estiver online e logado
       if (user && navigator.onLine) {
         try {
-          const snapshot = await firebase.database().ref('sessions/' + newId).once('value');
+          const snapshot = await firebase.database().ref('events/' + newId).once('value');
           const existingData = snapshot.val();
           if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
             showToast(`Código "${newId}" já em uso por outro organizador. Não foi possível substituir.`);
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           if (oldId) {
-            await firebase.database().ref('sessions/' + oldId).remove();
+            await firebase.database().ref('events/' + oldId).remove();
             const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
             delete registry[oldId];
             localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // COPIAR
       if (user && navigator.onLine) {
         try {
-          const snapshot = await firebase.database().ref('sessions/' + newId).once('value');
+          const snapshot = await firebase.database().ref('events/' + newId).once('value');
           const existingData = snapshot.val();
           if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
             showToast(`Código "${newId}" já em uso. Não foi possível criar cópia.`);
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Resolução de propriedade ao logar
         if (eventData.eventid && navigator.onLine) {
           try {
-            const snapshot = await firebase.database().ref('sessions/' + eventData.eventid).once('value');
+            const snapshot = await firebase.database().ref('events/' + eventData.eventid).once('value');
             const remoteData = snapshot.val();
 
             if (remoteData && remoteData.ownerUid && remoteData.ownerUid !== user.uid) {
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast("Baixando dados do evento...");
     try {
-      const snapshot = await firebase.database().ref('sessions/' + id).once('value');
+      const snapshot = await firebase.database().ref('events/' + id).once('value');
       const data = snapshot.val();
 
       if (data) {
@@ -1315,7 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
       // Remove explicitamente do Firebase antes de atualizar localmente
       if (navigator.onLine && firebase.auth().currentUser && eventData.eventid) {
-        firebase.database().ref(`sessions/${eventData.eventid}/sessions/${currentName}`).remove();
+        firebase.database().ref(`events/${eventData.eventid}/sessions/${currentName}`).remove();
       }
       
       delete eventData.sessions[currentName];

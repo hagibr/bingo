@@ -1,16 +1,16 @@
 // Inicializa a visualização do espectador assim que o DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
-  let sessionId = params.get('id');
+  let eventId = params.get('id');
 
   // Se o ID foi passado via URL, salvamos no storage para persistência 
   // e limpamos a barra de endereços imediatamente.
-  if (sessionId) {
-    sessionStorage.setItem('activeBingoId', sessionId);
+  if (eventId) {
+    sessionStorage.setItem('activeBingoId', eventId);
     window.history.replaceState({}, document.title, window.location.pathname);
   } else {
     // Tenta recuperar do storage caso o usuário dê refresh na página
-    sessionId = sessionStorage.getItem('activeBingoId');
+    eventId = sessionStorage.getItem('activeBingoId');
   }
 
   const idEntrySection = document.getElementById('id-entry-section');
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeSessionRef) activeSessionRef.off();
     if (activeRoundRef) activeRoundRef.off();
 
-    rootRef = db.ref('sessions/' + id);
+    rootRef = db.ref('events/' + id);
 
     // 1. Carregamento inicial completo (Uma única vez)
     // Permite que o usuário tenha todos os dados de sessões e rodadas passadas sem baixar tudo novamente a cada sorteio.
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Escuta qual a rodada atual da sessão ativa
     if (activeSessionRef) activeSessionRef.off();
-    activeSessionRef = db.ref(`sessions/${id}/sessions/${sessName}/currentRound`);
+    activeSessionRef = db.ref(`events/${id}/sessions/${sessName}/currentRound`);
     activeSessionRef.on('value', snap => {
       const currentRound = snap.val();
       fullData.sessions[sessName].currentRound = currentRound;
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncLiveRoundDataListener = (id, sessName, roundNum) => {
     // Escuta apenas os dados da rodada que está sendo sorteada
     if (activeRoundRef) activeRoundRef.off();
-    activeRoundRef = db.ref(`sessions/${id}/sessions/${sessName}/rounds/${roundNum}`);
+    activeRoundRef = db.ref(`events/${id}/sessions/${sessName}/rounds/${roundNum}`);
     activeRoundRef.on('value', snap => {
       if (fullData && fullData.sessions[sessName]) {
         if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
   joinSessionButton.addEventListener('click', () => {
     const id = manualIdInput.value.trim().toUpperCase();
     if (id.length >= 1 && id.length <= 16) {
-      sessionId = id;
+      eventId = id;
       sessionStorage.setItem('activeBingoId', id); // Salva para manter no refresh
       connectToSession(id);
     } else {
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
   leaveEventButton.addEventListener('click', () => {
     if (confirm("Deseja realmente sair desta sessão de bingo?")) {
       sessionStorage.removeItem('activeBingoId');
-      sessionId = null;
+      eventId = null;
       manualIdInput.value = '';
 
       // Remove todos os listeners do Firebase para economizar tráfego
@@ -378,14 +378,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Gera o QR Code de compartilhamento para outros espectadores
   showQrButton.addEventListener('click', () => {
-    if (!sessionId) {
+    if (!eventId) {
       alert("Entre em uma sessão primeiro para compartilhar.");
       return;
     }
     // Constrói a URL de compartilhamento garantindo que o ID esteja nela
     // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
     const url = new URL(window.location.href.split('?')[0].split('#')[0]);
-    url.searchParams.set('id', sessionId);
+    url.searchParams.set('id', eventId);
 
     qrcodeLarge.innerHTML = ""; // Limpa QR anterior
     new QRCode(qrcodeLarge, {
@@ -482,8 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Inicialização
-  if (sessionId) {
-    connectToSession(sessionId);
+  if (eventId) {
+    connectToSession(eventId);
   } else {
     eventTitle.textContent = "Aguardando Código";
     idEntrySection.classList.remove('hidden');
