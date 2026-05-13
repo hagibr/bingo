@@ -155,8 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * Esta função ignora as verificações de debounce e modais abertos, sendo usada para
    * operações críticas que exigem sincronização imediata.
    * @param {object} dataToSync - O objeto eventData completo a ser sincronizado.
+   * @param {boolean} fullSync - Se verdadeiro, sincroniza a estrutura completa de sessões.
    */
-  const _performFirebaseSync = (dataToSync) => {
+  const _performFirebaseSync = (dataToSync, fullSync = false) => {
     const user = firebase.auth().currentUser;
     if (!user || !navigator.onLine || !dataToSync?.eventid) return; // Só sincroniza se estiver logado, online e com ID
 
@@ -175,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
     dataToSync.lastModified = firebase.database.ServerValue.TIMESTAMP;
 
     const eventId = dataToSync.eventid;
-    const activeName = dataToSync.activeBingoSessionName;
     const updates = {};
 
     // Metadados da raiz
@@ -185,8 +185,38 @@ document.addEventListener('DOMContentLoaded', () => {
     updates[`events/${eventId}/ownerUid`] = dataToSync.ownerUid || user.uid;
     updates[`events/${eventId}/lastModified`] = dataToSync.lastModified || firebase.database.ServerValue.TIMESTAMP;
 
-    // Sincroniza o array de sessões completo para garantir que renomeações e reordenações sejam persistidas
-    updates[`events/${eventId}/sessions`] = dataToSync.sessions;
+    const timestamp = firebase.database.ServerValue.TIMESTAMP;
+
+    if (fullSync) {
+      // Sincronização estrutural: Clonamos para não afetar o estado local
+      const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
+      sessionsClone.forEach((s, sIdx) => {
+        if (!s) return;
+        s.lastModified = timestamp;
+        // Move números sorteados de todas as rodadas para o nó /numbers
+        Object.keys(s.rounds).forEach(rId => {
+          if (s.rounds[rId]) {
+            updates[`numbers/${eventId}/${sIdx}/${rId}`] = s.rounds[rId].drawnNumbers || [];
+            delete s.rounds[rId].drawnNumbers;
+          }
+        });
+      });
+      updates[`events/${eventId}/sessions`] = sessionsClone;
+    } else if (dataToSync.activeSessionIndex !== null && dataToSync.sessions[dataToSync.activeSessionIndex]) {
+      const idx = dataToSync.activeSessionIndex;
+      const sessionClone = JSON.parse(JSON.stringify(dataToSync.sessions[idx]));
+      sessionClone.lastModified = timestamp;
+
+      // Move números sorteados de todas as rodadas da sessão ativa
+      Object.keys(sessionClone.rounds).forEach(rId => {
+        if (sessionClone.rounds[rId]) {
+          updates[`numbers/${eventId}/${idx}/${rId}`] = sessionClone.rounds[rId].drawnNumbers || [];
+          delete sessionClone.rounds[rId].drawnNumbers;
+        }
+      });
+
+      updates[`events/${eventId}/sessions/${idx}`] = sessionClone;
+    }
 
     firebase.database().ref().update(updates)
       .catch(err => {
@@ -363,9 +393,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncTimeout) clearTimeout(syncTimeout);
 
     if (immediate) {
-      performSyncWithChecks();
+      _performFirebaseSync(eventData, true); // Força sincronização estrutural completa
     } else {
-      syncTimeout = setTimeout(performSyncWithChecks, 1000); // Debounce de 1 segundo para digitação
+      syncTimeout = setTimeout(() => _performFirebaseSync(eventData, false), 1000); // Sincronização leve
     }
   };
 

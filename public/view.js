@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let rootRef = null;
   let activeSessionRef = null;
   let activeRoundRef = null;
+  let activeNumbersRef = null;
 
   let fullData = null; // Dados brutos do Firebase (sessionsData)
   let localLastModified = 0; // Controle local da última atualização
@@ -319,7 +320,19 @@ document.addEventListener('DOMContentLoaded', () => {
     activeRoundRef.on('value', snap => {
       if (fullData && fullData.sessions[sessName]) {
         if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
-        fullData.sessions[sessName].rounds[roundNum] = snap.val();
+        // Merge manual: preserva drawnNumbers que vêm do outro nó
+        const existingNumbers = fullData.sessions[sessName].rounds[roundNum]?.drawnNumbers || [];
+        fullData.sessions[sessName].rounds[roundNum] = { ...snap.val(), drawnNumbers: existingNumbers };
+        updateUI();
+      }
+    });
+
+    // NOVO: Escuta especificamente os números sorteados em /numbers
+    if (activeNumbersRef) activeNumbersRef.off();
+    activeNumbersRef = db.ref(`numbers/${id}/${sessName}/${roundNum}`);
+    activeNumbersRef.on('value', snap => {
+      if (fullData && fullData.sessions[sessName]?.rounds?.[roundNum]) {
+        fullData.sessions[sessName].rounds[roundNum].drawnNumbers = snap.val() || [];
         updateUI();
       }
     });
@@ -509,21 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isOffline) {
         db.goOnline();
         isOffline = false;
-        console.log("Reconectado ao Firebase.");
-
-        // Após reconectar, verifica se houve mudanças para atualizar a UI
-        if (rootRef) {
-          rootRef.child('lastModified').once('value').then(snap => {
-            const remoteTimestamp = snap.val() || 0;
-            if (remoteTimestamp > localLastModified) {
-              rootRef.once('value').then(fullSnap => {
-                fullData = fullSnap.val();
-                localLastModified = remoteTimestamp;
-                updateUI();
-              });
-            }
-          });
-        }
+        // O Firebase RTDB recupera os listeners (.on) automaticamente ao voltar a ficar online.
       }
     }
   });
