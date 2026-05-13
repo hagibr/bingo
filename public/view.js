@@ -44,7 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  firebase.initializeApp(firebaseConfig);
+  if (firebase.apps.length === 0) {
+    firebase.initializeApp(firebaseConfig);
+  }
   const db = firebase.database();
   let rootRef = null;
   let activeSessionRef = null;

@@ -1150,6 +1150,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true);
   };
 
+  // Listener para mover sessão para cima
+  if (moveSessionUpButton) {
+    moveSessionUpButton.addEventListener('click', () => moveSession(-1));
+  }
+
+  // Listener para mover sessão para baixo
+  if (moveSessionDownButton) {
+    moveSessionDownButton.addEventListener('click', () => moveSession(1));
+  }
+
   // Garante que o ID digitado manualmente siga as regras de maiúsculas e caracteres alfanuméricos
   configSessionId.addEventListener('input', (e) => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
