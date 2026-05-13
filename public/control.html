@@ -36,7 +36,7 @@
           <path d="M7 17h.01"></path>
         </svg>
       </button>
-      <button id="sessions-mgr-button" class="config-button">📂 Eventos</button>
+      <button id="events-mgr-button" class="config-button">📂 Eventos</button>
       <button id="config-button" class="config-button">⚙️ Configurações</button>
 
       <div class="user-menu-wrapper">
@@ -202,21 +202,21 @@
     </div>
   </div>
 
-  <!-- Modal de Gerenciamento de Sessões -->
-  <div id="sessions-mgr-modal" class="modal hidden">
+  <!-- Modal de Gerenciamento de Eventos -->
+  <div id="events-mgr-modal" class="modal hidden">
     <div class="modal-content">
-      <button id="close-sessions-mgr-x" class="close-x">&times;</button>
+      <button id="close-events-mgr-x" class="close-x">&times;</button>
       <h2>Gerenciar Eventos</h2>
 
-      <div id="sessions-list-container"
+      <div id="events-list-container"
         style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
         <!-- Lista de sessões será injetada aqui -->
       </div>
 
       <div class="modal-actions">
-        <button id="mgr-new-session-button" style="background-color: #28a745; margin-right: auto;">➕ Nova
-          Sessão</button>
-        <button id="close-sessions-mgr-button">Fechar</button>
+        <button id="mgr-new-event-button" style="background-color: #28a745; margin-right: auto;">➕ Novo
+          Evento</button>
+        <button id="close-events-mgr-button">Fechar</button>
       </div>
     </div>
   </div>
