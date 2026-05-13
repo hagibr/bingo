@@ -127,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = document.getElementById('drawn-numbers-list');
     list.innerHTML = '';
     let nums = [...(currentRoundData.drawnNumbers || [])];
+    const rawNumbers = currentRoundData.drawnNumbers || [];
+    const lastDrawn = rawNumbers.length > 0 ? rawNumbers[rawNumbers.length - 1] : null;
+    
     document.getElementById('numbers-count').textContent = `(${nums.length})`;
 
     // Usa o estado local de ordenação em vez do appState vindo do Firebase
@@ -141,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const item = document.createElement('div');
       item.classList.add('drawn-number-item');
       item.textContent = num.toString().padStart(2, '0');
-      if (num === currentRoundData.lastDrawn) item.classList.add('last-drawn');
+      if (num === lastDrawn) item.classList.add('last-drawn');
       list.appendChild(item);
     });
 
@@ -320,8 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
     activeRoundRef.on('value', snap => {
       if (fullData && fullData.sessions[sessName]) {
         if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
-        // Merge manual: preserva drawnNumbers que vêm do outro nó
-        const existingNumbers = fullData.sessions[sessName].rounds[roundNum]?.drawnNumbers || [];
+        
+        const round = fullData.sessions[sessName].rounds[roundNum];
+        const existingNumbers = round?.drawnNumbers || [];
         fullData.sessions[sessName].rounds[roundNum] = { ...snap.val(), drawnNumbers: existingNumbers };
         updateUI();
       }
@@ -331,8 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeNumbersRef) activeNumbersRef.off();
     activeNumbersRef = db.ref(`numbers/${id}/${sessName}/${roundNum}`);
     activeNumbersRef.on('value', snap => {
+      const data = snap.val();
       if (fullData && fullData.sessions[sessName]?.rounds?.[roundNum]) {
-        fullData.sessions[sessName].rounds[roundNum].drawnNumbers = snap.val() || [];
+        const round = fullData.sessions[sessName].rounds[roundNum];
+        round.drawnNumbers = data?.drawnNumbers || [];
         updateUI();
       }
     });
