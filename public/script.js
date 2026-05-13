@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const checkIdExists = async (id) => {
     const user = firebase.auth().currentUser;
     if (!navigator.onLine || !user || typeof firebase === 'undefined' || firebase.apps.length === 0) return false;
-    const snapshot = await firebase.database().ref('events/' + id).once('value');
+    const snapshot = await firebase.database().ref('evt/' + id).once('value');
     return snapshot.exists();
   };
 
@@ -180,27 +180,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isFull) {
       // Sincronização estrutural: Metadados da Raiz + Todas as Sessões
-      updates[`events/${eventId}/eventName`] = dataToSync.eventName || "Novo Evento de Bingo";
-      updates[`events/${eventId}/eventIcon`] = dataToSync.eventIcon || "default-icon.png";
-      updates[`events/${eventId}/activeSessionIndex`] = dataToSync.activeSessionIndex;
-      updates[`events/${eventId}/ownerUid`] = dataToSync.ownerUid || user.uid;
-      updates[`events/${eventId}/lastModified`] = timestamp;
+      updates[`evt/${eventId}/name`] = dataToSync.eventName || "Novo Evento de Bingo";
+      updates[`evt/${eventId}/icon`] = dataToSync.eventIcon || "default-icon.png";
+      updates[`evt/${eventId}/sIdx`] = dataToSync.activeSessionIndex;
+      updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
+      updates[`evt/${eventId}/last`] = timestamp;
 
       const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
-      sessionsClone.forEach((s, sIdx) => {
-        if (!s) return;
-        s.lastModified = timestamp;
-        // Move números sorteados de todas as rodadas para o nó /numbers
+      const ssToUpload = sessionsClone.map((s, sIdx) => {
+        if (!s) return null;
+        const ssUpdate = {
+          snm: s.sessionName,
+          max: s.maxNumber,
+          nrd: s.numRounds,
+          crnd: s.currentRound,
+          mode: s.drawMode,
+          asc: !!s.isSortedAscending,
+          last: timestamp,
+          rds: {}
+        };
+
         Object.keys(s.rounds).forEach(rId => {
           if (s.rounds[rId]) {
-            updates[`numbers/${eventId}/${sIdx}/${rId}`] = {
-              drawnNumbers: s.rounds[rId].drawnNumbers || []
+            updates[`nums/${eventId}/${sIdx}/${rId}`] = {
+              dns: s.rounds[rId].drawnNumbers || []
             };
-            delete s.rounds[rId].drawnNumbers;
+            ssUpdate.rds[rId] = {
+              prz: s.rounds[rId].prize || "",
+              ptrn: s.rounds[rId].pattern || [],
+              pidx: s.rounds[rId].patternIndex || 0,
+              done: !!s.rounds[rId].isCompleted
+            };
           }
         });
+        return ssUpdate;
       });
-      updates[`events/${eventId}/sessions`] = sessionsClone;
+      updates[`evt/${eventId}/ss`] = ssToUpload;
     } else if (dataToSync.activeSessionIndex !== null && dataToSync.sessions[dataToSync.activeSessionIndex]) {
       const idx = dataToSync.activeSessionIndex;
       const session = dataToSync.sessions[idx];
@@ -208,23 +223,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 1. Sincroniza APENAS os números da rodada ativa no nó /numbers (Nível 'numbers' ou 'session')
       if (session.rounds && session.rounds[rIdx]) {
-        updates[`numbers/${eventId}/${idx}/${rIdx}`] = {
-          drawnNumbers: session.rounds[rIdx].drawnNumbers || []
+        updates[`nums/${eventId}/${idx}/${rIdx}`] = {
+          dns: session.rounds[rIdx].drawnNumbers || []
         };
       }
 
       // 2. Se for nível 'session', sincroniza metadados voláteis (Round, Prize, Pattern, etc.)
       if (isSession) {
-        updates[`events/${eventId}/sessions/${idx}/currentRound`] = session.currentRound;
-        updates[`events/${eventId}/sessions/${idx}/isSortedAscending`] = !!session.isSortedAscending;
-        updates[`events/${eventId}/sessions/${idx}/lastModified`] = timestamp;
+        updates[`evt/${eventId}/ss/${idx}/crnd`] = session.currentRound;
+        updates[`evt/${eventId}/ss/${idx}/asc`] = !!session.isSortedAscending;
+        updates[`evt/${eventId}/ss/${idx}/last`] = timestamp;
         
         if (session.rounds[rIdx]) {
           const r = session.rounds[rIdx];
-          updates[`events/${eventId}/sessions/${idx}/rounds/${rIdx}/prize`] = r.prize || "";
-          updates[`events/${eventId}/sessions/${idx}/rounds/${rIdx}/pattern`] = r.pattern || [];
-          updates[`events/${eventId}/sessions/${idx}/rounds/${rIdx}/patternIndex`] = r.patternIndex || 0;
-          updates[`events/${eventId}/sessions/${idx}/rounds/${rIdx}/isCompleted`] = !!r.isCompleted;
+          updates[`evt/${eventId}/ss/${idx}/rds/${rIdx}/prz`] = r.prize || "";
+          updates[`evt/${eventId}/ss/${idx}/rds/${rIdx}/ptrn`] = r.pattern || [];
+          updates[`evt/${eventId}/ss/${idx}/rds/${rIdx}/pidx`] = r.patternIndex || 0;
+          updates[`evt/${eventId}/ss/${idx}/rds/${rIdx}/done`] = !!r.isCompleted;
         }
       }
     }
@@ -247,15 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navigator.onLine || !uid) return;
 
     try {
-      const snapshot = await firebase.database().ref('events').orderByChild('ownerUid').equalTo(uid).once('value');
+      const snapshot = await firebase.database().ref('evt').orderByChild('ouid').equalTo(uid).once('value');
       const data = snapshot.val();
 
       if (data) {
         const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
         Object.entries(data).forEach(([id, event]) => {
           registry[id] = {
-            name: event.eventName || "Evento sem nome",
-            sessions: (event.sessions || []).map(s => s.sessionName || "Sessão")
+            name: event.name || "Evento sem nome",
+            sessions: (event.ss || []).map(s => s.snm || "Sessão")
           };
         });
         localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
@@ -305,15 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
       // Só tenta validar e remover no Firebase se estiver online e logado
       if (user && navigator.onLine) {
         try {
-          const snapshot = await firebase.database().ref('events/' + newId).once('value');
+          const snapshot = await firebase.database().ref('evt/' + newId).once('value');
           const existingData = snapshot.val();
-          if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
+          if (existingData && existingData.ouid && existingData.ouid !== user.uid) {
             showToast(`Código "${newId}" já em uso por outro organizador. Não foi possível substituir.`);
             configSessionId.value = oldId;
             return;
           }
           if (oldId) {
-            await firebase.database().ref('events/' + oldId).remove();
+            await firebase.database().ref('evt/' + oldId).remove();
             const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
             delete registry[oldId];
             localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
@@ -332,9 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // COPIAR
       if (user && navigator.onLine) {
         try {
-          const snapshot = await firebase.database().ref('events/' + newId).once('value');
+          const snapshot = await firebase.database().ref('evt/' + newId).once('value');
           const existingData = snapshot.val();
-          if (existingData && existingData.ownerUid && existingData.ownerUid !== user.uid) {
+          if (existingData && existingData.ouid && existingData.ouid !== user.uid) {
             showToast(`Código "${newId}" já em uso. Não foi possível criar cópia.`);
             configSessionId.value = oldId;
             return;
@@ -511,10 +526,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Resolução de propriedade ao logar
         if (eventData.eventid && navigator.onLine) {
           try {
-            const snapshot = await firebase.database().ref('events/' + eventData.eventid).once('value');
-            const remoteData = snapshot.val();
+            const [evtSnap, numsSnap] = await Promise.all([
+              firebase.database().ref('evt/' + eventData.eventid).once('value'),
+              firebase.database().ref('nums/' + eventData.eventid).once('value')
+            ]);
+            const remoteData = evtSnap.val();
+            const remoteNums = numsSnap.val();
 
-            if (remoteData && remoteData.ownerUid && remoteData.ownerUid !== user.uid) {
+            if (remoteData && remoteData.ouid && remoteData.ouid !== user.uid) {
               // Conflito: O ID que você está usando localmente pertence a outra conta no servidor.
               showToast(`Conflito: O código ${eventData.eventid} pertence a outro usuário.`);
               const newId = generateRandomId();
@@ -523,13 +542,31 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               // Lógica de Sincronização Automática (Merge)
               if (remoteData) {
-                // 1. Sincroniza os dados locais com os da nuvem, priorizando a nuvem para carregar números sorteados
-                eventData.sessions = Array.isArray(remoteData.sessions) ? remoteData.sessions : eventData.sessions;
-                eventData.eventIcon = remoteData.eventIcon || eventData.eventIcon;
-                eventData.eventName = remoteData.eventName || eventData.eventName;
-                eventData.activeSessionIndex = (remoteData.activeSessionIndex !== undefined) 
-                  ? remoteData.activeSessionIndex 
-                  : eventData.activeSessionIndex;
+                eventData.eventName = remoteData.name || eventData.eventName;
+                eventData.eventIcon = remoteData.icon || eventData.eventIcon;
+                eventData.activeSessionIndex = (remoteData.sIdx !== undefined) ? remoteData.sIdx : eventData.activeSessionIndex;
+                eventData.ownerUid = remoteData.ouid || eventData.ownerUid;
+                
+                if (Array.isArray(remoteData.ss)) {
+                  eventData.sessions = remoteData.ss.map((s, sIdx) => ({
+                    sessionName: s.snm,
+                    maxNumber: s.max,
+                    numRounds: s.nrd,
+                    currentRound: s.crnd,
+                    drawMode: s.mode,
+                    isSortedAscending: s.asc,
+                    rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+                      acc[rId] = {
+                        prize: s.rds[rId].prz,
+                        pattern: s.rds[rId].ptrn,
+                        patternIndex: s.rds[rId].pidx,
+                        isCompleted: s.rds[rId].done,
+                        drawnNumbers: remoteNums?.[sIdx]?.[rId]?.dns || []
+                      };
+                      return acc;
+                    }, {})
+                  }));
+                }
                 
                 // Atualiza a referência do estado ativo para os novos dados carregados
                 if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
@@ -602,11 +639,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast("Baixando dados do evento...");
     try {
-      const snapshot = await firebase.database().ref('events/' + id).once('value');
-      const data = snapshot.val();
+      const [evtSnap, numsSnap] = await Promise.all([
+        firebase.database().ref('evt/' + id).once('value'),
+        firebase.database().ref('nums/' + id).once('value')
+      ]);
+      const data = evtSnap.val();
+      const numsData = numsSnap.val();
 
       if (data) {
-        eventData = data;
+        eventData.eventid = id;
+        eventData.eventName = data.name || "Sem Nome";
+        eventData.eventIcon = data.icon || "default-icon.png";
+        eventData.activeSessionIndex = data.sIdx || 0;
+        eventData.ownerUid = data.ouid;
+        eventData.sessions = (data.ss || []).map((s, sIdx) => ({
+          sessionName: s.snm,
+          maxNumber: s.max,
+          numRounds: s.nrd,
+          currentRound: s.crnd,
+          drawMode: s.mode,
+          isSortedAscending: s.asc,
+          rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+            const r = s.rds[rId];
+            acc[rId] = { 
+              prize: r.prz, 
+              pattern: r.ptrn, 
+              patternIndex: r.pidx, 
+              isCompleted: r.done, 
+              drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || [] 
+            };
+            return acc;
+          }, {})
+        }));
+        
         eventData.hasActiveEvent = true;
 
         // Define o índice da sessão de bingo ativa

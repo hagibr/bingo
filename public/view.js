@@ -232,14 +232,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeSessionRef) activeSessionRef.off();
     if (activeRoundRef) activeRoundRef.off();
 
-    rootRef = db.ref('events/' + id);
+    rootRef = db.ref('evt/' + id);
 
     // 1. Carregamento inicial completo (Uma única vez)
-    // Permite que o usuário tenha todos os dados de sessões e rodadas passadas sem baixar tudo novamente a cada sorteio.
+    // Permite que o usuário tenha todos os dados de sessões e rodadas passadas.
     rootRef.once('value').then((snapshot) => {
-      fullData = snapshot.val();
-      if (fullData && fullData.sessions && fullData.activeSessionIndex !== undefined) {
-        localLastModified = fullData.lastModified || 0;
+      const data = snapshot.val();
+      if (data) {
+        // Mapeia do formato reduzido do Firebase para o formato descritivo interno
+        fullData = {
+          eventName: data.name,
+          eventIcon: data.icon,
+          activeSessionIndex: data.sIdx || 0,
+          lastModified: data.last || 0,
+          sessions: (data.ss || []).map(s => ({
+            sessionName: s.snm,
+            maxNumber: s.max,
+            numRounds: s.nrd,
+            currentRound: s.crnd,
+            drawMode: s.mode,
+            isSortedAscending: s.asc,
+            rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+              const r = s.rds[rId];
+              acc[rId] = { prize: r.prz, pattern: r.ptrn, patternIndex: r.pidx, isCompleted: r.done, drawnNumbers: [] };
+              return acc;
+            }, {})
+          }))
+        };
+
+        localLastModified = fullData.lastModified;
 
         // Inicializa o estado de visualização
         if (followActive || viewedSessionIndex === null) {
@@ -248,16 +269,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         appState = fullData.sessions[viewedSessionIndex];
 
-        // Ativa interface
-        idEntrySection.classList.add('hidden');
-        bingoContent.classList.remove('hidden');
-        if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
-        if (showQrButton) showQrButton.classList.remove('hidden');
-        if (leaveEventButton) leaveEventButton.classList.remove('hidden');
+        // Carrega os números sorteados da rodada ativa *antes* de ativar a UI e os listeners
+        const initialSessIndex = viewedSessionIndex;
+        const initialRoundNum = viewedRound;
+        const numsRef = db.ref(`nums/${id}/${initialSessIndex}/${initialRoundNum}`);
+        numsRef.once('value').then(numsSnap => {
+          if (fullData.sessions[initialSessIndex]?.rounds?.[initialRoundNum]) {
+            fullData.sessions[initialSessIndex].rounds[initialRoundNum].drawnNumbers = numsSnap.val()?.dns || [];
+          }
 
-        // 2. Inicia ouvintes granulares para tráfego reduzido em tempo real
-        setupGranularListeners(id);
-        updateUI();
+          // Ativa interface
+          idEntrySection.classList.add('hidden');
+          bingoContent.classList.remove('hidden');
+          if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
+          if (showQrButton) showQrButton.classList.remove('hidden');
+          if (leaveEventButton) leaveEventButton.classList.remove('hidden');
+
+          // 2. Inicia ouvintes granulares para tráfego reduzido em tempo real
+          setupGranularListeners(id);
+          updateUI(); // Agora updateUI terá os números sorteados iniciais
+        }).catch(error => {
+          console.error("Erro ao carregar números iniciais:", error);
+          handleSessionError();
+        });
       } else {
         handleSessionError();
       }
@@ -278,23 +312,23 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const setupGranularListeners = (id) => {
     // Monitora o timestamp global de modificação
-    rootRef.child('lastModified').on('value', snap => {
+    rootRef.child('last').on('value', snap => {
       localLastModified = snap.val() || 0;
     });
 
     // Escuta mudanças nos metadados globais (raras)
-    rootRef.child('activeSessionIndex').on('value', snap => {
+    rootRef.child('sIdx').on('value', snap => {
       if (!fullData) return;
       fullData.activeSessionIndex = snap.val();
       syncLiveSessionListeners(id);
       updateUI();
     });
 
-    rootRef.child('eventName').on('value', snap => {
+    rootRef.child('name').on('value', snap => {
       if (fullData) { fullData.eventName = snap.val(); updateUI(); }
     });
 
-    rootRef.child('eventIcon').on('value', snap => {
+    rootRef.child('icon').on('value', snap => {
       if (fullData) { fullData.eventIcon = snap.val(); updateUI(); }
     });
 
@@ -307,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Escuta qual a rodada atual da sessão ativa
     if (activeSessionRef) activeSessionRef.off();
-    activeSessionRef = db.ref(`events/${id}/sessions/${activeIndex}/currentRound`);
+    activeSessionRef = db.ref(`evt/${id}/ss/${activeIndex}/crnd`);
     activeSessionRef.on('value', snap => {
       const currentRound = snap.val();
       fullData.sessions[activeIndex].currentRound = currentRound;
@@ -319,26 +353,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncLiveRoundDataListener = (id, sessName, roundNum) => {
     // Escuta apenas os dados da rodada que está sendo sorteada
     if (activeRoundRef) activeRoundRef.off();
-    activeRoundRef = db.ref(`events/${id}/sessions/${sessName}/rounds/${roundNum}`);
+    activeRoundRef = db.ref(`evt/${id}/ss/${sessName}/rds/${roundNum}`);
     activeRoundRef.on('value', snap => {
+      const r = snap.val();
       if (fullData && fullData.sessions[sessName]) {
         if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
         
         const round = fullData.sessions[sessName].rounds[roundNum];
         const existingNumbers = round?.drawnNumbers || [];
-        fullData.sessions[sessName].rounds[roundNum] = { ...snap.val(), drawnNumbers: existingNumbers };
+        
+        // Mapeia do Firebase para o local
+        fullData.sessions[sessName].rounds[roundNum] = { 
+          prize: r.prz, 
+          pattern: r.ptrn, 
+          patternIndex: r.pidx, 
+          isCompleted: r.done,
+          drawnNumbers: existingNumbers 
+        };
         updateUI();
       }
     });
 
     // NOVO: Escuta especificamente os números sorteados em /numbers
     if (activeNumbersRef) activeNumbersRef.off();
-    activeNumbersRef = db.ref(`numbers/${id}/${sessName}/${roundNum}`);
+    activeNumbersRef = db.ref(`nums/${id}/${sessName}/${roundNum}`);
     activeNumbersRef.on('value', snap => {
       const data = snap.val();
       if (fullData && fullData.sessions[sessName]?.rounds?.[roundNum]) {
         const round = fullData.sessions[sessName].rounds[roundNum];
-        round.drawnNumbers = data?.drawnNumbers || [];
+        round.drawnNumbers = data?.dns || [];
         updateUI();
       }
     });
