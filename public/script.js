@@ -38,12 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyQrLinkButton = document.getElementById('copy-qr-link-button');
 
   // Elementos do Gerenciador de Eventos
-  const eventsMgrButton = document.getElementById('sessions-mgr-button');
-  const eventsMgrModal = document.getElementById('sessions-mgr-modal');
-  const closeEventsMgrX = document.getElementById('close-sessions-mgr-x');
-  const closeEventsMgrButton = document.getElementById('close-sessions-mgr-button');
-  const mgrNewEventButton = document.getElementById('mgr-new-session-button');
-  const sessionsListContainer = document.getElementById('sessions-list-container');
+  const eventsMgrButton = document.getElementById('events-mgr-button');
+  const eventsMgrModal = document.getElementById('events-mgr-modal');
+  const closeEventsMgrX = document.getElementById('close-events-mgr-x');
+  const closeEventsMgrButton = document.getElementById('close-events-mgr-button');
+  const mgrNewEventButton = document.getElementById('mgr-new-event-button');
+  const sessionsListContainer = document.getElementById('events-list-container');
 
   // Elementos de Autenticação
   const adminHeader = document.getElementById('admin-header');
@@ -179,12 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const updates = {};
 
     // Metadados da raiz
-    updates[`events/${eventId}/eventName`] = dataToSync.eventName;
-    updates[`events/${eventId}/eventIcon`] = dataToSync.eventIcon;
+    updates[`events/${eventId}/eventName`] = dataToSync.eventName || "Novo Evento de Bingo";
+    updates[`events/${eventId}/eventIcon`] = dataToSync.eventIcon || "default-icon.png";
     updates[`events/${eventId}/activeBingoSessionName`] = activeName;
-    updates[`events/${eventId}/sessionOrder`] = dataToSync.sessionOrder;
-    updates[`events/${eventId}/ownerUid`] = dataToSync.ownerUid;
-    updates[`events/${eventId}/lastModified`] = dataToSync.lastModified;
+    updates[`events/${eventId}/sessionOrder`] = dataToSync.sessionOrder || [];
+    updates[`events/${eventId}/ownerUid`] = dataToSync.ownerUid || user.uid;
+    updates[`events/${eventId}/lastModified`] = dataToSync.lastModified || firebase.database.ServerValue.TIMESTAMP;
 
     // Sincroniza APENAS a sessão ativa. Isso evita enviar dados de outras sessões salvas.
     if (activeName && dataToSync.sessions[activeName]) {
@@ -417,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         eventData = {
           eventid: null, // Nenhum ID de evento ativo inicialmente
           eventName: "Nenhum Evento Ativo",
+          eventIcon: "default-icon.png",
           ownerUid: null,
           sessions: {},
           sessionOrder: [],
@@ -1237,6 +1238,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const defaultName = "Novo Evento de Bingo";
       eventData.eventid = generateRandomId();
+      eventData.eventName = defaultName;
+      eventData.eventIcon = "default-icon.png";
       eventData.sessions = {};
       eventData.sessions[defaultName] = createDefaultSessionState(defaultName);
       eventData.sessionOrder = [defaultName];
