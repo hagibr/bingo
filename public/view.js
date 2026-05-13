@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let fullData = null; // Dados brutos do Firebase (sessionsData)
   let localLastModified = 0; // Controle local da última atualização
   let appState = null;
-  let viewedSessionName = null; // Nome da sessão sendo visualizada
+  let viewedSessionIndex = null; // Índice da sessão sendo visualizada
   let viewedRound = null; // Rodada que o usuário está olhando no momento
   let followActive = true; // Se o usuário está seguindo a rodada ativa do organizador
   let localIsSortedAscending = false; // Controle local de ordenação
@@ -83,14 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Se estiver em modo automático, força a visualização do que está ativo no servidor
     if (followActive) {
-      viewedSessionName = fullData.activeBingoSessionName;
-      appState = fullData.sessions[viewedSessionName];
+      viewedSessionIndex = fullData.activeSessionIndex;
+      appState = fullData.sessions[viewedSessionIndex];
       viewedRound = appState.currentRound;
       localIsSortedAscending = appState.isSortedAscending;
     }
 
     // Atualiza o nome da sessão visualizada
-    if (viewedSessionNameDisplay) viewedSessionNameDisplay.textContent = viewedSessionName;
+    if (viewedSessionNameDisplay && appState) viewedSessionNameDisplay.textContent = appState.sessionName;
 
     document.getElementById('event-title').textContent = fullData.eventName || appState.eventName;
     document.title = "Bingo: " + (fullData.eventName || appState.eventName);
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('current-round-label').textContent = "Rodada " + roundToDisplay;
 
     // O selo "ATUAL" deve aparecer apenas se for a SESSÃO ativa E a RODADA ativa do organizador
-    const isAtLiveState = (viewedSessionName === fullData.activeBingoSessionName && roundToDisplay === appState.currentRound);
+    const isAtLiveState = (viewedSessionIndex === fullData.activeSessionIndex && roundToDisplay === appState.currentRound);
     if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
 
     // O botão "Ir para o Atual" aparece se o usuário não estiver seguindo o estado ativo (followActive === false)
@@ -151,12 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
     nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
 
     // Atualiza estado dos botões de navegação de sessões
-    const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
-    const currentSessIndex = sessionNames.indexOf(viewedSessionName);
+    const sessionsCount = fullData.sessions ? fullData.sessions.length : 0;
     prevSessionButton.classList.toggle('hidden', isLocked);
     nextSessionButton.classList.toggle('hidden', isLocked);
-    prevSessionButton.disabled = currentSessIndex <= 0;
-    nextSessionButton.disabled = currentSessIndex >= sessionNames.length - 1;
+    prevSessionButton.disabled = viewedSessionIndex <= 0;
+    nextSessionButton.disabled = viewedSessionIndex >= sessionsCount - 1;
 
     if (toggleSortButton) toggleSortButton.classList.toggle('hidden', isLocked);
   };
@@ -233,15 +232,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Permite que o usuário tenha todos os dados de sessões e rodadas passadas sem baixar tudo novamente a cada sorteio.
     rootRef.once('value').then((snapshot) => {
       fullData = snapshot.val();
-      if (fullData && fullData.sessions && fullData.activeBingoSessionName) {
+      if (fullData && fullData.sessions && fullData.activeSessionIndex !== undefined) {
         localLastModified = fullData.lastModified || 0;
 
         // Inicializa o estado de visualização
-        if (followActive || viewedSessionName === null) {
-          viewedSessionName = fullData.activeBingoSessionName;
-          viewedRound = fullData.sessions[viewedSessionName].currentRound;
+        if (followActive || viewedSessionIndex === null) {
+          viewedSessionIndex = fullData.activeSessionIndex;
+          viewedRound = fullData.sessions[viewedSessionIndex].currentRound;
         }
-        appState = fullData.sessions[viewedSessionName];
+        appState = fullData.sessions[viewedSessionIndex];
 
         // Ativa interface
         idEntrySection.classList.add('hidden');
@@ -278,9 +277,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Escuta mudanças nos metadados globais (raras)
-    rootRef.child('activeBingoSessionName').on('value', snap => {
+    rootRef.child('activeSessionIndex').on('value', snap => {
       if (!fullData) return;
-      fullData.activeBingoSessionName = snap.val();
+      fullData.activeSessionIndex = snap.val();
       syncLiveSessionListeners(id);
       updateUI();
     });
@@ -297,16 +296,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const syncLiveSessionListeners = (id) => {
-    const sessName = fullData.activeBingoSessionName;
-    if (!sessName || !fullData.sessions[sessName]) return;
+    const activeIndex = fullData.activeSessionIndex;
+    if (activeIndex === undefined || !fullData.sessions[activeIndex]) return;
 
     // Escuta qual a rodada atual da sessão ativa
     if (activeSessionRef) activeSessionRef.off();
-    activeSessionRef = db.ref(`events/${id}/sessions/${sessName}/currentRound`);
+    activeSessionRef = db.ref(`events/${id}/sessions/${activeIndex}/currentRound`);
     activeSessionRef.on('value', snap => {
       const currentRound = snap.val();
-      fullData.sessions[sessName].currentRound = currentRound;
-      syncLiveRoundDataListener(id, sessName, currentRound);
+      fullData.sessions[activeIndex].currentRound = currentRound;
+      syncLiveRoundDataListener(id, activeIndex, currentRound);
       updateUI();
     });
   };
@@ -408,15 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navegação de Sessões
   const navigateSession = (direction) => {
-    const sessionNames = fullData.sessionOrder || Object.keys(fullData.sessions);
-    const currentIndex = sessionNames.indexOf(viewedSessionName);
+    const currentIndex = viewedSessionIndex;
     const nextIndex = currentIndex + direction;
 
-    if (nextIndex >= 0 && nextIndex < sessionNames.length) {
-      viewedSessionName = sessionNames[nextIndex];
-      appState = fullData.sessions[viewedSessionName];
+    if (fullData.sessions && nextIndex >= 0 && nextIndex < fullData.sessions.length) {
+      viewedSessionIndex = nextIndex;
+      appState = fullData.sessions[viewedSessionIndex];
       // Ao mudar de sessão, foca na primeira rodada dela ou na atual se for a ativa
-      viewedRound = (viewedSessionName === fullData.activeBingoSessionName) ? appState.currentRound : 1;
+      viewedRound = (viewedSessionIndex === fullData.activeSessionIndex) ? appState.currentRound : 1;
       followActive = false; // Navegação manual desativa o acompanhamento automático
       animationPhase = true;
       updateUI();
@@ -429,8 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Botão de Atalho para o Vivo
   goToLiveButton.addEventListener('click', () => {
     followActive = false; // Apenas pula para o estado atual sem reativar o auto-follow
-    viewedSessionName = fullData.activeBingoSessionName;
-    appState = fullData.sessions[viewedSessionName];
+    viewedSessionIndex = fullData.activeSessionIndex;
+    appState = fullData.sessions[viewedSessionIndex];
     viewedRound = appState.currentRound;
     updateUI();
   });
