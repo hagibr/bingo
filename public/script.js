@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toastContainer = document.getElementById('toast-container');
 
   let activeRemoteRef = null;
+  const instanceId = Math.random().toString(36).substring(2, 10);
 
   /**
    * Exibe uma notificação tipo toast na tela.
@@ -184,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Isso garante que o listener em outras máquinas seja disparado mesmo quando
     // apenas os números (que ficam em outro nó 'nums/ID') forem alterados.
     updates[`evt/${eventId}/last`] = timestamp;
+    updates[`evt/${eventId}/sid`] = instanceId;
 
     if (isFull) {
       // Sincronização estrutural: Metadados da Raiz + Todas as Sessões
@@ -272,8 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     activeRemoteRef.on('value', async (snapshot) => {
       const remoteData = snapshot.val();
-      // Só processa se os dados existirem e forem mais recentes que os locais
-      if (!remoteData || (remoteData.last && remoteData.last <= eventData.lastModified)) return;
+      // Ignora se for um "eco" da própria máquina ou se os dados forem antigos
+      if (!remoteData || remoteData.sid === instanceId) return;
+
+      if (remoteData.last && remoteData.last <= eventData.lastModified) return;
 
       // Verifica se somos o proprietário antes de aplicar a mudança
       if (remoteData.ouid !== user.uid) return;
