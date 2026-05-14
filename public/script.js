@@ -211,6 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
       updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
 
       const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
+
+      // Registra apenas o ID do evento no índice do usuário para controle de posse
+      updates[`uevts/${user.uid}/${eventId}`] = true;
+
       const ssToUpload = sessionsClone.map((s, sIdx) => {
         if (!s) return null;
         const ssUpdate = {
@@ -346,20 +350,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navigator.onLine || !uid) return;
 
     try {
-      const snapshot = await firebase.database().ref('evt').orderByChild('ouid').equalTo(uid).once('value');
+      // Agora lemos diretamente do nó indexado pelo UID do usuário
+      const snapshot = await firebase.database().ref(`uevts/${uid}`).once('value');
       const data = snapshot.val();
 
-      if (data) {
-        const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
-        Object.entries(data).forEach(([id, event]) => {
-          registry[id] = {
-            name: event.name || "Evento sem nome",
-            sessions: (event.ss || []).map(s => s.snm || "Sessão")
-          };
-        });
-        localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
-        renderEventsList(); // Sempre re-renderiza a lista interna se houver dados novos
-      }
+      // Recupera o registro local para não perder os nomes/metadados das sessões já carregadas
+      const localRegistry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+      const cloudIds = data || {};
+      const updatedRegistry = {};
+
+      // Reconstrói a lista baseada nos IDs da nuvem, mantendo informações locais se disponíveis
+      Object.keys(cloudIds).forEach(id => {
+        updatedRegistry[id] = localRegistry[id] || { name: `Evento ${id}`, sessions: [] };
+      });
+
+      localStorage.setItem('bingoUserEvents', JSON.stringify(updatedRegistry));
+      renderEventsList();
     } catch (error) {
       console.error("Erro ao sincronizar lista de eventos:", error);
     }
@@ -978,7 +984,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (confirm(confirmMessage)) {
             if (user && isOnline) {
               try {
-                await firebase.database().ref('sessions/' + id).remove();
+                // Remove o evento, os números e o índice do usuário na nuvem
+                const updates = {};
+                updates[`evt/${id}`] = null;
+                updates[`nums/${id}`] = null;
+                updates[`uevts/${user.uid}/${id}`] = null;
+
+                await firebase.database().ref().update(updates);
                 showToast(`Evento "${eventName}" removido do Firebase e localmente.`);
               } catch (error) {
                 console.error("Erro ao remover evento do Firebase:", error);
