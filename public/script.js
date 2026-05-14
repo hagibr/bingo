@@ -180,13 +180,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const isFull = (syncLevel === 'full' || syncLevel === true);
     const isSession = (syncLevel === 'session');
 
+    // CRÍTICO: Sempre atualizamos o timestamp na raiz do evento 'evt/ID'.
+    // Isso garante que o listener em outras máquinas seja disparado mesmo quando
+    // apenas os números (que ficam em outro nó 'nums/ID') forem alterados.
+    updates[`evt/${eventId}/last`] = timestamp;
+
     if (isFull) {
       // Sincronização estrutural: Metadados da Raiz + Todas as Sessões
       updates[`evt/${eventId}/name`] = dataToSync.eventName || "Novo Evento de Bingo";
       updates[`evt/${eventId}/icon`] = dataToSync.eventIcon || "default-icon.png";
       updates[`evt/${eventId}/sIdx`] = dataToSync.activeSessionIndex;
       updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
-      updates[`evt/${eventId}/last`] = timestamp;
 
       const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
       const ssToUpload = sessionsClone.map((s, sIdx) => {
@@ -234,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isSession) {
         updates[`evt/${eventId}/ss/${idx}/crnd`] = session.currentRound;
         updates[`evt/${eventId}/ss/${idx}/asc`] = !!session.isSortedAscending;
-        updates[`evt/${eventId}/ss/${idx}/last`] = timestamp;
 
         if (session.rounds[rIdx]) {
           const r = session.rounds[rIdx];
