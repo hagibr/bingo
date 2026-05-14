@@ -66,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const idOptCancel = document.getElementById('id-opt-cancel');
   const toastContainer = document.getElementById('toast-container');
 
+  let activeRemoteRef = null;
+
   /**
    * Exibe uma notificação tipo toast na tela.
    * @param {string} message - Mensagem a ser exibida.
@@ -254,6 +256,59 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Configura ouvintes em tempo real para sincronizar mudanças feitas em outros dispositivos
+   * logados na mesma conta de organizador.
+   */
+  const setupRemoteSyncListener = (id) => {
+    if (!id || !navigator.onLine) return;
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    if (activeRemoteRef) activeRemoteRef.off();
+    activeRemoteRef = firebase.database().ref('evt/' + id);
+
+    activeRemoteRef.on('value', async (snapshot) => {
+      const remoteData = snapshot.val();
+      // Só processa se os dados existirem e forem mais recentes que os locais
+      if (!remoteData || (remoteData.last && remoteData.last <= eventData.lastModified)) return;
+
+      // Verifica se somos o proprietário antes de aplicar a mudança
+      if (remoteData.ouid !== user.uid) return;
+
+      const numsSnap = await firebase.database().ref('nums/' + id).once('value');
+      const remoteNums = numsSnap.val();
+
+      // Mapeamento inverso: do formato Firebase para o formato interno eventData
+      eventData.eventName = remoteData.name || eventData.eventName;
+      eventData.eventIcon = remoteData.icon || eventData.eventIcon;
+      eventData.activeSessionIndex = (remoteData.sIdx !== undefined) ? remoteData.sIdx : eventData.activeSessionIndex;
+      eventData.lastModified = remoteData.last;
+      eventData.ownerUid = remoteData.ouid;
+
+      if (Array.isArray(remoteData.ss)) {
+        eventData.sessions = remoteData.ss.map((s, sIdx) => ({
+          sessionName: s.snm,
+          maxNumber: s.max,
+          numRounds: s.nrd,
+          currentRound: s.crnd,
+          drawMode: s.mode,
+          isSortedAscending: s.asc,
+          rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+            const r = s.rds[rId];
+            acc[rId] = { prize: r.prz, pattern: r.ptrn, patternIndex: r.pidx, isCompleted: r.done, drawnNumbers: remoteNums?.[sIdx]?.[rId]?.dns || [] };
+            return acc;
+          }, {})
+        }));
+      }
+      if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
+        appState = eventData.sessions[eventData.activeSessionIndex];
+      }
+      updateUI(false, 'none'); // Atualiza a tela sem reenviar para o servidor
+      showToast("Sincronizado com a nuvem.");
+    });
+  };
+
+  /**
    * Busca todos os eventos pertencentes ao usuário no Firebase e atualiza o registro local.
    * Isso garante que eventos removidos localmente, mas que ainda existem na nuvem, reapareçam após o login.
    * @param {string} uid - UID do usuário logado.
@@ -341,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
       eventData.eventid = newId;
       if (user && navigator.onLine) _performFirebaseSync(eventData, 'full');
       updateUI(false);
+      setupRemoteSyncListener(newId);
       const status = (user && navigator.onLine) ? ' (Sincronizado)' : ' (Local)';
       showToast(`Código alterado para: ${newId}${status}`);
     } else if (choice === '2') {
@@ -361,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       eventData.eventid = newId;
       if (user && navigator.onLine) _performFirebaseSync(eventData, 'full');
       updateUI(false);
+      setupRemoteSyncListener(newId);
       const status = (user && navigator.onLine) ? ' (Sincronizada)' : ' (Local)';
       showToast(`Cópia criada no código: ${newId}${status}`);
     } else {
@@ -587,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
               // Assumir propriedade caso não tenha e subir dados (Upload/Merge)
               if (!eventData.ownerUid) eventData.ownerUid = user.uid;
               saveState(true, 'full');
+              setupRemoteSyncListener(eventData.eventid);
               if (remoteData) showToast("Dados sincronizados com a nuvem.");
             }
           } catch (e) {
@@ -691,6 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appState = eventData.sessions[eventData.activeSessionIndex];
 
         // Atualiza a interface e exibe o painel de controle
+        setupRemoteSyncListener(id);
         updateUI(false);
         showToast(`Evento "${eventData.eventName}" carregado com sucesso!`);
       } else {
@@ -705,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Atualiza todos os elementos visuais da interface (textos, listas, seletores e modais) com base no estado atual.
    * @param {boolean} immediateSync - Define se as alterações devem ser salvas no Firebase imediatamente.
-   * @param {string|boolean} syncLevel - Nível de sincronização ('full', 'session', 'numbers').
+   * @param {string|boolean} syncLevel - Nível de sincronização ('full', 'session', 'numbers', ou 'none' para não salvar).
    */
   const updateUI = (immediateSync = false, syncLevel = 'numbers') => {
     // Se não houver evento ativo, atualiza o cabeçalho e oculta o conteúdo principal
@@ -794,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
       configShareLink.value = `${baseUrl}view.html?id=${eventData.eventid}`;
     }
 
-    saveState(immediateSync, syncLevel);
+    if (syncLevel !== 'none') saveState(immediateSync, syncLevel);
   };
 
   /**
