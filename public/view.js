@@ -39,6 +39,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
   const autoFollowContainer = document.getElementById('auto-follow-container');
 
+  // --- Lógica de Zoom das Bolas ---
+  const ballScales = [1, 1.25, 1.5, 1.75, 2];
+  let ballZoomIndex = 0;
+  const drawnNumbersListContainer = document.getElementById('drawn-numbers-list');
+
+  /**
+   * Cicla o tamanho das bolas na tela do espectador.
+   */
+  const cycleBallZoom = () => {
+    ballZoomIndex = (ballZoomIndex + 1) % ballScales.length;
+    const scale = ballScales[ballZoomIndex];
+    drawnNumbersListContainer.style.setProperty('--ball-zoom', scale);
+    drawnNumbersListContainer.style.setProperty('--ball-gap', (10 * scale) + 'px');
+    drawnNumbersListContainer.style.setProperty('--ball-padding', (15 * scale) + 'px');
+  };
+
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
     return;
@@ -129,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let nums = [...(currentRoundData.drawnNumbers || [])];
     const rawNumbers = currentRoundData.drawnNumbers || [];
     const lastDrawn = rawNumbers.length > 0 ? rawNumbers[rawNumbers.length - 1] : null;
-    
+
     document.getElementById('numbers-count').textContent = `(${nums.length})`;
 
     // Usa o estado local de ordenação em vez do appState vindo do Firebase
@@ -358,17 +374,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = snap.val();
       if (fullData && fullData.sessions[sessName]) {
         if (!fullData.sessions[sessName].rounds) fullData.sessions[sessName].rounds = {};
-        
+
         const round = fullData.sessions[sessName].rounds[roundNum];
         const existingNumbers = round?.drawnNumbers || [];
-        
+
         // Mapeia do Firebase para o local
-        fullData.sessions[sessName].rounds[roundNum] = { 
-          prize: r.prz, 
-          pattern: r.ptrn, 
-          patternIndex: r.pidx, 
+        fullData.sessions[sessName].rounds[roundNum] = {
+          prize: r.prz,
+          pattern: r.ptrn,
+          patternIndex: r.pidx,
           isCompleted: r.done,
-          drawnNumbers: existingNumbers 
+          drawnNumbers: existingNumbers
         };
         updateUI();
       }
@@ -517,6 +533,13 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleSortButton.addEventListener('click', () => {
     localIsSortedAscending = !localIsSortedAscending;
     updateUI();
+  });
+
+  // Clique em qualquer bola para aumentar o tamanho
+  drawnNumbersListContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('drawn-number-item')) {
+      cycleBallZoom();
+    }
   });
 
   // Fecha o modal de QR Code no "X"

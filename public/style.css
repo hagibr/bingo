@@ -248,27 +248,31 @@ body {
 .drawn-numbers-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--ball-gap, 10px);
   min-height: 60px;
   border: 1px dashed #ccc;
-  padding: 10px;
+  padding: var(--ball-padding, 10px);
   border-radius: 5px;
   align-items: center;
   justify-content: center;
+  overflow: visible;
+  /* Garante que as bolas não fiquem cortadas ao crescer */
 }
 
 .drawn-number-item {
   background-color: #e9ecef;
   border: 1px solid #dee2e6;
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
+  width: calc(60px * var(--ball-zoom, 1));
+  height: calc(60px * var(--ball-zoom, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6em;
+  font-size: calc(1.6em * var(--ball-zoom, 1));
   font-weight: bold;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: zoom-in;
+  flex-shrink: 0;
 }
 
 .drawn-number-item.last-drawn {
@@ -276,12 +280,9 @@ body {
   /* Amarelo */
   color: #333;
   border-color: #ffc107;
-  width: 80px;
-  /* 2x maior */
-  height: 80px;
-  /* 2x maior */
-  font-size: 2.2em;
-  /* 2x maior */
+  width: calc(80px * var(--ball-zoom, 1));
+  height: calc(80px * var(--ball-zoom, 1));
+  font-size: calc(2.2em * var(--ball-zoom, 1));
   box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
 }
 
@@ -784,11 +785,5 @@ button:hover {
   .bingo-main {
     padding: 10px;
     margin: 10px auto;
-  }
-
-  .drawn-number-item.last-drawn {
-    width: 60px;
-    height: 60px;
-    font-size: 1.8em;
   }
 }

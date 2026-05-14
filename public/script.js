@@ -66,6 +66,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const idOptCancel = document.getElementById('id-opt-cancel');
   const toastContainer = document.getElementById('toast-container');
 
+  // --- Lógica de Zoom das Bolas ---
+  const ballScales = [1, 1.25, 1.5, 1.75, 2];
+  let ballZoomIndex = 0;
+
+  /**
+   * Cicla o tamanho das bolas e atualiza as variáveis CSS no contêiner.
+   */
+  const cycleBallZoom = () => {
+    ballZoomIndex = (ballZoomIndex + 1) % ballScales.length;
+    const scale = ballScales[ballZoomIndex];
+    drawnNumbersList.style.setProperty('--ball-zoom', scale);
+    drawnNumbersList.style.setProperty('--ball-gap', (10 * scale) + 'px');
+    drawnNumbersList.style.setProperty('--ball-padding', (15 * scale) + 'px');
+    showToast(`Zoom das bolas: ${scale * 100}%`);
+  };
+
   let activeRemoteRef = null;
   const instanceId = Math.random().toString(36).substring(2, 10);
 
@@ -1295,6 +1311,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Sorteia um número aleatório (disponível no modo automático)
   drawRandomButton.addEventListener('click', drawRandomNumber);
+
+  // Clique em qualquer bola para aumentar o tamanho
+  drawnNumbersList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('drawn-number-item')) {
+      cycleBallZoom();
+    }
+  });
 
   // Altera o padrão visual da rodada (Linha, Coluna, etc.)
   patternSelect.addEventListener('change', (e) => {
