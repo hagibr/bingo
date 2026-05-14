@@ -1688,22 +1688,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Gera e baixa um arquivo JSON com todos os dados do projeto
   exportSessionButton.addEventListener('click', () => {
-    // Criamos uma cópia para processar a exportação sem alterar o estado em memória
-    const stateToExport = JSON.parse(JSON.stringify(appState));
-    stateToExport.eventIcon = eventData.eventIcon;
-
-    // Se a imagem for muito grande, quebramos em um array de strings (fatias de 5k caracteres)
-    if (typeof stateToExport.eventIcon === 'string' && stateToExport.eventIcon.length > 5000) {
-      stateToExport.eventIcon = stateToExport.eventIcon.match(/.{1,5000}/g);
+    if (!eventData || !eventData.sessions.length) {
+      showToast("Nenhum dado para exportar.");
+      return;
     }
 
-    const dataStr = JSON.stringify(stateToExport, null, 2); // Formata para leitura
+    // Criamos uma cópia para processar a exportação sem alterar o estado em memória
+    const dataToExport = JSON.parse(JSON.stringify(eventData));
+
+    const dataStr = JSON.stringify(dataToExport, null, 2); // Formata para leitura
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const safeFileName = appState.eventName.replace(/\s+/g, '_');
-    a.download = `${safeFileName}_${new Date().toISOString().slice(0, 10)}.json`;
+
+    const fileName = (eventData.eventName || "Bingo_Evento").replace(/\s+/g, '_');
+    a.download = `${fileName}_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1722,29 +1722,45 @@ document.addEventListener('DOMContentLoaded', () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
-          const importedState = JSON.parse(event.target.result);
-          // Validação básica para garantir que é um estado de bingo válido
-          if (importedState && (importedState.eventName || importedState.sessionName) && importedState.rounds) {
+          const imported = JSON.parse(event.target.result);
 
-            // Se o ícone foi exportado como array (múltiplas linhas), juntamos novamente
-            if (Array.isArray(importedState.eventIcon)) {
-              importedState.eventIcon = importedState.eventIcon.join('');
+          // Caso 1: Importação de Evento Completo (Novo formato)
+          if (imported && imported.sessions && Array.isArray(imported.sessions)) {
+            if (confirm("Este arquivo contém um evento completo. Deseja substituir o evento atual por este?")) {
+              const user = firebase.auth().currentUser;
+              const newId = generateRandomId();
+
+              // Criamos um novo objeto de evento assumindo a posse
+              eventData = {
+                ...imported,
+                eventid: newId,
+                ownerUid: user ? user.uid : null, // O importador assume como novo dono
+                activeSessionIndex: 0,
+                hasActiveEvent: true,
+                lastModified: Date.now()
+              };
+
+              appState = eventData.sessions[0];
+              updateUI(true, 'full');
+              showToast(`Evento importado! Novo código gerado: ${newId}`);
             }
-            eventData.eventIcon = importedState.eventIcon || "default-icon.png";
+          }
+          // Caso 2: Importação de Sessão Única (Legado ou exportação parcial)
+          else if (imported && (imported.eventName || imported.sessionName) && imported.rounds) {
+            // Ajuste de compatibilidade para o ícone
+            if (Array.isArray(imported.eventIcon)) imported.eventIcon = imported.eventIcon.join('');
 
-            // Garante um ID se o arquivo importado for de uma versão anterior
-            if (!importedState.eventid) importedState.eventid = importedState.sessionId || generateRandomId();
-            // Garante um ID se o arquivo importado não possuir um
-            if (!importedState.eventid) importedState.eventid = generateRandomId();
+            // Limpa metadados de nível de evento do objeto importado para não sujar a sessão
+            delete imported.eventid;
+            delete imported.ownerUid;
+            delete imported.lastModified;
 
-            // Ensure sessionName is set, using eventName as fallback for older exports
-            importedState.sessionName = importedState.sessionName || importedState.eventName;
-
-            eventData.sessions.push(importedState);
+            imported.sessionName = imported.sessionName || imported.eventName;
+            eventData.sessions.push(imported);
             eventData.activeSessionIndex = eventData.sessions.length - 1;
             appState = eventData.sessions[eventData.activeSessionIndex];
             updateUI(true, 'full');
-            showToast("Sessão importada!");
+            showToast("Sessão adicionada ao evento atual!");
           } else {
             showToast("JSON inválido.");
           }
