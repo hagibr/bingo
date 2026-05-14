@@ -274,10 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     activeRemoteRef.on('value', async (snapshot) => {
       const remoteData = snapshot.val();
-      // Ignora se for um "eco" da própria máquina ou se os dados forem antigos
+      // Ignora se não houver dados, se for um "eco" ou se os dados remotos forem mais antigos que os locais
       if (!remoteData || remoteData.sid === instanceId) return;
 
-      if (remoteData.last && remoteData.last <= eventData.lastModified) return;
+      if (remoteData.last && eventData.lastModified && remoteData.last <= eventData.lastModified) return;
 
       // Verifica se somos o proprietário antes de aplicar a mudança
       if (remoteData.ouid !== user.uid) return;
@@ -292,8 +292,11 @@ document.addEventListener('DOMContentLoaded', () => {
       eventData.lastModified = remoteData.last;
       eventData.ownerUid = remoteData.ouid;
 
-      if (Array.isArray(remoteData.ss)) {
-        eventData.sessions = remoteData.ss.map((s, sIdx) => ({
+      if (remoteData.ss) {
+        // O Firebase pode retornar um objeto em vez de array se os índices forem manipulados
+        const sessionsRaw = Array.isArray(remoteData.ss) ? remoteData.ss : Object.values(remoteData.ss);
+
+        eventData.sessions = sessionsRaw.map((s, sIdx) => ({
           sessionName: s.snm,
           maxNumber: s.max,
           numRounds: s.nrd,
@@ -306,10 +309,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
           }, {})
         }));
+
+        // Garante que a referência do appState aponte para o objeto dentro do novo array
+        if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
+          appState = eventData.sessions[eventData.activeSessionIndex];
+        }
       }
-      if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
-        appState = eventData.sessions[eventData.activeSessionIndex];
-      }
+
       updateUI(false, 'none'); // Atualiza a tela sem reenviar para o servidor
       showToast("Sincronizado com a nuvem.");
     });
@@ -621,8 +627,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventData.activeSessionIndex = (remoteData.sIdx !== undefined) ? remoteData.sIdx : eventData.activeSessionIndex;
                 eventData.ownerUid = remoteData.ouid || eventData.ownerUid;
 
-                if (Array.isArray(remoteData.ss)) {
-                  eventData.sessions = remoteData.ss.map((s, sIdx) => ({
+                if (remoteData.ss) {
+                  const sessionsRaw = Array.isArray(remoteData.ss) ? remoteData.ss : Object.values(remoteData.ss);
+
+                  eventData.sessions = sessionsRaw.map((s, sIdx) => ({
                     sessionName: s.snm,
                     maxNumber: s.max,
                     numRounds: s.nrd,
