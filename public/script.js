@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeEventsMgrButton = document.getElementById('close-events-mgr-button');
   const mgrNewEventButton = document.getElementById('mgr-new-event-button');
   const sessionsListContainer = document.getElementById('events-list-container');
+  const mgrForceSyncButton = document.getElementById('mgr-force-sync-button');
+  const mgrImportEventButton = document.getElementById('mgr-import-event-button');
+  const mgrImportEventInput = document.getElementById('mgr-import-event-input');
 
   // Elementos de Autenticação
   const adminHeader = document.getElementById('admin-header');
@@ -103,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toast.onclick = removeToast;
     toastContainer.appendChild(toast);
-    setTimeout(removeToast, 3000);
+    setTimeout(removeToast, 2000);
   };
 
   // --- Definições de Padrões ---
@@ -140,8 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const configIconRemove = document.getElementById('config-icon-remove');
   const configIconPreview = document.getElementById('config-icon-preview');
   const exportSessionButton = document.getElementById('export-session-button');
-  const importSessionButton = document.getElementById('import-session-button');
-  const importSessionInput = document.getElementById('import-session-input');
 
   /**
    * Gera uma string aleatória de 6 caracteres (excluindo I e O) para identificação da sessão.
@@ -352,22 +353,30 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Agora lemos diretamente do nó indexado pelo UID do usuário
       const snapshot = await firebase.database().ref(`uevts/${uid}`).once('value');
-      const data = snapshot.val();
-
-      // Recupera o registro local para não perder os nomes/metadados das sessões já carregadas
-      const localRegistry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
-      const cloudIds = data || {};
+      const cloudIds = snapshot.val() || {};
       const updatedRegistry = {};
 
-      // Reconstrói a lista baseada nos IDs da nuvem, mantendo informações locais se disponíveis
-      Object.keys(cloudIds).forEach(id => {
-        updatedRegistry[id] = localRegistry[id] || { name: `Evento ${id}`, sessions: [] };
+      // Busca os detalhes de cada evento (Nome e Sessões) para exibir no gerenciador
+      const fetchPromises = Object.keys(cloudIds).map(async (id) => {
+        const evtSnap = await firebase.database().ref(`evt/${id}`).once('value');
+        const data = evtSnap.val();
+        if (data) {
+          updatedRegistry[id] = {
+            name: data.name || "Sem Nome",
+            sessions: (data.ss || [])
+              .filter(s => s !== null)
+              .map(s => s.snm || "Sessão")
+          };
+        }
       });
 
+      await Promise.all(fetchPromises);
       localStorage.setItem('bingoUserEvents', JSON.stringify(updatedRegistry));
       renderEventsList();
+      showToast("Lista de eventos sincronizada com a nuvem.");
     } catch (error) {
       console.error("Erro ao sincronizar lista de eventos:", error);
+      showToast("Erro ao sincronizar com a nuvem.");
     }
   };
 
@@ -764,25 +773,28 @@ document.addEventListener('DOMContentLoaded', () => {
         eventData.eventIcon = data.icon || "default-icon.png";
         eventData.activeSessionIndex = data.sIdx || 0;
         eventData.ownerUid = data.ouid;
-        eventData.sessions = (data.ss || []).map((s, sIdx) => ({
-          sessionName: s.snm,
-          maxNumber: s.max,
-          numRounds: s.nrd,
-          currentRound: s.crnd,
-          drawMode: s.mode,
-          isSortedAscending: s.asc,
-          rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
-            const r = s.rds[rId];
-            acc[rId] = {
-              prize: r.prz,
-              pattern: r.ptrn,
-              patternIndex: r.pidx,
-              isCompleted: r.done,
-              drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || []
-            };
-            return acc;
-          }, {})
-        }));
+        eventData.sessions = (data.ss || []).map((s, sIdx) => {
+          if (!s) return null;
+          return {
+            sessionName: s.snm,
+            maxNumber: s.max,
+            numRounds: s.nrd,
+            currentRound: s.crnd,
+            drawMode: s.mode,
+            isSortedAscending: s.asc,
+            rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+              const r = s.rds[rId];
+              acc[rId] = { 
+                prize: r.prz, 
+                pattern: r.ptrn, 
+                patternIndex: r.pidx, 
+                isCompleted: r.done, 
+                drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || [] 
+              };
+              return acc;
+            }, {})
+          };
+        }).filter(s => s !== null);
 
         eventData.hasActiveEvent = true;
 
@@ -807,6 +819,82 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Cria uma cópia completa de um evento existente na nuvem.
+   */
+  const duplicateEventById = async (id) => {
+    const user = firebase.auth().currentUser;
+    if (!user || !navigator.onLine) return showToast("Ação requer login e internet.");
+    
+    showToast("Duplicando evento...");
+    try {
+      const [evtSnap, numsSnap] = await Promise.all([
+        firebase.database().ref(`evt/${id}`).once('value'),
+        firebase.database().ref(`nums/${id}`).once('value')
+      ]);
+      
+      const data = evtSnap.val();
+      const nums = numsSnap.val();
+      if (!data) return showToast("Evento não encontrado.");
+
+      const newId = generateRandomId();
+      data.ouid = user.uid; // Garante que o usuário atual seja o dono
+      data.last = firebase.database.ServerValue.TIMESTAMP;
+
+      const updates = {};
+      updates[`evt/${newId}`] = data;
+      if (nums) updates[`nums/${newId}`] = nums;
+      updates[`uevts/${user.uid}/${newId}`] = true;
+
+      await firebase.database().ref().update(updates);
+      await syncRegistryWithFirebase(user.uid);
+      showToast(`Evento duplicado! Novo código: ${newId}`);
+    } catch (e) {
+      showToast("Erro ao duplicar.");
+    }
+  };
+
+  /**
+   * Exporta os dados de um evento específico por ID.
+   */
+  const exportEventById = async (id) => {
+    showToast("Preparando exportação...");
+    try {
+      const [evtSnap, numsSnap] = await Promise.all([
+        firebase.database().ref(`evt/${id}`).once('value'),
+        firebase.database().ref(`nums/${id}`).once('value')
+      ]);
+      
+      const data = evtSnap.val();
+      const numsData = numsSnap.val();
+      if (!data) return showToast("Dados não encontrados.");
+      
+      const exportObj = {
+        eventName: data.name,
+        eventIcon: data.icon,
+        sessions: (data.ss || []).map((s, sIdx) => ({
+          sessionName: s.snm,
+          maxNumber: s.max,
+          numRounds: s.nrd,
+          currentRound: s.crnd,
+          drawMode: s.mode,
+          isSortedAscending: s.asc,
+          rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+            const r = s.rds[rId];
+            acc[rId] = { prize: r.prz, pattern: r.ptrn, patternIndex: r.pidx, isCompleted: r.done, drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || [] }; // Inclui drawnNumbers
+            return acc;
+          }, {})
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(data.name || "Bingo").replace(/\s+/g, '_')}_export.json`;
+      a.click();
+    } catch (e) { showToast("Erro ao exportar."); }
+  };
+
+  /**
    * Atualiza todos os elementos visuais da interface (textos, listas, seletores e modais) com base no estado atual.
    * @param {boolean} immediateSync - Define se as alterações devem ser salvas no Firebase imediatamente.
    * @param {string|boolean} syncLevel - Nível de sincronização ('full', 'session', 'numbers', ou 'none' para não salvar).
@@ -827,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     adminMain.classList.remove('hidden');
 
     // Header
-    eventTitle.textContent = eventData.eventName || appState.sessionName; // Use sessionName here
+    eventTitle.textContent = eventData.eventName || appState.sessionName;
     document.title = eventData.eventName || appState.eventName;
     eventIcon.src = eventData.eventIcon || "default-icon.png";
     configIconPreview.src = eventData.eventIcon || "default-icon.png"; // Atualiza a prévia no modal
@@ -1015,6 +1103,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
       item.appendChild(nameSpan); item.appendChild(actions);
       sessionsListContainer.appendChild(item);
+    });
+    
+    // Adiciona botões de Duplicar e Exportar para cada item
+    sessionsListContainer.querySelectorAll('.event-mgr-item').forEach(item => {
+      const idMatch = item.innerHTML.match(/Código: ([A-Z0-9]+)/);
+      if (!idMatch) return;
+      const id = idMatch[1];
+      const actions = item.querySelector('div');
+
+      const dupBtn = document.createElement('button');
+      dupBtn.textContent = 'Duplicar';
+      dupBtn.style.padding = '5px 10px'; dupBtn.style.fontSize = '0.8em';
+      dupBtn.style.backgroundColor = '#17a2b8';
+      dupBtn.onclick = () => duplicateEventById(id);
+
+      const expBtn = document.createElement('button');
+      expBtn.textContent = 'Exportar';
+      expBtn.style.padding = '5px 10px'; expBtn.style.fontSize = '0.8em';
+      expBtn.style.backgroundColor = '#6c757d';
+      expBtn.onclick = () => exportEventById(id);
+      
+      // Insere o botão de Exportar no início do div 'actions'
+      actions.insertBefore(expBtn, actions.firstChild);
+      // Insere o botão de Duplicar no início do div 'actions' (ele ficará antes do Exportar)
+      actions.insertBefore(dupBtn, actions.firstChild);
     });
   };
 
@@ -1240,7 +1353,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * Abre o gerenciador de sessões e renderiza a lista.
    */
   const openEventsMgr = () => {
-    renderEventsList();
+    const user = firebase.auth().currentUser;
+    if (user) syncRegistryWithFirebase(user.uid);
+    else renderEventsList();
     eventsMgrModal.classList.remove('hidden');
   };
 
@@ -1477,9 +1592,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Event Listeners do Gerenciador de Sessões ---
-  if (eventsMgrButton) eventsMgrButton.addEventListener('click', openEventsMgr);
-  if (closeEventsMgrX) closeEventsMgrX.addEventListener('click', closeEventsMgr);
-  if (closeEventsMgrButton) closeEventsMgrButton.addEventListener('click', closeEventsMgr);
+  if (eventsMgrButton) eventsMgrButton.addEventListener('click', openEventsMgr); // Abre o gerenciador de eventos
+  if (closeEventsMgrX) closeEventsMgrX.addEventListener('click', closeEventsMgr); // Fecha o gerenciador de eventos (X)
+  if (closeEventsMgrButton) closeEventsMgrButton.addEventListener('click', closeEventsMgr); // Fecha o gerenciador de eventos (botão)
+  if (mgrForceSyncButton) mgrForceSyncButton.addEventListener('click', () => {
+    const user = firebase.auth().currentUser;
+    if (!navigator.onLine) return showToast("Você está offline.");
+    if (!user) return showToast("Faça login para sincronizar com a nuvem.");
+    
+    showToast("Iniciando sincronização...");
+    syncRegistryWithFirebase(user.uid);
+  });
 
   if (mgrNewEventButton) {
     mgrNewEventButton.addEventListener('click', () => {
@@ -1685,64 +1808,73 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast("Ícone padrão restaurado.");
   });
 
-
-  // Gera e baixa um arquivo JSON com todos os dados do projeto
+  // Exporta o evento atual (botão no modal de configurações)
   exportSessionButton.addEventListener('click', () => {
     if (!eventData || !eventData.sessions.length) {
       showToast("Nenhum dado para exportar.");
       return;
     }
-
-    // Criamos uma cópia para processar a exportação sem alterar o estado em memória
-    const dataToExport = JSON.parse(JSON.stringify(eventData));
-
-    const dataStr = JSON.stringify(dataToExport, null, 2); // Formata para leitura
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-
-    const fileName = (eventData.eventName || "Bingo_Evento").replace(/\s+/g, '_');
-    a.download = `${fileName}_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    exportEventById(eventData.eventid);
   });
 
-  // Gatilho para o seletor de arquivo de importação
-  importSessionButton.addEventListener('click', () => {
-    importSessionInput.click(); // Dispara o clique no input de arquivo escondido
-  });
+  // Gatilhos de Importação no Gerenciador
+  if (mgrImportEventButton) mgrImportEventButton.addEventListener('click', () => mgrImportEventInput.click());
 
-  // Lê e processa o arquivo JSON selecionado para importar dados
-  importSessionInput.addEventListener('change', (e) => {
+  if (mgrImportEventInput) mgrImportEventInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const imported = JSON.parse(event.target.result);
 
           // Caso 1: Importação de Evento Completo (Novo formato)
           if (imported && imported.sessions && Array.isArray(imported.sessions)) {
-            if (confirm("Este arquivo contém um evento completo. Deseja substituir o evento atual por este?")) {
+            if (confirm("Deseja importar este evento? Ele será salvo como um novo código ID na sua conta.")) {
               const user = firebase.auth().currentUser;
+              if (!user) {
+                showToast("Você precisa estar logado para importar eventos.");
+                return;
+              }
               const newId = generateRandomId();
 
-              // Criamos um novo objeto de evento assumindo a posse
+              // Constrói eventData no formato legível interno a partir do JSON importado
               eventData = {
-                ...imported,
                 eventid: newId,
-                ownerUid: user ? user.uid : null, // O importador assume como novo dono
+                eventName: imported.eventName || "Evento Importado",
+                eventIcon: imported.eventIcon || "default-icon.png",
+                ownerUid: user.uid, // O importador assume como novo dono
                 activeSessionIndex: 0,
                 hasActiveEvent: true,
-                lastModified: Date.now()
+                lastModified: Date.now(),
+                sessions: imported.sessions.map(s => {
+                  const newSession = {
+                    sessionName: s.sessionName,
+                    maxNumber: s.maxNumber,
+                    numRounds: s.numRounds,
+                    currentRound: s.currentRound,
+                    drawMode: s.drawMode,
+                    isSortedAscending: s.isSortedAscending,
+                    rounds: {}
+                  };
+                  Object.keys(s.rounds || {}).forEach(rId => {
+                    const r = s.rounds[rId];
+                    newSession.rounds[rId] = {
+                      prize: r.prize,
+                      pattern: r.pattern,
+                      patternIndex: r.patternIndex,
+                      isCompleted: r.isCompleted,
+                      drawnNumbers: r.drawnNumbers || []
+                    };
+                  });
+                  return newSession;
+                })
               };
 
               appState = eventData.sessions[0];
               updateUI(true, 'full');
               showToast(`Evento importado! Novo código gerado: ${newId}`);
+              closeEventsMgr(); // Fecha o gerenciador após a importação
             }
           }
           // Caso 2: Importação de Sessão Única (Legado ou exportação parcial)
@@ -1782,7 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Armazena o nome principal e a lista de todas as sessões para visualização no gerenciador
     registry[eventData.eventid] = {
       name: eventData.eventName || "Evento sem nome",
-      sessions: (eventData.sessions || []).map(s => s.sessionName || "Sessão")
+      sessions: (eventData.sessions || []).filter(s => s !== null).map(s => s.sessionName || "Sessão")
     };
     localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
   };
