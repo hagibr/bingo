@@ -673,8 +673,14 @@ document.addEventListener('DOMContentLoaded', () => {
               }
 
               // Assumir propriedade caso não tenha e subir dados (Upload/Merge)
-              if (!eventData.ownerUid) eventData.ownerUid = user.uid;
-              saveState(true, 'full');
+              if (!eventData.ownerUid || !remoteData) {
+                eventData.ownerUid = user.uid;
+                saveState(true, 'full');
+              } else {
+                // Se já existia no remoto e os dados foram mesclados, 
+                // apenas atualizamos o lastModified local sem disparar novo upload
+                eventData.lastModified = remoteData.last;
+              }
               setupRemoteSyncListener(eventData.eventid);
               if (remoteData) showToast("Dados sincronizados com a nuvem.");
             }
@@ -696,7 +702,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // A aplicação SEMPRE carrega os dados locais, logado ou não
       if (eventData.hasActiveEvent && appState) {
-        updateUI(false);
+        // Usamos 'none' aqui porque acabamos de vir de um processo de 
+        // autenticação/sincronização inicial, não há necessidade de salvar novamente.
+        updateUI(false, 'none');
       } else {
         openEventsMgr();
       }
