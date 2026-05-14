@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`evt/${eventId}/ss/${idx}/crnd`] = session.currentRound;
         updates[`evt/${eventId}/ss/${idx}/asc`] = !!session.isSortedAscending;
         updates[`evt/${eventId}/ss/${idx}/last`] = timestamp;
-        
+
         if (session.rounds[rIdx]) {
           const r = session.rounds[rIdx];
           updates[`evt/${eventId}/ss/${idx}/rds/${rIdx}/prz`] = r.prize || "";
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (eventData.sessions && !Array.isArray(eventData.sessions)) {
         const sessionNames = eventData.sessionOrder || Object.keys(eventData.sessions);
         const oldActiveName = eventData.activeBingoSessionName || eventData.activeSessionName;
-        
+
         const sessionsArray = sessionNames.map(name => {
           const s = eventData.sessions[name];
           if (s && !s.sessionName) s.sessionName = name;
@@ -534,11 +534,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const remoteNums = numsSnap.val();
 
             if (remoteData && remoteData.ouid && remoteData.ouid !== user.uid) {
-              // Conflito: O ID que você está usando localmente pertence a outra conta no servidor.
-              showToast(`Conflito: O código ${eventData.eventid} pertence a outro usuário.`);
-              const newId = generateRandomId();
-              // Forçamos a mudança para um novo ID aleatório para permitir sincronização na sua conta
-              await processIdChange(newId, eventData.eventid, true);
+              // Conflito de posse: O ID que você está usando localmente pertence a outra conta no servidor.
+              if (confirm(`O código "${eventData.eventid}" já está em uso por outro organizador.\n\nDeseja gerar um novo código para este evento para poder salvá-lo na nuvem?`)) {
+                const newId = generateRandomId();
+                // Forçamos a mudança para um novo ID aleatório para permitir sincronização na sua conta
+                await processIdChange(newId, eventData.eventid, true);
+              } else {
+                showToast("Sincronização ignorada. O evento permanecerá apenas local.");
+              }
+            } else if (!remoteData && eventData.eventid) {
+              // Evento criado offline que não existe no servidor
+              if (confirm(`O evento "${eventData.eventName}" está apenas no seu dispositivo.\n\nDeseja salvá-lo no servidor para permitir o acesso de outros jogadores?`)) {
+                eventData.ownerUid = user.uid;
+                saveState(true, 'full');
+                showToast("Evento enviado para a nuvem com sucesso!");
+              }
             } else {
               // Lógica de Sincronização Automática (Merge)
               if (remoteData) {
@@ -546,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventData.eventIcon = remoteData.icon || eventData.eventIcon;
                 eventData.activeSessionIndex = (remoteData.sIdx !== undefined) ? remoteData.sIdx : eventData.activeSessionIndex;
                 eventData.ownerUid = remoteData.ouid || eventData.ownerUid;
-                
+
                 if (Array.isArray(remoteData.ss)) {
                   eventData.sessions = remoteData.ss.map((s, sIdx) => ({
                     sessionName: s.snm,
@@ -567,18 +577,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, {})
                   }));
                 }
-                
+
                 // Atualiza a referência do estado ativo para os novos dados carregados
                 if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
                   appState = eventData.sessions[eventData.activeSessionIndex];
                 }
-
-                showToast("Sincronizado com a nuvem.");
               }
 
-              // 2. Assumir propriedade e Subir o que tem local (Upload)
+              // Assumir propriedade caso não tenha e subir dados (Upload/Merge)
               if (!eventData.ownerUid) eventData.ownerUid = user.uid;
               saveState(true, 'full');
+              if (remoteData) showToast("Dados sincronizados com a nuvem.");
             }
           } catch (e) {
             console.error("Erro na verificação de posse ao logar:", e);
@@ -661,17 +670,17 @@ document.addEventListener('DOMContentLoaded', () => {
           isSortedAscending: s.asc,
           rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
             const r = s.rds[rId];
-            acc[rId] = { 
-              prize: r.prz, 
-              pattern: r.ptrn, 
-              patternIndex: r.pidx, 
-              isCompleted: r.done, 
-              drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || [] 
+            acc[rId] = {
+              prize: r.prz,
+              pattern: r.ptrn,
+              patternIndex: r.pidx,
+              isCompleted: r.done,
+              drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || []
             };
             return acc;
           }, {})
         }));
-        
+
         eventData.hasActiveEvent = true;
 
         // Define o índice da sessão de bingo ativa
@@ -1007,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drawnNumbersList.innerHTML = '';
     const currentRoundData = appState.rounds[appState.currentRound];
     if (!currentRoundData) return;
-    
+
     const rawNumbers = currentRoundData.drawnNumbers || [];
     let numbersToDisplay = [...rawNumbers];
     const lastDrawn = rawNumbers.length > 0 ? rawNumbers[rawNumbers.length - 1] : null;
@@ -1248,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const temp = eventData.sessions[currentIndex];
     eventData.sessions[currentIndex] = eventData.sessions[newIndex];
     eventData.sessions[newIndex] = temp;
-    
+
     // Atualiza o índice ativo para acompanhar o item movido
     eventData.activeSessionIndex = newIndex;
     // Reatribui appState para a nova posição
@@ -1609,8 +1618,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Garante um ID se o arquivo importado for de uma versão anterior
             if (!importedState.eventid) importedState.eventid = importedState.sessionId || generateRandomId();
             // Garante um ID se o arquivo importado não possuir um
-            if (!importedState.eventid) importedState.eventid = generateRandomId();            
-            
+            if (!importedState.eventid) importedState.eventid = generateRandomId();
+
             // Ensure sessionName is set, using eventName as fallback for older exports
             importedState.sessionName = importedState.sessionName || importedState.eventName;
 
