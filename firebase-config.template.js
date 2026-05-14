@@ -1,5 +1,4 @@
 // Renomeie este arquivo para firebase-config.js e adicione suas credenciais do Firebase Console
-// IMPORTANTE: Adicione o arquivo firebase-config.js ao seu .gitignore
 const firebaseConfig = {
   apiKey: "SUA_API_KEY",
   authDomain: "SEU_PROJETO.firebaseapp.com",
