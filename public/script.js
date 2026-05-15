@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     drawnNumbersList.style.setProperty('--ball-zoom', scale);
     drawnNumbersList.style.setProperty('--ball-gap', (10 * scale) + 'px');
     drawnNumbersList.style.setProperty('--ball-padding', (15 * scale) + 'px');
-    showToast(`Zoom das bolas: ${scale * 100}%`);
   };
 
   let activeRemoteRef = null;
