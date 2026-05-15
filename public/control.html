@@ -63,26 +63,24 @@
   <main id="admin-main" class="bingo-main">
     <section class="round-section">
       <div class="round-header-layout">
-        <div class="round-info-column">
-          <div class="round-selection-row">
+        <div class="round-controls-row">
+          <div class="round-selection-group">
             <label for="round-selector">Rodada:</label>
-            <select id="round-selector">
-              <!-- Opções de rodadas serão geradas via JS -->
-            </select>
-            <div class="prize-display">
-              <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada:
-                [Clique para
-                editar]</span>
-            </div>
+            <select id="round-selector"></select>
           </div>
-          <div class="switch-container" style="margin-bottom: 10px;">
+          <div class="switch-container">
             <label class="switch">
               <input type="checkbox" id="round-completed-checkbox">
               <span class="slider"></span>
             </label>
-            <span style="font-size: 0.9em; color: #666; font-weight: bold;">Rodada Concluída</span>
+            <span class="switch-text">Rodada Concluída</span>
           </div>
         </div>
+
+        <div class="prize-display">
+          <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada: [Clique para editar]</span>
+        </div>
+
         <div class="pattern-animator">
           <div id="pattern-grid" class="pattern-grid"
             title="Clique nos quadrados para definir o padrão ou use o botão ao lado"></div>
@@ -219,6 +217,7 @@
       <div class="modal-actions">
         <button id="mgr-new-event-button" style="background-color: #28a745; margin-right: auto;">➕ Novo
           Evento</button>
+        <button id="mgr-import-code-button" style="background-color: #007bff;">🔑 Importar por Código</button>
         <button id="mgr-force-sync-button" style="background-color: #17a2b8;">🔄 Sincronizar Nuvem</button>
         <button id="mgr-import-event-button" style="background-color: #6c757d;">📥 Importar Arquivo</button>
         <input type="file" id="mgr-import-event-input" accept="application/json" style="display: none;">

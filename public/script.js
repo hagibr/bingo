@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionsListContainer = document.getElementById('events-list-container');
   const mgrForceSyncButton = document.getElementById('mgr-force-sync-button');
   const mgrImportEventButton = document.getElementById('mgr-import-event-button');
+  const mgrImportCodeButton = document.getElementById('mgr-import-code-button');
   const mgrImportEventInput = document.getElementById('mgr-import-event-input');
 
   // Elementos de Autenticação
@@ -1818,6 +1819,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Gatilhos de Importação no Gerenciador
+  if (mgrImportCodeButton) {
+    mgrImportCodeButton.addEventListener('click', () => {
+      const code = prompt("Digite o código do evento que deseja copiar para sua conta:");
+      if (code && code.trim() !== "") {
+        duplicateEventById(code.trim().toUpperCase());
+      }
+    });
+  }
+
   if (mgrImportEventButton) mgrImportEventButton.addEventListener('click', () => mgrImportEventInput.click());
 
   if (mgrImportEventInput) mgrImportEventInput.addEventListener('change', async (e) => {
