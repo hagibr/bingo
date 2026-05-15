@@ -401,7 +401,7 @@ button:hover {
 
 .config-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
 }
 
@@ -771,5 +771,23 @@ button:hover {
 
   .pattern-animator {
     margin-left: 0;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-actions button {
+    margin-right: 0 !important;
+    width: 100%;
+  }
+
+  .config-grid {
+    grid-template-columns: 1fr;
   }
 }

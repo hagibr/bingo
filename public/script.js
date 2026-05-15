@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const renameSessionButton = document.getElementById('rename-session-button');
   const newSessionButton = document.getElementById('new-session-button');
   const deleteSessionButton = document.getElementById('delete-session-button');
-  const configSessionId = document.getElementById('config-session-id');
+  const configSessionId = document.getElementById('config-event-id');
   const regenerateIdButton = document.getElementById('regenerate-id-button');
   const copyLinkButton = document.getElementById('copy-link-button');
   const headerQrButton = document.getElementById('header-qr-button');
@@ -889,7 +889,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${(data.name || "Bingo").replace(/\s+/g, '_')}_export.json`;
+      const date = new Date().toISOString().split('T')[0];
+      const safeName = (data.name || "Bingo").replace(/\s+/g, '_');
+      a.download = `${safeName}_${id}_${date}.json`;
       a.click();
     } catch (e) { showToast("Erro ao exportar."); }
   };
