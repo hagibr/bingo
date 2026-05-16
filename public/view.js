@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Botão para sair do evento atual e retornar à tela de entrada
   leaveEventButton.addEventListener('click', async () => {
     const ok = await showDialog({
-      title: "Sair",
+      title: "Sair do Bingo",
       message: "Deseja realmente sair desta sessão de bingo?",
       type: "confirm"
     });
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmBtn = document.getElementById('dialog-confirm-btn');
         if (cancelBtn && !cancelBtn.classList.contains('hidden')) cancelBtn.click();
         else if (confirmBtn) confirmBtn.click();
-        return; // Prioridade total ao diálogo customizado
+        return;
       }
     }
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
