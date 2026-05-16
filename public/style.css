@@ -91,7 +91,7 @@ body {
   align-items: center;
   gap: 8px;
   vertical-align: middle;
-  margin-left: 15px;
+  margin-left: 0;
   background: #eee;
   padding: 5px;
   border-radius: 6px;
@@ -127,10 +127,17 @@ body {
 
 .round-header-layout {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  flex-wrap: wrap;
   gap: 15px;
+}
+
+.round-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
 }
 
 .round-info-column {
@@ -153,6 +160,7 @@ body {
   margin-right: 10px;
 }
 
+#main-session-selector,
 #round-selector {
   padding: 8px;
   border-radius: 4px;
@@ -171,7 +179,10 @@ body {
   cursor: pointer;
   min-width: 200px;
   /* Para garantir que o clique seja fácil */
-  display: inline-block;
+  display: block;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .round-nav-container {
@@ -288,10 +299,10 @@ body {
   box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
 }
 
-fi .draw-controls {
-  width: 100%;
-  flex-direction: column;
+.draw-controls {
+  display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 #manual-number-input {
@@ -636,26 +647,6 @@ button:hover {
   align-items: center;
 }
 
-/* Seletor de Sessão no Header */
-.header-session-select {
-  padding: 2px 8px !important;
-  font-size: 0.85em !important;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  cursor: pointer;
-  height: auto !important;
-  width: auto !important;
-  font-weight: bold;
-}
-
-.header-session-select option {
-  color: #333;
-  background: white;
-  font-weight: normal;
-}
-
 /* Sistema de Toasts (Notificações) */
 .toast-container {
   position: fixed;
@@ -774,18 +765,62 @@ button:hover {
     align-items: flex-start;
   }
 
-  .draw-controls {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .draw-controls input,
-  .draw-controls button {
-    width: 100%;
-  }
-
   .bingo-main {
     padding: 10px;
     margin: 10px auto;
+  }
+
+  /* Garante que os contêineres de info da rodada expandam no mobile */
+  .round-header-layout,
+  .round-nav-container,
+  .round-nav-container>div {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Layout da Seção de Números Sorteados no Mobile */
+  .drawn-numbers-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .header-controls {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .draw-controls {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Melhoria na seção da Rodada para Mobile */
+  .round-controls-row {
+    gap: 15px;
+  }
+
+  .prize-display {
+    width: 100%;
+    margin: 0;
+    min-width: unset;
+    box-sizing: border-box;
+  }
+
+  .pattern-animator {
+    display: flex;
+    /* Muda de inline-flex para flex para permitir expansão */
+    width: 100%;
+    margin: 10px 0 0 0;
+    justify-content: center;
+    flex-direction: row;
+    padding: 10px;
+    box-sizing: border-box;
   }
 }
