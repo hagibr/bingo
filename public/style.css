@@ -132,6 +132,38 @@ body {
   gap: 15px;
 }
 
+.session-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 5px;
+}
+
+.session-label-trigger {
+  margin: 0;
+  color: #28a745;
+  cursor: pointer;
+  border-bottom: 2px dashed rgba(40, 167, 69, 0.4);
+  padding: 2px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.session-label-trigger:hover {
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.session-select-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .round-controls-row {
   display: flex;
   align-items: center;
@@ -158,6 +190,29 @@ body {
   display: inline-block;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.round-label-trigger {
+  margin: 0;
+  cursor: pointer;
+  border-bottom: 2px dashed rgba(0, 123, 255, 0.4);
+  padding: 2px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.round-label-trigger:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.round-select-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 #main-session-selector,
@@ -197,7 +252,7 @@ body {
   background-color: #f8f9fa;
   color: #333;
   border: 1px solid #ddd;
-  padding: 10px 15px;
+  padding: 5px 5px;
   border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
@@ -330,7 +385,7 @@ button {
 .switch-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   cursor: pointer;
   user-select: none;
 }

@@ -67,17 +67,17 @@
     <div id="bingo-content" class="hidden">
       <section class="round-section" style="text-align: center;">
         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
-          <button id="prev-session" class="nav-button hidden" style="padding: 5px 12px;" title="Sessão Anterior">
+          <button id="prev-session" class="nav-button hidden" title="Sessão Anterior">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
-              <polyline points="18 15 12 9 6 15"></polyline>
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
           <h3 id="viewed-session-name" style="margin: 0; color: #28a745;">Sessão</h3>
-          <button id="next-session" class="nav-button hidden" style="padding: 5px 12px;" title="Próxima Sessão">
+          <button id="next-session" class="nav-button hidden" title="Próxima Sessão">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
-              <polyline points="6 9 12 15 18 9"></polyline>
+              <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </button>
         </div>
@@ -85,11 +85,21 @@
         <div class="round-nav-container">
           <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-              <button id="prev-round" class="nav-button" title="Rodada Anterior">&lt;&lt;</button>
+              <button id="prev-round" class="nav-button" title="Rodada Anterior">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
               <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
               <span id="viewing-active-badge" class="active-badge hidden">ATUAL</span>
               <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
-              <button id="next-round" class="nav-button" title="Próxima Rodada">&gt;&gt;</button>
+              <button id="next-round" class="nav-button" title="Próxima Rodada">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
             <div class="prize-display" style="cursor: default;">
               <span id="prize-label">Aguardando prêmio...</span>

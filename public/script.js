@@ -70,6 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const idOptCancel = document.getElementById('id-opt-cancel');
   const toastContainer = document.getElementById('toast-container');
 
+  // Novos elementos de navegação de rodada no painel principal
+  const prevRoundMainButton = document.getElementById('prev-round-main');
+  const nextRoundMainButton = document.getElementById('next-round-main');
+  const currentRoundLabelTrigger = document.getElementById('current-round-label-trigger');
+
+  // Novos elementos de navegação de sessão no painel principal
+  const prevSessionMainButton = document.getElementById('prev-session-main');
+  const nextSessionMainButton = document.getElementById('next-session-main');
+  const currentSessionNameLabel = document.getElementById('current-session-name-label');
+
   // --- Lógica de Zoom das Bolas ---
   const ballScales = [1, 1.25, 1.5, 1.75, 2];
   let ballZoomIndex = 0;
@@ -784,12 +794,12 @@ document.addEventListener('DOMContentLoaded', () => {
             isSortedAscending: s.asc,
             rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
               const r = s.rds[rId];
-              acc[rId] = { 
-                prize: r.prz, 
-                pattern: r.ptrn, 
-                patternIndex: r.pidx, 
-                isCompleted: r.done, 
-                drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || [] 
+              acc[rId] = {
+                prize: r.prz,
+                pattern: r.ptrn,
+                patternIndex: r.pidx,
+                isCompleted: r.done,
+                drawnNumbers: numsData?.[sIdx]?.[rId]?.dns || []
               };
               return acc;
             }, {})
@@ -824,14 +834,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const duplicateEventById = async (id) => {
     const user = firebase.auth().currentUser;
     if (!user || !navigator.onLine) return showToast("Ação requer login e internet.");
-    
+
     showToast("Duplicando evento...");
     try {
       const [evtSnap, numsSnap] = await Promise.all([
         firebase.database().ref(`evt/${id}`).once('value'),
         firebase.database().ref(`nums/${id}`).once('value')
       ]);
-      
+
       const data = evtSnap.val();
       const nums = numsSnap.val();
       if (!data) return showToast("Evento não encontrado.");
@@ -863,11 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
         firebase.database().ref(`evt/${id}`).once('value'),
         firebase.database().ref(`nums/${id}`).once('value')
       ]);
-      
+
       const data = evtSnap.val();
       const numsData = numsSnap.val();
       if (!data) return showToast("Dados não encontrados.");
-      
+
       const exportObj = {
         eventName: data.name,
         eventIcon: data.icon,
@@ -924,7 +934,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Round Selector
     updateRoundSelector();
-    roundSelector.value = appState.currentRound;
+    const currentRoundNum = appState.currentRound || 1;
+    roundSelector.value = currentRoundNum;
+
+    if (currentRoundLabelTrigger) {
+      currentRoundLabelTrigger.textContent = `Rodada ${currentRoundNum}`;
+    }
+    if (prevRoundMainButton) prevRoundMainButton.disabled = appState.currentRound <= 1;
+    if (nextRoundMainButton) nextRoundMainButton.disabled = appState.currentRound >= appState.numRounds;
+
+    // Session Info (Label e Botões)
+    if (currentSessionNameLabel) {
+      currentSessionNameLabel.textContent = appState.sessionName || "Sessão";
+    }
+    const sessionsCount = eventData.sessions ? eventData.sessions.length : 0;
+    if (prevSessionMainButton) prevSessionMainButton.disabled = eventData.activeSessionIndex <= 0;
+    if (nextSessionMainButton) nextSessionMainButton.disabled = eventData.activeSessionIndex >= sessionsCount - 1;
 
     // Checkbox de Conclusão
     const currentRoundData = appState.rounds[appState.currentRound];
@@ -1106,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
       item.appendChild(nameSpan); item.appendChild(actions);
       sessionsListContainer.appendChild(item);
     });
-    
+
     // Adiciona botões de Duplicar e Exportar para cada item
     sessionsListContainer.querySelectorAll('.event-mgr-item').forEach(item => {
       const idMatch = item.innerHTML.match(/Código: ([A-Z0-9]+)/);
@@ -1125,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       expBtn.style.padding = '5px 10px'; expBtn.style.fontSize = '0.8em';
       expBtn.style.backgroundColor = '#6c757d';
       expBtn.onclick = () => exportEventById(id);
-      
+
       // Insere o botão de Exportar no início do div 'actions'
       actions.insertBefore(expBtn, actions.firstChild);
       // Insere o botão de Duplicar no início do div 'actions' (ele ficará antes do Exportar)
@@ -1437,6 +1462,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  /**
+   * Navega entre as sessões do evento no painel principal.
+   * @param {number} direction - -1 para anterior, 1 para próxima.
+   */
+  const navigateSessionMain = (direction) => {
+    const currentIndex = eventData.activeSessionIndex;
+    const nextIndex = currentIndex + direction;
+
+    if (eventData.sessions && nextIndex >= 0 && nextIndex < eventData.sessions.length) {
+      eventData.activeSessionIndex = nextIndex;
+      appState = eventData.sessions[eventData.activeSessionIndex];
+      updateUI(true, 'full');
+    }
+  };
+
+  if (prevSessionMainButton) prevSessionMainButton.addEventListener('click', () => navigateSessionMain(-1));
+  if (nextSessionMainButton) nextSessionMainButton.addEventListener('click', () => navigateSessionMain(1));
+
+  /**
+   * Navega entre as rodadas da sessão atual no painel principal.
+   * @param {number} direction - -1 para anterior, 1 para próxima.
+   */
+  const navigateRoundMain = (direction) => {
+    if (!appState) return;
+    const nextRound = appState.currentRound + direction;
+    if (nextRound >= 1 && nextRound <= appState.numRounds) {
+      appState.currentRound = nextRound;
+      updateUI(true, 'session');
+    }
+  };
+
+  if (prevRoundMainButton) prevRoundMainButton.addEventListener('click', () => navigateRoundMain(-1));
+  if (nextRoundMainButton) nextRoundMainButton.addEventListener('click', () => navigateRoundMain(1));
+
   // Desfaz o último número sorteado
   undoLastButton.addEventListener('click', undoLastDrawnNumber);
 
@@ -1601,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = firebase.auth().currentUser;
     if (!navigator.onLine) return showToast("Você está offline.");
     if (!user) return showToast("Faça login para sincronizar com a nuvem.");
-    
+
     showToast("Iniciando sincronização...");
     syncRegistryWithFirebase(user.uid);
   });

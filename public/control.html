@@ -85,14 +85,44 @@
   <main id="admin-main" class="bingo-main">
     <section class="round-section">
       <div class="round-header-layout">
-        <div class="session-selection-group">
-          <label for="main-session-selector" style="font-weight: bold;">Sessão:</label>
-          <select id="main-session-selector"></select>
+        <div class="session-nav-container">
+          <button id="prev-session-main" class="nav-button" title="Sessão Anterior">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <div style="position: relative; display: inline-block;">
+            <h3 id="current-session-name-label" class="session-label-trigger" title="Clique para trocar de sessão">
+              Sessão</h3>
+            <select id="main-session-selector" class="session-select-overlay"></select>
+          </div>
+          <button id="next-session-main" class="nav-button" title="Próxima Sessão">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
         </div>
         <div class="round-controls-row">
-          <div class="round-selection-group">
-            <label for="round-selector">Rodada:</label>
-            <select id="round-selector"></select>
+          <div class="round-nav-container">
+            <button id="prev-round-main" class="nav-button" title="Rodada Anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <div style="position: relative; display: inline-block;">
+              <h3 id="current-round-label-trigger" class="round-label-trigger" title="Clique para trocar de rodada">
+                Rodada</h3>
+              <select id="round-selector" class="round-select-overlay"></select>
+            </div>
+            <button id="next-round-main" class="nav-button" title="Próxima Rodada">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" style="width: 20px; height: 20px; vertical-align: middle;">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
           </div>
           <div class="switch-container">
             <label class="switch">
