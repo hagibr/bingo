@@ -924,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnElement) btnElement.disabled = true;
 
     showToast("Duplicando evento...");
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Artificial delay
     try {
       const [evtSnap, numsSnap] = await Promise.all([
         firebase.database().ref(`evt/${id}`).once('value'),
@@ -960,6 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnElement) btnElement.disabled = true;
 
     showToast("Preparando exportação...");
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Artificial delay
     try {
       const [evtSnap, numsSnap] = await Promise.all([
         firebase.database().ref(`evt/${id}`).once('value'),
@@ -1707,11 +1709,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Copia o link de visualização para a área de transferência
   copyLinkButton.addEventListener('click', () => {
+    copyLinkButton.disabled = true; // Bloqueia o botão
     const shareLink = document.getElementById('config-share-link');
     navigator.clipboard.writeText(shareLink.value)
       .then(() => showToast("Link copiado com sucesso!"))
-      .catch(() => showToast("Erro ao copiar link."));
+      .catch(() => showToast("Erro ao copiar link."))
+      .finally(() => setTimeout(() => { copyLinkButton.disabled = false; }, 1000)); // Reabilita após 1 segundo
   });
+
+
 
   /**
    * Gera o QR Code para o link de visualização e abre o modal correspondente.
@@ -1746,12 +1752,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Copia a URL de visualização de dentro do modal de QR Code
   if (copyQrLinkButton) {
     copyQrLinkButton.addEventListener('click', () => {
+      copyQrLinkButton.disabled = true; // Bloqueia o botão
       const url = qrLinkDisplay.textContent;
       navigator.clipboard.writeText(url)
         .then(() => showToast("Link copiado com sucesso!"))
-        .catch(() => showToast("Erro ao copiar link."));
+        .catch(() => showToast("Erro ao copiar link."))
+        .finally(() => setTimeout(() => { copyQrLinkButton.disabled = false; }, 1000)); // Reabilita após 1 segundo
     });
   }
+
 
   // --- Event Listeners do Gerenciador de Sessões ---
   if (eventsMgrButton) eventsMgrButton.addEventListener('click', openEventsMgr); // Abre o gerenciador de eventos
