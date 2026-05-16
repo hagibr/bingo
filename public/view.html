@@ -45,7 +45,13 @@
         </svg>
       </button>
       <button id="leave-event-button" class="config-button hidden" title="Sair do Evento"
-        style="background-color: #dc3545;">
+        style="background-color: #dc3545; display: inline-flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" style="width: 16px; height: 16px;">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
         Sair
       </button>
     </div>
@@ -91,7 +97,7 @@
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-              <h2 id="current-round-label" style="margin: 0;">Rodada</h2>
+              <h3 id="current-round-label" style="margin: 0;">Rodada</h3>
               <span id="viewing-active-badge" class="active-badge hidden">ATUAL</span>
               <span id="round-completed-status" class="completed-badge hidden">CONCLUÍDA</span>
               <button id="next-round" class="nav-button" title="Próxima Rodada">
