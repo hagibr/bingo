@@ -593,8 +593,9 @@ button:hover {
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
   margin-top: 20px;
 }
@@ -876,5 +877,21 @@ button:hover {
     flex-direction: row;
     padding: 10px;
     box-sizing: border-box;
+  }
+
+  /* Ajuste para botões de modais no mobile (2 por linha) */
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    margin: 0 !important;
+    /* Remove o margin-right: auto do botão Novo */
+    width: 100%;
+    justify-content: center;
   }
 }
