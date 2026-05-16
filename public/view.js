@@ -614,11 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (copyQrLinkButton) {
     copyQrLinkButton.addEventListener('click', () => {
       const url = qrLinkDisplay.textContent;
-      navigator.clipboard.writeText(url).then(() => {
-        const originalText = copyQrLinkButton.textContent;
-        copyQrLinkButton.textContent = 'Copiado! ✅';
-        setTimeout(() => copyQrLinkButton.textContent = originalText, 2000);
-      });
+      navigator.clipboard.writeText(url)
+        .then(() => showToast("Link copiado com sucesso!"))
+        .catch(() => showToast("Erro ao copiar link."));
     });
   }
 

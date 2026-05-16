@@ -1662,14 +1662,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Copia o link de visualização para a área de transferência
   copyLinkButton.addEventListener('click', () => {
     const shareLink = document.getElementById('config-share-link');
-    navigator.clipboard.writeText(shareLink.value).then(() => {
-      const originalText = copyLinkButton.textContent;
-      copyLinkButton.textContent = '✅';
-      setTimeout(() => copyLinkButton.textContent = originalText, 2000);
-    }).catch(err => {
-      console.error('Erro ao copiar:', err);
-      showToast('Erro ao copiar o link.');
-    });
+    navigator.clipboard.writeText(shareLink.value)
+      .then(() => showToast("Link copiado com sucesso!"))
+      .catch(() => showToast("Erro ao copiar link."));
   });
 
   /**
@@ -1705,11 +1700,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (copyQrLinkButton) {
     copyQrLinkButton.addEventListener('click', () => {
       const url = qrLinkDisplay.textContent;
-      navigator.clipboard.writeText(url).then(() => {
-        const originalText = copyQrLinkButton.textContent;
-        copyQrLinkButton.textContent = 'Copiado! ✅';
-        setTimeout(() => copyQrLinkButton.textContent = originalText, 2000);
-      });
+      navigator.clipboard.writeText(url)
+        .then(() => showToast("Link copiado com sucesso!"))
+        .catch(() => showToast("Erro ao copiar link."));
     });
   }
 
