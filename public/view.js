@@ -32,12 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextRoundButton = document.getElementById('next-round');
   const prevSessionButton = document.getElementById('prev-session');
   const nextSessionButton = document.getElementById('next-session');
-  const goToLiveButton = document.getElementById('go-to-live');
   const viewedSessionNameDisplay = document.getElementById('viewed-session-name');
   const viewingActiveBadge = document.getElementById('viewing-active-badge');
   const toggleSortButton = document.getElementById('toggle-sort-button');
   const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
   const autoFollowContainer = document.getElementById('auto-follow-container');
+  const toastContainer = document.getElementById('toast-container');
 
   // --- Lógica de Zoom das Bolas ---
   const ballScales = [1, 1.25, 1.5, 1.75, 2];
@@ -53,6 +53,28 @@ document.addEventListener('DOMContentLoaded', () => {
     drawnNumbersListContainer.style.setProperty('--ball-zoom', scale);
     drawnNumbersListContainer.style.setProperty('--ball-gap', (10 * scale) + 'px');
     drawnNumbersListContainer.style.setProperty('--ball-padding', (15 * scale) + 'px');
+  };
+
+  /**
+   * Exibe uma notificação tipo toast na tela.
+   * @param {string} message - Mensagem a ser exibida.
+   */
+  const showToast = (message) => {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span>${message}</span><span style="margin-left:10px; opacity:0.6;">&times;</span>`;
+
+    const removeToast = () => {
+      if (toast.parentNode) {
+        toast.style.animation = 'toastFadeOut 0.2s forwards';
+        setTimeout(() => toast.remove(), 200);
+      }
+    };
+
+    toast.onclick = removeToast;
+    toastContainer.appendChild(toast);
+    setTimeout(removeToast, 2500);
   };
 
   if (typeof firebaseConfig === 'undefined') {
@@ -121,9 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // O selo "ATUAL" deve aparecer apenas se for a SESSÃO ativa E a RODADA ativa do organizador
     const isAtLiveState = (viewedSessionIndex === fullData.activeSessionIndex && roundToDisplay === appState.currentRound);
     if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
-
-    // O botão "Ir para o Atual" aparece se o usuário não estiver seguindo o estado ativo (followActive === false)
-    if (goToLiveButton) goToLiveButton.classList.toggle('hidden', followActive || isAtLiveState);
 
     const currentRoundData = appState.rounds[roundToDisplay];
     if (!currentRoundData) return;
@@ -397,7 +416,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = snap.val();
       if (fullData && fullData.sessions[sessName]?.rounds?.[roundNum]) {
         const round = fullData.sessions[sessName].rounds[roundNum];
-        round.drawnNumbers = data?.dns || [];
+        const newDrawn = data?.dns || [];
+
+        // Exibe toast se novos números foram adicionados e o usuário não está visualizando esta rodada/sessão
+        const isCurrentlyViewed = (viewedSessionIndex === sessName && viewedRound === roundNum);
+        if (newDrawn.length > (round.drawnNumbers ? round.drawnNumbers.length : 0) && !isCurrentlyViewed) {
+          showToast(`Novo número sorteado na Rodada ${roundNum}!`);
+        }
+
+        round.drawnNumbers = newDrawn;
         updateUI();
       }
     });
@@ -503,15 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   prevSessionButton.addEventListener('click', () => navigateSession(-1));
   nextSessionButton.addEventListener('click', () => navigateSession(1));
-
-  // Botão de Atalho para o Vivo
-  goToLiveButton.addEventListener('click', () => {
-    followActive = false; // Apenas pula para o estado atual sem reativar o auto-follow
-    viewedSessionIndex = fullData.activeSessionIndex;
-    appState = fullData.sessions[viewedSessionIndex];
-    viewedRound = appState.currentRound;
-    updateUI();
-  });
 
   // Navegação: Rodada Anterior
   prevRoundButton.addEventListener('click', () => {
