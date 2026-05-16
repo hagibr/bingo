@@ -426,6 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncRegistryWithFirebase = async (uid) => {
     if (!navigator.onLine || !uid) return;
 
+    // Bloqueia o botão para evitar cliques múltiplos durante o processo
+    if (mgrForceSyncButton) {
+      mgrForceSyncButton.disabled = true;
+    }
+
     try {
       // Agora lemos diretamente do nó indexado pelo UID do usuário
       const snapshot = await firebase.database().ref(`uevts/${uid}`).once('value');
@@ -453,6 +458,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error("Erro ao sincronizar lista de eventos:", error);
       showToast("Erro ao sincronizar com a nuvem.");
+    } finally {
+      // Garante que o botão seja reabilitado independente de sucesso ou falha
+      if (mgrForceSyncButton) {
+        mgrForceSyncButton.disabled = false;
+      }
     }
   };
 
@@ -907,9 +917,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Cria uma cópia completa de um evento existente na nuvem.
    */
-  const duplicateEventById = async (id) => {
+  const duplicateEventById = async (id, btnElement = null) => {
     const user = firebase.auth().currentUser;
     if (!user || !navigator.onLine) return showToast("Ação requer login e internet.");
+
+    if (btnElement) btnElement.disabled = true;
 
     showToast("Duplicando evento...");
     try {
@@ -936,13 +948,17 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`Evento duplicado! Novo código: ${newId}`);
     } catch (e) {
       showToast("Erro ao duplicar.");
+    } finally {
+      if (btnElement) btnElement.disabled = false;
     }
   };
 
   /**
    * Exporta os dados de um evento específico por ID.
    */
-  const exportEventById = async (id) => {
+  const exportEventById = async (id, btnElement = null) => {
+    if (btnElement) btnElement.disabled = true;
+
     showToast("Preparando exportação...");
     try {
       const [evtSnap, numsSnap] = await Promise.all([
@@ -979,7 +995,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const safeName = (data.name || "Bingo").replace(/\s+/g, '_');
       a.download = `${safeName}_${id}_${date}.json`;
       a.click();
-    } catch (e) { showToast("Erro ao exportar."); }
+    } catch (e) {
+      showToast("Erro ao exportar.");
+    } finally {
+      if (btnElement) btnElement.disabled = false;
+    }
   };
 
   /**
@@ -1219,13 +1239,13 @@ document.addEventListener('DOMContentLoaded', () => {
       dupBtn.textContent = 'Duplicar';
       dupBtn.style.padding = '5px 10px'; dupBtn.style.fontSize = '0.8em';
       dupBtn.style.backgroundColor = '#17a2b8';
-      dupBtn.onclick = () => duplicateEventById(id);
+      dupBtn.onclick = () => duplicateEventById(id, dupBtn);
 
       const expBtn = document.createElement('button');
       expBtn.textContent = 'Exportar';
       expBtn.style.padding = '5px 10px'; expBtn.style.fontSize = '0.8em';
       expBtn.style.backgroundColor = '#6c757d';
-      expBtn.onclick = () => exportEventById(id);
+      expBtn.onclick = () => exportEventById(id, expBtn);
 
       // Insere o botão de Exportar no início do div 'actions'
       actions.insertBefore(expBtn, actions.firstChild);
@@ -1981,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast("Nenhum dado para exportar.");
       return;
     }
-    exportEventById(eventData.eventid);
+    exportEventById(eventData.eventid, exportSessionButton);
   });
 
   // Gatilhos de Importação no Gerenciador
@@ -1989,7 +2009,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mgrImportCodeButton.addEventListener('click', async () => {
       const code = await showDialog({ title: "Importar Código", message: "Digite o código ID do evento:", type: "prompt" });
       if (code && code.trim() !== "") {
-        duplicateEventById(code.trim().toUpperCase());
+        duplicateEventById(code.trim().toUpperCase(), mgrImportCodeButton);
       }
     });
   }
