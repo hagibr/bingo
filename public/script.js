@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
     manualNumberInput.placeholder = `01-${appState.maxNumber.toString().padStart(2, '0')}`;
     manualNumberInput.max = appState.maxNumber;
 
-    // Control Section (Manual/Automatic)
+    // Control Section (Manual/Sorteio)
     if (appState.drawMode === "manual") {
       manualDrawControls.classList.remove('hidden');
       autoDrawControls.classList.add('hidden');
@@ -1458,6 +1458,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const randomIndex = Math.floor(Math.random() * availableNumbers.length);
     const drawn = availableNumbers[randomIndex];
     addDrawnNumber(drawn);
+    drawRandomButton.disabled = true;
+    setTimeout(() => updateUI(false, 'none'), 1000);
   };
 
   // --- Event Listeners ---
@@ -1547,6 +1549,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentRoundData = appState.rounds[appState.currentRound];
     currentRoundData.isCompleted = e.target.checked;
     updateUI(true, 'session');
+
+    // Bloqueia o toggle por 1 segundo para evitar alterações rápidas
+    roundCompletedCheckbox.disabled = true;
+    setTimeout(() => { roundCompletedCheckbox.disabled = false; }, 1000);
   });
 
   // Salva o nome do prêmio quando o usuário para de editar o campo
@@ -1583,6 +1589,11 @@ document.addEventListener('DOMContentLoaded', () => {
       eventData.activeSessionIndex = nextIndex;
       appState = eventData.sessions[eventData.activeSessionIndex];
       updateUI(true, 'full');
+
+      // Bloqueia a navegação de sessão por 1 segundo
+      if (prevSessionMainButton) prevSessionMainButton.disabled = true;
+      if (nextSessionMainButton) nextSessionMainButton.disabled = true;
+      setTimeout(() => updateUI(false, 'none'), 1000);
     }
   };
 
@@ -1599,6 +1610,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nextRound >= 1 && nextRound <= appState.numRounds) {
       appState.currentRound = nextRound;
       updateUI(true, 'session');
+
+      // Bloqueia a navegação de rodada por 1 segundo
+      if (prevRoundMainButton) prevRoundMainButton.disabled = true;
+      if (nextRoundMainButton) nextRoundMainButton.disabled = true;
+      setTimeout(() => updateUI(false, 'none'), 1000);
     }
   };
 
@@ -1614,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true, 'session');
   });
 
-  // Sorteia um número aleatório (disponível no modo automático)
+  // Sorteia um número aleatório (disponível no modo sorteio)
   drawRandomButton.addEventListener('click', drawRandomNumber);
 
   // Clique em qualquer bola para aumentar o tamanho
