@@ -548,7 +548,8 @@ document.addEventListener('DOMContentLoaded', () => {
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
-    qrLinkDisplay.textContent = url.toString(); // Exibe o link abaixo do QR Code
+    qrLinkDisplay.textContent = url.toString();
+    qrLinkDisplay.href = url.toString();
   });
 
   // Alterna o modo de acompanhamento automático

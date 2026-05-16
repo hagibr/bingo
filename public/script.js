@@ -1683,7 +1683,8 @@ document.addEventListener('DOMContentLoaded', () => {
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
-    qrLinkDisplay.textContent = shareLink.value; // Exibe o link abaixo do QR Code
+    qrLinkDisplay.textContent = shareLink.value;
+    qrLinkDisplay.href = shareLink.value;
   };
 
   // Abre o modal de QR Code a partir do botão no cabeçalho
