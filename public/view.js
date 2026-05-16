@@ -108,13 +108,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeToast = () => {
       if (toast.parentNode) {
         toast.style.animation = 'toastFadeOut 0.2s forwards';
-        setTimeout(() => toast.remove(), 200);
+        setTimeout(() => {
+          if (toast.parentNode) toast.remove();
+          if (lastToast === toast) lastToast = null;
+        }, 200);
       }
     };
 
     toast.onclick = removeToast;
     toastContainer.appendChild(toast);
-    setTimeout(removeToast, 2500);
+    lastToast = toast;
+    lastToastTimeout = setTimeout(removeToast, 2500);
   };
 
   if (typeof firebaseConfig === 'undefined') {

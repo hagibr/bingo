@@ -138,11 +138,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeRemoteRef = null;
   const instanceId = Math.random().toString(36).substring(2, 10);
 
+  let lastToast = null;
+  let lastToastTimeout = null;
+
   /**
    * Exibe uma notificação tipo toast na tela.
    * @param {string} message - Mensagem a ser exibida.
    */
   const showToast = (message) => {
+    if (lastToast && lastToast.querySelector('span').textContent === message) {
+      clearTimeout(lastToastTimeout);
+      // Efeito de piscar resetando a animação de entrada
+      lastToast.style.animation = 'none';
+      void lastToast.offsetWidth; // trigger reflow
+      lastToast.style.animation = 'toastFadeIn 0.3s ease';
+
+      const t = lastToast;
+      lastToastTimeout = setTimeout(() => {
+        if (t.parentNode) {
+          t.style.animation = 'toastFadeOut 0.2s forwards';
+          setTimeout(() => { if (t.parentNode) t.remove(); }, 200);
+        }
+        if (lastToast === t) lastToast = null;
+      }, 2000);
+      return;
+    }
+
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<span>${message}</span><span style="margin-left:10px; opacity:0.6;">&times;</span>`;
@@ -150,13 +171,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeToast = () => {
       if (toast.parentNode) {
         toast.style.animation = 'toastFadeOut 0.2s forwards';
-        setTimeout(() => toast.remove(), 200);
+        setTimeout(() => {
+          if (toast.parentNode) toast.remove();
+          if (lastToast === toast) lastToast = null;
+        }, 200);
       }
     };
 
     toast.onclick = removeToast;
     toastContainer.appendChild(toast);
-    setTimeout(removeToast, 2000);
+    lastToast = toast;
+    lastToastTimeout = setTimeout(removeToast, 2000);
   };
 
   // --- Definições de Padrões ---
