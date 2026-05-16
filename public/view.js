@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoFollowContainer = document.getElementById('auto-follow-container');
   const toastContainer = document.getElementById('toast-container');
 
+  let lastToast = null;
+  let lastToastTimeout = null;
+
   // --- Lógica de Zoom das Bolas ---
   const ballScales = [1, 1.25, 1.5, 1.75, 2];
   let ballZoomIndex = 0;
@@ -101,6 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const showToast = (message) => {
     if (!toastContainer) return;
+
+    // Se a mensagem for igual à última, pisca o toast atual e reseta o tempo
+    if (lastToast && lastToast.querySelector('span').textContent === message) {
+      clearTimeout(lastToastTimeout);
+
+      // Reinicia a animação de entrada para dar o efeito de "piscar"
+      lastToast.style.animation = 'none';
+      void lastToast.offsetWidth; // Trigger reflow para o navegador notar a mudança
+      lastToast.style.animation = 'toastFadeIn 0.3s ease';
+
+      const t = lastToast;
+      lastToastTimeout = setTimeout(() => {
+        if (t.parentNode) {
+          t.style.animation = 'toastFadeOut 0.2s forwards';
+          setTimeout(() => { if (t.parentNode) t.remove(); }, 200);
+        }
+        if (lastToast === t) lastToast = null;
+      }, 2500);
+      return;
+    }
+
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<span>${message}</span><span style="margin-left:10px; opacity:0.6;">&times;</span>`;
@@ -461,11 +485,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fullData && fullData.sessions[sessName]?.rounds?.[roundNum]) {
         const round = fullData.sessions[sessName].rounds[roundNum];
         const newDrawn = data?.dns || [];
+        const oldLen = round.drawnNumbers ? round.drawnNumbers.length : 0;
 
-        // Exibe toast se novos números foram adicionados e o usuário não está visualizando esta rodada/sessão
+        // Exibe toast se a quantidade de números mudou e o usuário não está visualizando esta rodada/sessão
         const isCurrentlyViewed = (viewedSessionIndex === sessName && viewedRound === roundNum);
-        if (newDrawn.length > (round.drawnNumbers ? round.drawnNumbers.length : 0) && !isCurrentlyViewed) {
-          showToast(`Novo número sorteado na Rodada ${roundNum}!`);
+        if (newDrawn.length !== oldLen && !isCurrentlyViewed) {
+          // Pega os 3 últimos números sorteados e formata com zeros à esquerda
+          const nums = newDrawn.slice(-3).reverse().map(n => n.toString().padStart(2, '0'));
+          const display = nums.length > 0
+            ? `<strong>${nums[0]}</strong>${nums.length > 1 ? ', ' + nums.slice(1).join(', ') : ''}`
+            : 'Sorteio limpo';
+          showToast(`Rodada ${roundNum}: ${display}`);
         }
 
         round.drawnNumbers = newDrawn;

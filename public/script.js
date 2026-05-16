@@ -146,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {string} message - Mensagem a ser exibida.
    */
   const showToast = (message) => {
-    if (lastToast && lastToast.querySelector('span').textContent === message) {
+    // Compara o innerHTML para suportar tags de formatação como <strong>
+    if (lastToast && lastToast.querySelector('span').innerHTML === message) {
       clearTimeout(lastToastTimeout);
       // Efeito de piscar resetando a animação de entrada
       lastToast.style.animation = 'none';
