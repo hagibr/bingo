@@ -56,6 +56,46 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Exibe uma caixa de diálogo personalizada (Substitui alert, confirm e prompt).
+   */
+  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "" }) => {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('custom-dialog-modal');
+      const titleEl = document.getElementById('dialog-title');
+      const messageEl = document.getElementById('dialog-message');
+      const inputContainer = document.getElementById('dialog-input-container');
+      const inputEl = document.getElementById('dialog-input');
+      const cancelBtn = document.getElementById('dialog-cancel-btn');
+      const confirmBtn = document.getElementById('dialog-confirm-btn');
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      inputEl.value = defaultValue;
+
+      inputContainer.classList.toggle('hidden', type !== 'prompt');
+      cancelBtn.classList.toggle('hidden', type === 'alert');
+      confirmBtn.textContent = (type === 'alert') ? 'OK' : 'Confirmar';
+
+      modal.classList.remove('hidden');
+
+      const cleanup = (value) => {
+        modal.classList.add('hidden');
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+        resolve(value);
+      };
+
+      confirmBtn.onclick = () => cleanup(type === 'prompt' ? inputEl.value : true);
+      cancelBtn.onclick = () => cleanup(type === 'prompt' ? null : false);
+
+      if (type === 'prompt') {
+        setTimeout(() => inputEl.focus(), 100);
+        inputEl.onkeypress = (e) => { if (e.key === 'Enter') confirmBtn.click(); };
+      }
+    });
+  };
+
+  /**
    * Exibe uma notificação tipo toast na tela.
    * @param {string} message - Mensagem a ser exibida.
    */
@@ -445,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('activeBingoId', id); // Salva para manter no refresh
       connectToSession(id);
     } else {
-      alert("Por favor, digite um código válido (máx 16 caracteres).");
+      showDialog({ title: "Erro", message: "Digite um código de até 16 caracteres." });
     }
   });
 
@@ -462,8 +502,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Botão para sair do evento atual e retornar à tela de entrada
-  leaveEventButton.addEventListener('click', () => {
-    if (confirm("Deseja realmente sair desta sessão de bingo?")) {
+  leaveEventButton.addEventListener('click', async () => {
+    const ok = await showDialog({
+      title: "Sair",
+      message: "Deseja realmente sair desta sessão de bingo?",
+      type: "confirm"
+    });
+    if (ok) {
       sessionStorage.removeItem('activeBingoId');
       eventId = null;
       manualIdInput.value = '';
@@ -485,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Gera o QR Code de compartilhamento para outros espectadores
   showQrButton.addEventListener('click', () => {
     if (!eventId) {
-      alert("Entre em uma sessão primeiro para compartilhar.");
+      showDialog({ title: "Aviso", message: "Entre em uma sessão primeiro para compartilhar." });
       return;
     }
     // Constrói a URL de compartilhamento garantindo que o ID esteja nela
@@ -579,6 +624,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Atalho para fechar o modal de QR Code com a tecla Escape
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const customDialog = document.getElementById('custom-dialog-modal');
+      if (customDialog && !customDialog.classList.contains('hidden')) {
+        const cancelBtn = document.getElementById('dialog-cancel-btn');
+        const confirmBtn = document.getElementById('dialog-confirm-btn');
+        if (cancelBtn && !cancelBtn.classList.contains('hidden')) cancelBtn.click();
+        else if (confirmBtn) confirmBtn.click();
+        return; // Prioridade total ao diálogo customizado
+      }
+    }
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
       closeQrModal();
     }

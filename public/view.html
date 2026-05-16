@@ -129,6 +129,21 @@
     </div>
   </main>
 
+  <!-- Modal de Diálogo Customizado (Alert, Confirm, Prompt) -->
+  <div id="custom-dialog-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <h2 id="dialog-title" style="margin-top: 0; color: #333;">Aviso</h2>
+      <p id="dialog-message" style="margin-bottom: 20px; color: #666;"></p>
+      <div id="dialog-input-container" class="hidden" style="margin-bottom: 20px;">
+        <input type="text" id="dialog-input" style="width: 100%; box-sizing: border-box; text-align: center;">
+      </div>
+      <div class="modal-actions" id="dialog-actions">
+        <button id="dialog-cancel-btn" class="undo-button hidden">Cancelar</button>
+        <button id="dialog-confirm-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Contêiner de Notificações (Toasts) -->
   <div id="toast-container" class="toast-container"></div>
 

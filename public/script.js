@@ -70,6 +70,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const idOptCancel = document.getElementById('id-opt-cancel');
   const toastContainer = document.getElementById('toast-container');
 
+  /**
+   * Exibe uma caixa de diálogo personalizada (Substitui alert, confirm e prompt).
+   */
+  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "" }) => {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('custom-dialog-modal');
+      const titleEl = document.getElementById('dialog-title');
+      const messageEl = document.getElementById('dialog-message');
+      const inputContainer = document.getElementById('dialog-input-container');
+      const inputEl = document.getElementById('dialog-input');
+      const cancelBtn = document.getElementById('dialog-cancel-btn');
+      const confirmBtn = document.getElementById('dialog-confirm-btn');
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      inputEl.value = defaultValue;
+
+      inputContainer.classList.toggle('hidden', type !== 'prompt');
+      cancelBtn.classList.toggle('hidden', type === 'alert');
+      confirmBtn.textContent = (type === 'alert') ? 'OK' : 'Confirmar';
+
+      modal.classList.remove('hidden');
+
+      const cleanup = (value) => {
+        modal.classList.add('hidden');
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+        resolve(value);
+      };
+
+      confirmBtn.onclick = () => cleanup(type === 'prompt' ? inputEl.value : true);
+      cancelBtn.onclick = () => cleanup(type === 'prompt' ? null : false);
+
+      if (type === 'prompt') {
+        setTimeout(() => inputEl.focus(), 100);
+        inputEl.onkeypress = (e) => { if (e.key === 'Enter') confirmBtn.click(); };
+      }
+    });
+  };
+
   // Novos elementos de navegação de rodada no painel principal
   const prevRoundMainButton = document.getElementById('prev-round-main');
   const nextRoundMainButton = document.getElementById('next-round-main');
@@ -1085,18 +1125,16 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.textContent = 'Remover';
         deleteBtn.classList.add('undo-button');
         deleteBtn.style.padding = '5px 10px'; deleteBtn.style.fontSize = '0.8em';
-        deleteBtn.onclick = async () => { // Tornar a função assíncrona
+        deleteBtn.onclick = async () => {
           const user = firebase.auth().currentUser;
           const isOnline = navigator.onLine;
 
-          let confirmMessage = `Remover o evento "${eventName}" (Código: ${id}) da sua lista local?`;
-          if (user && isOnline) {
-            confirmMessage += `\n\nATENÇÃO: Isso também o removerá do Firebase (nuvem) se você for o proprietário.`;
-          } else {
-            confirmMessage += `\n\nVocê está offline ou não logado. A remoção será apenas local.`;
-          }
+          const confirmMessage = (user && isOnline)
+            ? `Isso removerá "${eventName}" permanentemente da nuvem e do seu dispositivo. Continuar?`
+            : `Remover "${eventName}" da sua lista local?`;
 
-          if (confirm(confirmMessage)) {
+          const ok = await showDialog({ title: "Excluir Evento", message: confirmMessage, type: "confirm" });
+          if (ok) {
             if (user && isOnline) {
               try {
                 // Remove o evento, os números e o índice do usuário na nuvem
@@ -1666,8 +1704,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   if (mgrNewEventButton) {
-    mgrNewEventButton.addEventListener('click', () => {
-      if (!confirm("Isso criará um Evento totalmente novo com um novo Código ID. Deseja continuar?")) return;
+    mgrNewEventButton.addEventListener('click', async () => {
+      const ok = await showDialog({
+        title: "Novo Evento",
+        message: "Isso criará um projeto vazio com um novo ID. Continuar?",
+        type: "confirm"
+      });
+      if (!ok) return;
 
       const defaultName = "Novo Evento de Bingo";
       eventData.eventid = generateRandomId();
@@ -1688,8 +1731,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Cria uma nova sessão no projeto atual
-  newSessionButton.addEventListener('click', () => {
-    const name = prompt("Nome da nova sessão:");
+  newSessionButton.addEventListener('click', async () => {
+    const name = await showDialog({ title: "Nova Sessão", message: "Digite o nome da sessão (Ex: Rodada da Tarde):", type: "prompt" });
     if (name && name.trim() !== "") {
       if (eventData.sessions.some(s => s.sessionName === name)) {
         showToast("Já existe uma sessão com este nome.");
@@ -1704,9 +1747,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Listener para Renomear a Sessão Selecionada via botão
   if (renameSessionButton) {
-    renameSessionButton.addEventListener('click', () => {
+    renameSessionButton.addEventListener('click', async () => {
       const oldName = appState.sessionName;
-      const newName = prompt("Novo nome para a sessão:", oldName);
+      const newName = await showDialog({
+        title: "Renomear",
+        message: "Novo nome para a sessão:",
+        type: "prompt",
+        defaultValue: oldName
+      });
 
       if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
         const cleanName = newName.trim();
@@ -1725,11 +1773,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Exclui a sessão ativa atual
-  deleteSessionButton.addEventListener('click', () => {
+  deleteSessionButton.addEventListener('click', async () => {
     const currentName = appState.sessionName;
 
     if (eventData.sessions.length <= 1) {
-      if (confirm(`Esta é a única sessão existente. Deseja resetá-la para o estado inicial?`)) {
+      const shouldReset = await showDialog({
+        title: "Aviso",
+        message: "Esta é a única sessão. Deseja resetar os dados e começar de novo?",
+        type: "confirm"
+      });
+      if (shouldReset) {
         const defaultName = "Sessão Padrão";
         eventData.sessions = [createDefaultSessionState(defaultName)];
         eventData.activeSessionIndex = 0;
@@ -1739,7 +1792,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (confirm(`Tem certeza que deseja excluir a sessão "${currentName}"?`)) {
+    const shouldDelete = await showDialog({
+      title: "Excluir",
+      message: `Remover a sessão "${currentName}" permanentemente?`,
+      type: "confirm"
+    });
+    if (shouldDelete) {
       const idxToRemove = eventData.activeSessionIndex;
       eventData.sessions.splice(idxToRemove, 1);
       eventData.activeSessionIndex = 0;
@@ -1778,7 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Altera a quantidade de rodadas do evento
-  configNumRounds.addEventListener('change', (e) => {
+  configNumRounds.addEventListener('change', async (e) => {
     const newNumRounds = parseInt(e.target.value);
     if (newNumRounds < 1) {
       showToast("Mínimo de 1 rodada.");
@@ -1792,7 +1850,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else if (newNumRounds < appState.numRounds) {
       // Remover rodadas extras (cuidado para não perder dados se já houver sorteios)
-      if (confirm(`Tem certeza que deseja reduzir o número de rodadas para ${newNumRounds}? Dados das rodadas ${newNumRounds + 1} em diante serão perdidos.`)) {
+      const ok = await showDialog({
+        title: "Reduzir Rodadas",
+        message: `Dados das rodadas ${newNumRounds + 1} em diante serão perdidos. Continuar?`,
+        type: "confirm"
+      });
+      if (ok) {
         for (let i = appState.numRounds; i > newNumRounds; i--) {
           delete appState.rounds[i];
         }
@@ -1880,8 +1943,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Gatilhos de Importação no Gerenciador
   if (mgrImportCodeButton) {
-    mgrImportCodeButton.addEventListener('click', () => {
-      const code = prompt("Digite o código do evento que deseja copiar para sua conta:");
+    mgrImportCodeButton.addEventListener('click', async () => {
+      const code = await showDialog({ title: "Importar Código", message: "Digite o código ID do evento público:", type: "prompt" });
       if (code && code.trim() !== "") {
         duplicateEventById(code.trim().toUpperCase());
       }
@@ -1900,7 +1963,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Caso 1: Importação de Evento Completo (Novo formato)
           if (imported && imported.sessions && Array.isArray(imported.sessions)) {
-            if (confirm("Deseja importar este evento? Ele será salvo como um novo código ID na sua conta.")) {
+            const ok = await showDialog({
+              title: "Importar JSON",
+              message: "Deseja carregar este arquivo? Um novo código ID será gerado.",
+              type: "confirm"
+            });
+            if (ok) {
               const user = firebase.auth().currentUser;
               if (!user) {
                 showToast("Você precisa estar logado para importar eventos.");
