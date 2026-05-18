@@ -422,8 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Monitora o timestamp global de modificação
     rootRef.child('last').on('value', snap => {
       localLastModified = snap.val() || 0;
-      // Se este valor ficou indefinido, é certo que o organizador apagou o evento
-      if (localLastModified == undefined) {
+      // Se este valor ficou zerado, é certo que o organizador apagou o evento
+      if (localLastModified == 0) {
         sessionStorage.removeItem('activeBingoId');
         eventId = null;
         manualIdInput.value = '';
