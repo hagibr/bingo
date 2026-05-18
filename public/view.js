@@ -422,6 +422,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Monitora o timestamp global de modificação
     rootRef.child('last').on('value', snap => {
       localLastModified = snap.val() || 0;
+      // Se este valor ficou indefinido, é certo que o organizador apagou o evento
+      if (localLastModified == undefined) {
+        sessionStorage.removeItem('activeBingoId');
+        eventId = null;
+        manualIdInput.value = '';
+
+        // Remove todos os listeners do Firebase para economizar tráfego
+        if (rootRef) rootRef.off();
+        if (activeSessionRef) activeSessionRef.off();
+        if (activeRoundRef) activeRoundRef.off();
+
+        fullData = null;
+        appState = null;
+
+        handleSessionError(); // Esconde o conteúdo e mostra a entrada manual
+        eventTitle.textContent = "Aguardando Código";
+        document.title = "Visualização - Bingo";
+      }
     });
 
     // Escuta mudanças nos metadados globais (raras)
@@ -539,6 +557,8 @@ document.addEventListener('DOMContentLoaded', () => {
       joinSessionButton.click();
     }
   });
+
+
 
   // Botão para sair do evento atual e retornar à tela de entrada
   leaveEventButton.addEventListener('click', async () => {
