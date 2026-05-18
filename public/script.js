@@ -83,6 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const cancelBtn = document.getElementById('dialog-cancel-btn');
       const confirmBtn = document.getElementById('dialog-confirm-btn');
 
+      // Permitindo somente letras maiúsculas e números
+      inputEl.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      });
+
       titleEl.textContent = title;
       messageEl.textContent = message;
       inputEl.value = defaultValue;
