@@ -997,6 +997,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = firebase.auth().currentUser;
     if (!user || !navigator.onLine) return showToast("Ação requer login e internet.");
 
+    const clearNumbers = await showDialog({
+      title: "Opções de Cópia",
+      message: "Deseja limpar os números sorteados e reiniciar o progresso das rodadas no novo evento?",
+      type: "confirm"
+    });
+
     if (btnElement) btnElement.disabled = true;
 
     showToast("Duplicando evento...");
@@ -1015,9 +1021,20 @@ document.addEventListener('DOMContentLoaded', () => {
       data.ouid = user.uid; // Garante que o usuário atual seja o dono
       data.last = firebase.database.ServerValue.TIMESTAMP;
 
+      if (clearNumbers && data.ss) {
+        const sessions = Array.isArray(data.ss) ? data.ss : Object.values(data.ss);
+        sessions.forEach(s => {
+          if (s && s.rds) {
+            Object.values(s.rds).forEach(r => {
+              if (r) r.done = false;
+            });
+          }
+        });
+      }
+
       const updates = {};
       updates[`evt/${newId}`] = data;
-      if (nums) updates[`nums/${newId}`] = nums;
+      if (!clearNumbers && nums) updates[`nums/${newId}`] = nums;
       updates[`uevts/${user.uid}/${newId}`] = true;
 
       await firebase.database().ref().update(updates);
