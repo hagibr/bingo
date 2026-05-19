@@ -77,20 +77,27 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Exibe uma caixa de diálogo personalizada (Substitui alert, confirm e prompt).
    */
-  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "" }) => {
+  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "", useFilter = true }) => {
     return new Promise((resolve) => {
       const modal = document.getElementById('custom-dialog-modal');
       const titleEl = document.getElementById('dialog-title');
       const messageEl = document.getElementById('dialog-message');
       const inputContainer = document.getElementById('dialog-input-container');
-      const inputEl = document.getElementById('dialog-input');
+      const rawInput = document.getElementById('dialog-input');
+
+      // Limpa listeners de chamadas anteriores substituindo o elemento por um clone
+      const inputEl = rawInput.cloneNode(true);
+      rawInput.parentNode.replaceChild(inputEl, rawInput);
+
       const cancelBtn = document.getElementById('dialog-cancel-btn');
       const confirmBtn = document.getElementById('dialog-confirm-btn');
 
-      // Permitindo somente letras maiúsculas e números
-      inputEl.addEventListener('input', (e) => {
-        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      });
+      if (useFilter) {
+        // Permitindo somente letras maiúsculas e números
+        inputEl.addEventListener('input', (e) => {
+          e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+      }
 
       titleEl.textContent = title;
       messageEl.textContent = message;
@@ -1901,7 +1908,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cria uma nova sessão no projeto atual
   newSessionButton.addEventListener('click', async () => {
-    const name = await showDialog({ title: "Nova Sessão", message: "Digite o nome da sessão:", type: "prompt" });
+    const name = await showDialog({ title: "Nova Sessão", message: "Digite o nome da sessão:", type: "prompt", useFilter: false });
     if (name && name.trim() !== "") {
       if (eventData.sessions.some(s => s.sessionName === name)) {
         showToast("Já existe uma sessão com este nome.");
@@ -1922,7 +1929,8 @@ document.addEventListener('DOMContentLoaded', () => {
         title: "Renomear",
         message: "Novo nome para a sessão:",
         type: "prompt",
-        defaultValue: oldName
+        defaultValue: oldName,
+        useFilter: false
       });
 
       if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
