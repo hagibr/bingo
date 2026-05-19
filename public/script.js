@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
   const copyQrLinkButton = document.getElementById('copy-qr-link-button');
+  const eventSummaryButton = document.getElementById('event-summary-button');
+  const eventSummaryModal = document.getElementById('event-summary-modal');
+  const closeEventSummaryX = document.getElementById('close-event-summary-x');
+  const closeEventSummaryButton = document.getElementById('close-event-summary-button');
 
   // Elementos do Gerenciador de Eventos
   const eventsMgrButton = document.getElementById('events-mgr-button');
@@ -559,6 +563,66 @@ document.addEventListener('DOMContentLoaded', () => {
       configSessionId.value = oldId;
       showToast("Alteração de código cancelada.");
     }
+  };
+
+  /**
+   * Gera o HTML para o resumo do evento e o exibe no modal.
+   */
+  const openEventSummaryModal = () => {
+    const summaryContent = document.getElementById('event-summary-content');
+    if (!summaryContent || !eventData) return;
+
+    const modalTitle = document.querySelector('#event-summary-modal h2');
+    if (modalTitle) modalTitle.textContent = eventData.eventName || "Evento sem Nome";
+
+    let html = '';
+
+    if (eventData.sessions && eventData.sessions.length > 0) {
+      eventData.sessions.forEach((session, sIdx) => {
+        if (!session) return;
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<h4 style="margin: 0; padding: 10px 0; color: #28a745; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 2px solid #eee;">Sessão: ${session.sessionName || `Sessão ${sIdx + 1}`}</h4>`;
+        html += `<ul style="list-style: none; padding: 0;">`;
+
+        // Ordena as chaves das rodadas numericamente
+        const sortedRoundKeys = Object.keys(session.rounds || {}).sort((a, b) => parseInt(a) - parseInt(b));
+
+        sortedRoundKeys.forEach(roundNum => {
+          const round = session.rounds[roundNum];
+          if (!round) return;
+
+          const isCurrent = (sIdx === eventData.activeSessionIndex && parseInt(roundNum) === session.currentRound);
+          const isCompleted = round.isCompleted;
+          const drawnCount = round.drawnNumbers ? round.drawnNumbers.length : 0;
+
+          html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #f0f0f0; text-align: left;">`;
+          html += `<strong>Rodada ${roundNum}:</strong> `;
+          if (isCurrent) {
+            html += `<span class="active-badge" style="margin-right: 5px;">ATUAL</span>`;
+          }
+          if (isCompleted) {
+            html += `<span class="completed-badge" style="margin-right: 5px;">CONCLUÍDA</span>`;
+          }
+          html += `<br><span style="font-size: 0.9em; color: #666;">Prêmio: ${round.prize || "Não definido"}</span>`;
+          html += `<br><span style="font-size: 0.9em; color: #666;">Bolas Sorteadas: ${drawnCount}</span>`;
+          html += `</li>`;
+        });
+        html += `</ul>`;
+        html += `</div>`;
+      });
+    } else {
+      html += `<p>Nenhuma sessão configurada para este evento.</p>`;
+    }
+
+    summaryContent.innerHTML = html;
+    eventSummaryModal.classList.remove('hidden');
+  };
+
+  /**
+   * Fecha o modal de resumo do evento.
+   */
+  const closeEventSummaryModal = () => {
+    eventSummaryModal.classList.add('hidden');
   };
 
   // --- Estado da Aplicação ---
@@ -1533,6 +1597,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && !eventsMgrModal.classList.contains('hidden')) {
       closeEventsMgr();
     }
+    if (e.key === 'Escape' && !eventSummaryModal.classList.contains('hidden')) {
+      closeEventSummaryModal();
+    }
     if (e.key === 'Escape' && !idOptionsModal.classList.contains('hidden')) {
       idOptCancel.click();
     }
@@ -1762,6 +1829,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Abre o modal de QR Code a partir do botão no cabeçalho
   if (headerQrButton) headerQrButton.addEventListener('click', openQrModal);
+
+  // Abre o modal de resumo do evento no painel do organizador
+  if (eventSummaryButton) {
+    eventSummaryButton.addEventListener('click', openEventSummaryModal);
+  }
+  
   // Abre o modal de QR Code a partir do botão no modal de configurações
   showQrButton.addEventListener('click', openQrModal);
 
@@ -1795,6 +1868,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast("Iniciando sincronização...");
     syncRegistryWithFirebase(user.uid);
   });
+  // Listeners para fechar o modal de resumo do evento
+  if (closeEventSummaryX) closeEventSummaryX.addEventListener('click', closeEventSummaryModal);
+  if (closeEventSummaryButton) closeEventSummaryButton.addEventListener('click', closeEventSummaryModal);
 
   if (mgrNewEventButton) {
     mgrNewEventButton.addEventListener('click', async () => {

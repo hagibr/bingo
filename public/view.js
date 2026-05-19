@@ -37,6 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleSortButton = document.getElementById('toggle-sort-button');
   const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
   const autoFollowContainer = document.getElementById('auto-follow-container');
+  const eventSummaryButton = document.getElementById('event-summary-button');
+  const eventSummaryModal = document.getElementById('event-summary-modal');
+  const closeEventSummaryX = document.getElementById('close-event-summary-x');
+  const closeEventSummaryButton = document.getElementById('close-event-summary-button');
   const toastContainer = document.getElementById('toast-container');
 
   let lastToast = null;
@@ -200,8 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
       viewedSessionIndex = fullData.activeSessionIndex;
       appState = fullData.sessions[viewedSessionIndex];
       viewedRound = appState.currentRound;
-      localIsSortedAscending = appState.isSortedAscending;
     }
+
+    if (eventSummaryButton) eventSummaryButton.classList.remove('hidden');
 
     // Atualiza o nome da sessão visualizada
     if (viewedSessionNameDisplay && appState) viewedSessionNameDisplay.textContent = appState.sessionName;
@@ -270,8 +275,66 @@ document.addEventListener('DOMContentLoaded', () => {
     nextSessionButton.classList.toggle('hidden', isLocked);
     prevSessionButton.disabled = viewedSessionIndex <= 0;
     nextSessionButton.disabled = viewedSessionIndex >= sessionsCount - 1;
+  };
 
-    if (toggleSortButton) toggleSortButton.classList.toggle('hidden', isLocked);
+  /**
+   * Gera o HTML para o resumo do evento e o exibe no modal.
+   */
+  const openEventSummaryModal = () => {
+    const summaryContent = document.getElementById('event-summary-content');
+    if (!summaryContent || !fullData) return;
+
+    const modalTitle = document.querySelector('#event-summary-modal h2');
+    if (modalTitle) modalTitle.textContent = fullData.eventName || "Evento sem Nome";
+
+    let html = '';
+
+    if (fullData.sessions && fullData.sessions.length > 0) {
+      fullData.sessions.forEach((session, sIdx) => {
+        if (!session) return;
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<h4 style="margin: 0; padding: 10px 0; color: #28a745; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 2px solid #eee;">Sessão: ${session.sessionName || `Sessão ${sIdx + 1}`}</h4>`;
+        html += `<ul style="list-style: none; padding: 0;">`;
+
+        // Ordena as chaves das rodadas numericamente
+        const sortedRoundKeys = Object.keys(session.rounds || {}).sort((a, b) => parseInt(a) - parseInt(b));
+
+        sortedRoundKeys.forEach(roundNum => {
+          const round = session.rounds[roundNum];
+          if (!round) return;
+
+          const isCurrent = (sIdx === fullData.activeSessionIndex && parseInt(roundNum) === session.currentRound);
+          const isCompleted = round.isCompleted;
+          const drawnCount = round.drawnNumbers ? round.drawnNumbers.length : 0;
+
+          html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #f0f0f0; text-align: left;">`;
+          html += `<strong>Rodada ${roundNum}:</strong> `;
+          if (isCurrent) {
+            html += `<span class="active-badge" style="margin-right: 5px;">ATUAL</span>`;
+          }
+          if (isCompleted) {
+            html += `<span class="completed-badge" style="margin-right: 5px;">CONCLUÍDA</span>`;
+          }
+          html += `<br><span style="font-size: 0.9em; color: #666;">Prêmio: ${round.prize || "Não definido"}</span>`;
+          html += `<br><span style="font-size: 0.9em; color: #666;">Bolas Sorteadas: ${drawnCount}</span>`;
+          html += `</li>`;
+        });
+        html += `</ul>`;
+        html += `</div>`;
+      });
+    } else {
+      html += `<p>Nenhuma sessão configurada para este evento.</p>`;
+    }
+
+    summaryContent.innerHTML = html;
+    eventSummaryModal.classList.remove('hidden');
+  };
+
+  /**
+   * Fecha o modal de resumo do evento.
+   */
+  const closeEventSummaryModal = () => {
+    eventSummaryModal.classList.add('hidden');
   };
 
   /**
@@ -670,6 +733,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fecha o modal de QR Code no botão "Fechar"
   closeQrModalButton.addEventListener('click', closeQrModal);
 
+  // Abre o modal de resumo do evento
+  if (eventSummaryButton) {
+    eventSummaryButton.addEventListener('click', openEventSummaryModal);
+  }
+  // Listeners para fechar o modal de resumo do evento
+  if (closeEventSummaryX) closeEventSummaryX.addEventListener('click', closeEventSummaryModal);
+  if (closeEventSummaryButton) closeEventSummaryButton.addEventListener('click', closeEventSummaryModal);
+
   // Copia a URL de visualização de dentro do modal de QR Code
   if (copyQrLinkButton) {
     copyQrLinkButton.addEventListener('click', () => {
@@ -696,6 +767,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (e.key === 'Escape' && !qrModal.classList.contains('hidden')) {
       closeQrModal();
+    }
+    if (e.key === 'Escape' && !eventSummaryModal.classList.contains('hidden')) {
+      closeEventSummaryModal();
     }
   });
 
