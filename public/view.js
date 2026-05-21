@@ -427,14 +427,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         appState = fullData.sessions[viewedSessionIndex];
 
-        // Carrega os números sorteados da rodada ativa *antes* de ativar a UI e os listeners
-        const initialSessIndex = viewedSessionIndex;
-        const initialRoundNum = viewedRound;
-        const numsRef = db.ref(`nums/${id}/${initialSessIndex}/${initialRoundNum}`);
+        // Carrega todos os números sorteados de todas as sessões/rodadas para o resumo do evento
+        const numsRef = db.ref(`nums/${id}`);
         numsRef.once('value').then(numsSnap => {
-          if (fullData.sessions[initialSessIndex]?.rounds?.[initialRoundNum]) {
-            fullData.sessions[initialSessIndex].rounds[initialRoundNum].drawnNumbers = numsSnap.val()?.dns || [];
-          }
+          const allNums = numsSnap.val() || {};
+
+          // Popula as listas de números em cada rodada de cada sessão no fullData
+          fullData.sessions.forEach((session, sIdx) => {
+            if (!session) return;
+            Object.keys(session.rounds || {}).forEach(rId => {
+              if (session.rounds[rId]) {
+                session.rounds[rId].drawnNumbers = allNums[sIdx]?.[rId]?.dns || [];
+              }
+            });
+          });
 
           // Ativa interface
           idEntrySection.classList.add('hidden');
