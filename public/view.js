@@ -252,6 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (num === lastDrawn) item.classList.add('last-drawn');
       list.appendChild(item);
     });
+
+    // Se o modal de resumo estiver aberto, atualiza seu conteúdo para refletir novos números
+    if (eventSummaryModal && !eventSummaryModal.classList.contains('hidden')) {
+      openEventSummaryModal();
+    }
   };
 
   /**
@@ -269,9 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fullData.sessions && fullData.sessions.length > 0) {
       fullData.sessions.forEach((session, sIdx) => {
         if (!session) return;
-        html += `<div style="margin-bottom: 20px;">`;
-        html += `<h4 style="margin: 0; padding: 10px 0; color: #28a745; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 2px solid #eee;">Sessão: ${session.sessionName || `Sessão ${sIdx + 1}`}</h4>`;
-        html += `<ul style="list-style: none; padding: 0;">`;
+        html += `<div class="summary-session-card">`;
+        html += `  <div class="summary-session-header">`;
+        html += `    <h4 style="margin: 0; color: #28a745;">${session.sessionName || `Sessão ${sIdx + 1}`}</h4>`;
+        html += `  </div>`;
+        html += `  <div class="summary-session-body">`;
+        html += `    <ul style="list-style: none; padding: 0; margin: 0;">`;
 
         // Ordena as chaves das rodadas numericamente
         const sortedRoundKeys = Object.keys(session.rounds || {}).sort((a, b) => parseInt(a) - parseInt(b));
@@ -284,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const isCompleted = round.isCompleted;
           const drawnNumbers = round.drawnNumbers || [];
 
-          html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #f0f0f0; text-align: left;">`;
+          html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #C0C0C0; text-align: left;">`;
           html += `<strong>Rodada ${roundNum}:</strong> `;
           if (isCurrent) {
             html += `<span class="active-badge" style="margin-right: 5px;">ATUAL</span>`;
@@ -292,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isCompleted) {
             html += `<span class="completed-badge" style="margin-right: 5px;">CONCLUÍDA</span>`;
           }
-          html += `<br><span style="font-size: 0.9em; color: #666;">Prêmio: ${round.prize || "Não definido"}</span>`;
+          html += `<br><span style="font-size: 0.9em;">${round.prize || "Prêmio não definido"}</span>`;
           if (drawnNumbers.length > 0) {
             const reversedNumbers = [...drawnNumbers].reverse(); // Cria uma cópia e reverte
             html += `<details style="margin-top: 5px; font-size: 0.85em;">
@@ -306,7 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           html += `</li>`;
         });
-        html += `</ul>`;
+        html += `    </ul>`;
+        html += `  </div>`;
         html += `</div>`;
       });
     } else {
