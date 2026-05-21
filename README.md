@@ -5,7 +5,7 @@ Este projeto é uma aplicação web para gerenciamento e visualização de sorte
 ## Estrutura Básica do Projeto
 
 - **control.html / script.js**: Painel do organizador. Permite criar eventos, gerenciar sessões, definir prêmios/padrões e realizar sorteios.
-- **view.html / view.js**: Interface do espectador. Consome os dados em tempo real e permite navegar entre rodadas/sessões.
+- **view.html / view.js**: Interface do espectador. Consome os dados em tempo real e permite visualizar um resumo de todas as sessões e rodadas.
 - **style.css**: Estilos compartilhados entre ambas as interfaces.
 - **firebase-config.js**: Arquivo contendo as credenciais de conexão com o Firebase.
 

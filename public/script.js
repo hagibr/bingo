@@ -513,7 +513,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           if (oldId) {
-            await firebase.database().ref('evt/' + oldId).remove();
+            // Limpeza completa do ID antigo na nuvem
+            const cleanupUpdates = {};
+            cleanupUpdates[`evt/${oldId}`] = null;
+            cleanupUpdates[`nums/${oldId}`] = null;
+            cleanupUpdates[`uevts/${user.uid}/${oldId}`] = null;
+            await firebase.database().ref().update(cleanupUpdates);
+
             const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
             delete registry[oldId];
             localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
