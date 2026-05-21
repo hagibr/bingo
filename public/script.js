@@ -502,33 +502,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (choice === '1') {
       // SUBSTITUIR
-      // Só tenta validar e remover no Firebase se estiver online e logado
-      if (user && navigator.onLine) {
-        try {
-          const snapshot = await firebase.database().ref('evt/' + newId).once('value');
-          const existingData = snapshot.val();
-          if (existingData && existingData.ouid && existingData.ouid !== user.uid) {
-            showToast(`Código "${newId}" já em uso por outro organizador. Não foi possível substituir.`);
-            configSessionId.value = oldId;
-            return;
+      if (user) {
+        // 1. Validação de posse do novo ID (apenas se online para segurança)
+        if (navigator.onLine) {
+          try {
+            const snapshot = await firebase.database().ref('evt/' + newId).once('value');
+            const existingData = snapshot.val();
+            if (existingData && existingData.ouid && existingData.ouid !== user.uid) {
+              showToast(`Código "${newId}" já em uso por outro organizador. Substituição abortada.`);
+              configSessionId.value = oldId;
+              return;
+            }
+          } catch (e) {
+            console.warn("Erro ao validar novo ID no servidor:", e);
           }
-          if (oldId) {
-            // Limpeza completa do ID antigo na nuvem
-            const cleanupUpdates = {};
-            cleanupUpdates[`evt/${oldId}`] = null;
-            cleanupUpdates[`nums/${oldId}`] = null;
-            cleanupUpdates[`uevts/${user.uid}/${oldId}`] = null;
-            await firebase.database().ref().update(cleanupUpdates);
+        }
 
-            const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
-            delete registry[oldId];
-            localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
-          }
-        } catch (error) {
-          console.error("Erro ao processar substituição no Firebase:", error);
-          showToast("Erro na nuvem. ID alterado apenas localmente.");
+        // 2. Limpeza do ID antigo no Firebase (O SDK gerencia a fila offline se necessário)
+        if (oldId) {
+          const cleanupUpdates = {};
+          cleanupUpdates[`evt/${oldId}`] = null;
+          cleanupUpdates[`nums/${oldId}`] = null;
+          cleanupUpdates[`uevts/${user.uid}/${oldId}`] = null;
+          firebase.database().ref().update(cleanupUpdates).catch(err => {
+            console.error("Erro na limpeza remota do ID antigo:", err);
+          });
         }
       }
+
+      // 3. Limpeza Local (Registry no localStorage) - Sempre ocorre para evitar inconsistências
+      if (oldId) {
+        const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
+        if (registry[oldId]) {
+          delete registry[oldId];
+          localStorage.setItem('bingoUserEvents', JSON.stringify(registry));
+        }
+      }
+
       eventData.eventid = newId;
       if (user && navigator.onLine) _performFirebaseSync(eventData, 'full');
       updateUI(false);
