@@ -36,19 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeQrModalX = document.getElementById('close-qr-modal-x');
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
   const copyQrLinkButton = document.getElementById('copy-qr-link-button');
-  const eventSummaryButton = document.getElementById('event-summary-button');
-  const eventSummaryModal = document.getElementById('event-summary-modal');
-  const closeEventSummaryX = document.getElementById('close-event-summary-x');
-  const closeEventSummaryButton = document.getElementById('close-event-summary-button');
 
   // Elementos do Gerenciador de Eventos
+  const mgrForceSyncButton = document.getElementById('mgr-force-sync-button');
   const eventsMgrButton = document.getElementById('events-mgr-button');
   const eventsMgrModal = document.getElementById('events-mgr-modal');
   const closeEventsMgrX = document.getElementById('close-events-mgr-x');
   const closeEventsMgrButton = document.getElementById('close-events-mgr-button');
-  const mgrNewEventButton = document.getElementById('mgr-new-event-button');
   const sessionsListContainer = document.getElementById('events-list-container');
-  const mgrForceSyncButton = document.getElementById('mgr-force-sync-button');
+  const mgrNewEventButton = document.getElementById('mgr-new-event-button');
   const mgrImportEventButton = document.getElementById('mgr-import-event-button');
   const mgrImportCodeButton = document.getElementById('mgr-import-code-button');
   const mgrImportEventInput = document.getElementById('mgr-import-event-input');
@@ -77,27 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Exibe uma caixa de diálogo personalizada (Substitui alert, confirm e prompt).
    */
-  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "", useFilter = true }) => {
+  const showDialog = ({ title = "Aviso", message = "", type = "alert", defaultValue = "" }) => {
     return new Promise((resolve) => {
       const modal = document.getElementById('custom-dialog-modal');
       const titleEl = document.getElementById('dialog-title');
       const messageEl = document.getElementById('dialog-message');
       const inputContainer = document.getElementById('dialog-input-container');
-      const rawInput = document.getElementById('dialog-input');
-
-      // Limpa listeners de chamadas anteriores substituindo o elemento por um clone
-      const inputEl = rawInput.cloneNode(true);
-      rawInput.parentNode.replaceChild(inputEl, rawInput);
-
+      const inputEl = document.getElementById('dialog-input');
       const cancelBtn = document.getElementById('dialog-cancel-btn');
       const confirmBtn = document.getElementById('dialog-confirm-btn');
-
-      if (useFilter) {
-        // Permitindo somente letras maiúsculas e números
-        inputEl.addEventListener('input', (e) => {
-          e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        });
-      }
 
       titleEl.textContent = title;
       messageEl.textContent = message;
@@ -572,66 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  /**
-   * Gera o HTML para o resumo do evento e o exibe no modal.
-   */
-  const openEventSummaryModal = () => {
-    const summaryContent = document.getElementById('event-summary-content');
-    if (!summaryContent || !eventData) return;
-
-    const modalTitle = document.querySelector('#event-summary-modal h2');
-    if (modalTitle) modalTitle.textContent = eventData.eventName || "Evento sem Nome";
-
-    let html = '';
-
-    if (eventData.sessions && eventData.sessions.length > 0) {
-      eventData.sessions.forEach((session, sIdx) => {
-        if (!session) return;
-        html += `<div style="margin-bottom: 20px;">`;
-        html += `<h4 style="margin: 0; padding: 10px 0; color: #28a745; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 2px solid #eee;">Sessão: ${session.sessionName || `Sessão ${sIdx + 1}`}</h4>`;
-        html += `<ul style="list-style: none; padding: 0;">`;
-
-        // Ordena as chaves das rodadas numericamente
-        const sortedRoundKeys = Object.keys(session.rounds || {}).sort((a, b) => parseInt(a) - parseInt(b));
-
-        sortedRoundKeys.forEach(roundNum => {
-          const round = session.rounds[roundNum];
-          if (!round) return;
-
-          const isCurrent = (sIdx === eventData.activeSessionIndex && parseInt(roundNum) === session.currentRound);
-          const isCompleted = round.isCompleted;
-          const drawnCount = round.drawnNumbers ? round.drawnNumbers.length : 0;
-
-          html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #f0f0f0; text-align: left;">`;
-          html += `<strong>Rodada ${roundNum}:</strong> `;
-          if (isCurrent) {
-            html += `<span class="active-badge" style="margin-right: 5px;">ATUAL</span>`;
-          }
-          if (isCompleted) {
-            html += `<span class="completed-badge" style="margin-right: 5px;">CONCLUÍDA</span>`;
-          }
-          html += `<br><span style="font-size: 0.9em; color: #666;">Prêmio: ${round.prize || "Não definido"}</span>`;
-          html += `<br><span style="font-size: 0.9em; color: #666;">Bolas Sorteadas: ${drawnCount}</span>`;
-          html += `</li>`;
-        });
-        html += `</ul>`;
-        html += `</div>`;
-      });
-    } else {
-      html += `<p>Nenhuma sessão configurada para este evento.</p>`;
-    }
-
-    summaryContent.innerHTML = html;
-    eventSummaryModal.classList.remove('hidden');
-  };
-
-  /**
-   * Fecha o modal de resumo do evento.
-   */
-  const closeEventSummaryModal = () => {
-    eventSummaryModal.classList.add('hidden');
-  };
-
   // --- Estado da Aplicação ---
   let eventData = {
     eventid: generateRandomId(),
@@ -997,12 +921,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = firebase.auth().currentUser;
     if (!user || !navigator.onLine) return showToast("Ação requer login e internet.");
 
-    const clearNumbers = await showDialog({
-      title: "Opções de Cópia",
-      message: "Deseja limpar os números sorteados e reiniciar o progresso das rodadas no novo evento?",
-      type: "confirm"
-    });
-
     if (btnElement) btnElement.disabled = true;
 
     showToast("Duplicando evento...");
@@ -1021,20 +939,9 @@ document.addEventListener('DOMContentLoaded', () => {
       data.ouid = user.uid; // Garante que o usuário atual seja o dono
       data.last = firebase.database.ServerValue.TIMESTAMP;
 
-      if (clearNumbers && data.ss) {
-        const sessions = Array.isArray(data.ss) ? data.ss : Object.values(data.ss);
-        sessions.forEach(s => {
-          if (s && s.rds) {
-            Object.values(s.rds).forEach(r => {
-              if (r) r.done = false;
-            });
-          }
-        });
-      }
-
       const updates = {};
       updates[`evt/${newId}`] = data;
-      if (!clearNumbers && nums) updates[`nums/${newId}`] = nums;
+      if (nums) updates[`nums/${newId}`] = nums;
       updates[`uevts/${user.uid}/${newId}`] = true;
 
       await firebase.database().ref().update(updates);
@@ -1621,9 +1528,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && !eventsMgrModal.classList.contains('hidden')) {
       closeEventsMgr();
     }
-    if (e.key === 'Escape' && !eventSummaryModal.classList.contains('hidden')) {
-      closeEventSummaryModal();
-    }
     if (e.key === 'Escape' && !idOptionsModal.classList.contains('hidden')) {
       idOptCancel.click();
     }
@@ -1634,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
   });
 
-  // Altera a rodada ativa quando o usuário seleciona outra no menu suspenso
+  // Listener para troca de rodada via seletor
   roundSelector.addEventListener('change', (e) => {
     appState.currentRound = parseInt(e.target.value);
     updateUI(true, 'session');
@@ -1853,12 +1757,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Abre o modal de QR Code a partir do botão no cabeçalho
   if (headerQrButton) headerQrButton.addEventListener('click', openQrModal);
-
-  // Abre o modal de resumo do evento no painel do organizador
-  if (eventSummaryButton) {
-    eventSummaryButton.addEventListener('click', openEventSummaryModal);
-  }
-  
   // Abre o modal de QR Code a partir do botão no modal de configurações
   showQrButton.addEventListener('click', openQrModal);
 
@@ -1892,9 +1790,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast("Iniciando sincronização...");
     syncRegistryWithFirebase(user.uid);
   });
-  // Listeners para fechar o modal de resumo do evento
-  if (closeEventSummaryX) closeEventSummaryX.addEventListener('click', closeEventSummaryModal);
-  if (closeEventSummaryButton) closeEventSummaryButton.addEventListener('click', closeEventSummaryModal);
 
   if (mgrNewEventButton) {
     mgrNewEventButton.addEventListener('click', async () => {
@@ -1925,7 +1820,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cria uma nova sessão no projeto atual
   newSessionButton.addEventListener('click', async () => {
-    const name = await showDialog({ title: "Nova Sessão", message: "Digite o nome da sessão:", type: "prompt", useFilter: false });
+    const name = await showDialog({ title: "Nova Sessão", message: "Digite o nome da sessão:", type: "prompt" });
     if (name && name.trim() !== "") {
       if (eventData.sessions.some(s => s.sessionName === name)) {
         showToast("Já existe uma sessão com este nome.");
@@ -1946,8 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
         title: "Renomear",
         message: "Novo nome para a sessão:",
         type: "prompt",
-        defaultValue: oldName,
-        useFilter: false
+        defaultValue: oldName
       });
 
       if (newName && newName.trim() !== "" && newName.trim() !== oldName) {

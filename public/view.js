@@ -28,15 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrLinkDisplay = document.getElementById('qr-link-display');
   const patternNameDisplay = document.getElementById('pattern-name-display');
   const roundCompletedStatus = document.getElementById('round-completed-status');
-  const prevRoundButton = document.getElementById('prev-round');
-  const nextRoundButton = document.getElementById('next-round');
-  const prevSessionButton = document.getElementById('prev-session');
-  const nextSessionButton = document.getElementById('next-session');
   const viewedSessionNameDisplay = document.getElementById('viewed-session-name');
-  const viewingActiveBadge = document.getElementById('viewing-active-badge');
   const toggleSortButton = document.getElementById('toggle-sort-button');
-  const autoFollowCheckbox = document.getElementById('auto-follow-checkbox');
-  const autoFollowContainer = document.getElementById('auto-follow-container');
   const eventSummaryButton = document.getElementById('event-summary-button');
   const eventSummaryModal = document.getElementById('event-summary-modal');
   const closeEventSummaryX = document.getElementById('close-event-summary-x');
@@ -85,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
           e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         });
       }
-      
+
       titleEl.textContent = title;
       messageEl.textContent = message;
       inputEl.value = defaultValue;
@@ -179,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let appState = null;
   let viewedSessionIndex = null; // Índice da sessão sendo visualizada
   let viewedRound = null; // Rodada que o usuário está olhando no momento
-  let followActive = true; // Se o usuário está seguindo a rodada ativa do organizador
+  const followActive = true; // Sempre segue a rodada ativa do organizador
   let localIsSortedAscending = false; // Controle local de ordenação
   let disconnectTimer = null; // Timer para desconexão programada
   let isOffline = false; // Rastreia o estado da conexão
@@ -202,9 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateUI = () => {
     if (!appState || !fullData) return;
 
-    // Sincroniza o estado de acompanhamento com o checkbox
-    if (autoFollowCheckbox) autoFollowCheckbox.checked = followActive;
-
     // Se estiver em modo automático, força a visualização do que está ativo no servidor
     if (followActive) {
       viewedSessionIndex = fullData.activeSessionIndex;
@@ -223,10 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const roundToDisplay = viewedRound || appState.currentRound;
     document.getElementById('current-round-label').textContent = "Rodada " + roundToDisplay;
-
-    // O selo "ATUAL" deve aparecer apenas se for a SESSÃO ativa E a RODADA ativa do organizador
-    const isAtLiveState = (viewedSessionIndex === fullData.activeSessionIndex && roundToDisplay === appState.currentRound);
-    if (viewingActiveBadge) viewingActiveBadge.classList.toggle('hidden', !isAtLiveState);
 
     const currentRoundData = appState.rounds[roundToDisplay];
     if (!currentRoundData) return;
@@ -266,21 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (num === lastDrawn) item.classList.add('last-drawn');
       list.appendChild(item);
     });
-
-    // Atualiza visibilidade e estado dos botões de navegação
-    const isLocked = followActive;
-
-    prevRoundButton.classList.toggle('hidden', isLocked);
-    nextRoundButton.classList.toggle('hidden', isLocked);
-    prevRoundButton.disabled = roundToDisplay <= 1;
-    nextRoundButton.disabled = roundToDisplay >= (appState.numRounds || 1);
-
-    // Atualiza estado dos botões de navegação de sessões
-    const sessionsCount = fullData.sessions ? fullData.sessions.length : 0;
-    prevSessionButton.classList.toggle('hidden', isLocked);
-    nextSessionButton.classList.toggle('hidden', isLocked);
-    prevSessionButton.disabled = viewedSessionIndex <= 0;
-    nextSessionButton.disabled = viewedSessionIndex >= sessionsCount - 1;
   };
 
   /**
@@ -311,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const isCurrent = (sIdx === fullData.activeSessionIndex && parseInt(roundNum) === session.currentRound);
           const isCompleted = round.isCompleted;
-          const drawnCount = round.drawnNumbers ? round.drawnNumbers.length : 0;
+          const drawnNumbers = round.drawnNumbers || [];
 
           html += `<li style="margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #f0f0f0; text-align: left;">`;
           html += `<strong>Rodada ${roundNum}:</strong> `;
@@ -322,7 +293,17 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `<span class="completed-badge" style="margin-right: 5px;">CONCLUÍDA</span>`;
           }
           html += `<br><span style="font-size: 0.9em; color: #666;">Prêmio: ${round.prize || "Não definido"}</span>`;
-          html += `<br><span style="font-size: 0.9em; color: #666;">Bolas Sorteadas: ${drawnCount}</span>`;
+          if (drawnNumbers.length > 0) {
+            const reversedNumbers = [...drawnNumbers].reverse(); // Cria uma cópia e reverte
+            html += `<details style="margin-top: 5px; font-size: 0.85em;">
+                      <summary style="cursor: pointer; color: #007bff; outline: none;">Ver números (${drawnNumbers.length})</summary>
+                      <div style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${reversedNumbers.map(n => `<span style="background: #f0f0f0; padding: 2px 5px; border-radius: 4px; border: 1px solid #ddd; font-weight: bold;">${n.toString().padStart(2, '0')}</span>`).join('')}
+                      </div>
+                    </details>`;
+          } else {
+            html += `<br><span style="font-size: 0.85em; color: #999;">Nenhum número sorteado</span>`;
+          }
           html += `</li>`;
         });
         html += `</ul>`;
@@ -458,7 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
           // Ativa interface
           idEntrySection.classList.add('hidden');
           bingoContent.classList.remove('hidden');
-          if (autoFollowContainer) autoFollowContainer.classList.remove('hidden');
           if (showQrButton) showQrButton.classList.remove('hidden');
           if (leaveEventButton) leaveEventButton.classList.remove('hidden');
 
@@ -479,7 +459,6 @@ document.addEventListener('DOMContentLoaded', () => {
     eventTitle.textContent = "Sessão não encontrada";
     idEntrySection.classList.remove('hidden');
     bingoContent.classList.add('hidden');
-    if (autoFollowContainer) autoFollowContainer.classList.add('hidden');
     if (showQrButton) showQrButton.classList.add('hidden');
     if (leaveEventButton) leaveEventButton.classList.add('hidden');
   };
@@ -678,47 +657,6 @@ document.addEventListener('DOMContentLoaded', () => {
     qrModal.classList.remove('hidden');
     qrLinkDisplay.textContent = url.toString();
     qrLinkDisplay.href = url.toString();
-  });
-
-  // Alterna o modo de acompanhamento automático
-  autoFollowCheckbox.addEventListener('change', (e) => {
-    followActive = e.target.checked;
-    updateUI();
-  });
-
-  // Navegação de Sessões
-  const navigateSession = (direction) => {
-    const currentIndex = viewedSessionIndex;
-    const nextIndex = currentIndex + direction;
-
-    if (fullData.sessions && nextIndex >= 0 && nextIndex < fullData.sessions.length) {
-      viewedSessionIndex = nextIndex;
-      appState = fullData.sessions[viewedSessionIndex];
-      // Ao mudar de sessão, foca na primeira rodada dela ou na atual se for a ativa
-      viewedRound = (viewedSessionIndex === fullData.activeSessionIndex) ? appState.currentRound : 1;
-      followActive = false; // Navegação manual desativa o acompanhamento automático
-      animationPhase = true;
-      updateUI();
-    }
-  };
-
-  prevSessionButton.addEventListener('click', () => navigateSession(-1));
-  nextSessionButton.addEventListener('click', () => navigateSession(1));
-
-  // Navegação: Rodada Anterior
-  prevRoundButton.addEventListener('click', () => {
-    viewedRound = Math.max(1, viewedRound - 1);
-    followActive = false; // Navegação manual desativa o acompanhamento automático
-    animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
-    updateUI();
-  });
-
-  // Navegação: Próxima Rodada
-  nextRoundButton.addEventListener('click', () => {
-    viewedRound = Math.min(appState.numRounds, viewedRound + 1);
-    followActive = false; // Navegação manual desativa o acompanhamento automático
-    animationPhase = true; // Reseta a fase da animação para garantir visibilidade na troca
-    updateUI();
   });
 
   // Alterna entre ordem de sorteio e ordem crescente localmente na visualização
