@@ -691,6 +691,7 @@ button:hover {
   padding: 10px 16px;
   border-radius: 0;
   font-size: 0.95em;
+  display: flex;
   width: 100%;
   border: none;
   cursor: pointer;
