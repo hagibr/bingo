@@ -523,6 +523,15 @@ button:hover {
   grid-column: span 2;
 }
 
+.config-row-3 {
+  display: flex;
+  gap: 10px;
+}
+
+.config-row-3 > div {
+  flex: 1;
+}
+
 .modal-content h2 {
   margin-top: 0;
   color: #28a745;

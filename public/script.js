@@ -1123,7 +1123,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (configShareLink) {
       // Usamos href.split para evitar erros com window.location.origin sendo 'null' em arquivos locais
       const baseUrl = window.location.href.split('?')[0].split('#')[0].replace('control.html', '').replace('index.html', '');
-      configShareLink.value = `${baseUrl}view.html?id=${eventData.eventid}`;
+      const fullUrl = `${baseUrl}view.html?id=${eventData.eventid}`;
+      configShareLink.href = fullUrl;
+      configShareLink.textContent = fullUrl;
     }
 
     if (syncLevel !== 'none') saveState(immediateSync, syncLevel);
@@ -1743,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
   copyLinkButton.addEventListener('click', () => {
     copyLinkButton.disabled = true; // Bloqueia o botão
     const shareLink = document.getElementById('config-share-link');
-    navigator.clipboard.writeText(shareLink.value)
+    navigator.clipboard.writeText(shareLink.href)
       .then(() => showToast("Link copiado com sucesso!"))
       .catch(() => showToast("Erro ao copiar link."))
       .finally(() => setTimeout(() => { copyLinkButton.disabled = false; }, 1000)); // Reabilita após 1 segundo
@@ -1759,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     qrcodeLarge.innerHTML = ""; // Limpa QR anterior
     new QRCode(qrcodeLarge, {
-      text: shareLink.value,
+      text: shareLink.href,
       width: 256,
       height: 256,
       colorDark: "#000000",
@@ -1767,8 +1769,8 @@ document.addEventListener('DOMContentLoaded', () => {
       correctLevel: QRCode.CorrectLevel.H
     });
     qrModal.classList.remove('hidden');
-    qrLinkDisplay.textContent = shareLink.value;
-    qrLinkDisplay.href = shareLink.value;
+    qrLinkDisplay.textContent = shareLink.href;
+    qrLinkDisplay.href = shareLink.href;
   };
 
   // Abre o modal de QR Code a partir do botão no cabeçalho
