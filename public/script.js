@@ -2010,6 +2010,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI(true, 'session');
   });
 
+  // Dispara o seletor de arquivo ao clicar na prévia do ícone
+  configIconPreview.addEventListener('click', () => {
+    configIconUpload.click();
+  });
+
   // Processa o upload de uma imagem personalizada para o ícone do evento
   configIconUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];

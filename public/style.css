@@ -566,7 +566,7 @@ button:hover {
   position: relative;
   width: 80px;
   height: 80px;
-  margin-top: 10px;
+  margin: 10px auto 0;
 }
 
 .event-icon-preview {
@@ -576,6 +576,12 @@ button:hover {
   object-fit: cover;
   border: 2px solid #ccc;
   display: block;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.event-icon-preview:hover {
+  filter: brightness(0.9);
 }
 
 .remove-icon-badge {
