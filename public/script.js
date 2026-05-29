@@ -1723,22 +1723,23 @@ document.addEventListener('DOMContentLoaded', () => {
     await processIdChange(newId, eventData.eventid);
   });
 
-  // Gera um novo ID de sessão aleatório
+  // Abre o diálogo para renomear o ID do evento manualmente
   regenerateIdButton.addEventListener('click', async () => {
-    let newId = generateRandomId();
-    const user = firebase.auth().currentUser; // Verifica se o usuário está logado
+    const newIdRaw = await showDialog({
+      title: "Renomear Código",
+      message: "Digite o novo código para este evento (apenas letras e números):",
+      type: "prompt",
+      defaultValue: eventData.eventid
+    });
 
-    if (user && navigator.onLine) { // Só checa o Firebase se o usuário estiver online
-      let isTaken = await checkIdExists(newId);
-      // Tenta gerar um novo ID até encontrar um que não esteja em uso (limite de 5 tentativas)
-      let attempts = 0;
-      while (isTaken && attempts < 5) {
-        newId = generateRandomId();
-        isTaken = await checkIdExists(newId);
-        attempts++;
-      }
+    if (!newIdRaw) return;
+    const newId = newIdRaw.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+    
+    if (newId && newId !== eventData.eventid) {
+      await processIdChange(newId, eventData.eventid);
+    } else if (newId === eventData.eventid) {
+      showToast("O novo código é igual ao atual.");
     }
-    await processIdChange(newId, eventData.eventid); // Usa a nova lógica de processamento
   });
 
   // Copia o link de visualização para a área de transferência
