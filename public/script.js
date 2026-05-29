@@ -919,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Atualiza a interface e exibe o painel de controle
         setupRemoteSyncListener(id);
-        updateUI(false);
+        updateUI(false, 'none');
         showToast(`Evento "${eventData.eventName}" carregado com sucesso!`);
       } else {
         showToast("Erro: Evento não encontrado no servidor.");
@@ -1128,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
       configShareLink.textContent = fullUrl;
     }
 
-    if (syncLevel !== 'none') saveState(immediateSync, syncLevel);
+    saveState(immediateSync, syncLevel);
   };
 
   /**
@@ -2180,7 +2180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     eventData.lastModified = Date.now();
     localStorage.setItem('bingoEventData', JSON.stringify(eventData));
     registerEventLocally();
-    syncToFirebase(immediate, syncLevel);
+    if (syncLevel !== 'none') syncToFirebase(immediate, syncLevel);
   };
 
   // --- Inicialização ---
