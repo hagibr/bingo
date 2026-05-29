@@ -273,19 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const timestamp = firebase.database.ServerValue.TIMESTAMP;
     const isFull = (syncLevel === 'full' || syncLevel === true);
     const isSession = (syncLevel === 'session');
+    const isOrderOnly = (syncLevel === 'order_only');
 
-    // CRÍTICO: Sempre atualizamos o timestamp na raiz do evento 'evt/ID'.
-    // Isso garante que o listener em outras máquinas seja disparado mesmo quando
-    // apenas os números (que ficam em outro nó 'nums/ID') forem alterados.
-    updates[`evt/${eventId}/last`] = timestamp;
-    updates[`evt/${eventId}/sid`] = instanceId;
+    // Atualiza o timestamp e o ID da instância apenas se não for uma mudança silenciosa de ordem
+    if (!isOrderOnly) {
+      updates[`evt/${eventId}/last`] = timestamp;
+      updates[`evt/${eventId}/sid`] = instanceId;
+    }
 
-    if (isFull) {
+    if (isFull || isOrderOnly) {
       // Sincronização estrutural: Metadados da Raiz + Todas as Sessões
-      updates[`evt/${eventId}/name`] = dataToSync.eventName || "Novo Evento de Bingo";
-      updates[`evt/${eventId}/icon`] = dataToSync.eventIcon || "default-icon.png";
-      updates[`evt/${eventId}/sIdx`] = dataToSync.activeSessionIndex;
-      updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
+      if (isFull) {
+        updates[`evt/${eventId}/name`] = dataToSync.eventName || "Novo Evento de Bingo";
+        updates[`evt/${eventId}/icon`] = dataToSync.eventIcon || "default-icon.png";
+        updates[`evt/${eventId}/sIdx`] = dataToSync.activeSessionIndex;
+        updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
+      }
+      
+      updates[`evt/${eventId}/ord`] = dataToSync.displayOrder || [];
 
       const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
 
@@ -301,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
           crnd: s.currentRound,
           mode: s.drawMode,
           asc: !!s.isSortedAscending,
-          last: timestamp,
+          last: s.lastModified || timestamp,
           rds: {}
         };
 
@@ -392,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (remoteData.ss) {
         // O Firebase pode retornar um objeto em vez de array se os índices forem manipulados
         const sessionsRaw = Array.isArray(remoteData.ss) ? remoteData.ss : Object.values(remoteData.ss);
+        const remoteOrder = remoteData.ord || sessionsRaw.map((_, i) => i);
 
         eventData.sessions = sessionsRaw.map((s, sIdx) => ({
           sessionName: s.snm,
@@ -400,12 +406,15 @@ document.addEventListener('DOMContentLoaded', () => {
           currentRound: s.crnd,
           drawMode: s.mode,
           isSortedAscending: s.asc,
+          lastModified: s.last,
           rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
             const r = s.rds[rId];
             acc[rId] = { prize: r.prz, pattern: r.ptrn, patternIndex: r.pidx, isCompleted: r.done, drawnNumbers: remoteNums?.[sIdx]?.[rId]?.dns || [] };
             return acc;
           }, {})
         }));
+
+        eventData.displayOrder = remoteOrder;
 
         // Garante que a referência do appState aponte para o objeto dentro do novo array
         if (eventData.activeSessionIndex !== null && eventData.sessions[eventData.activeSessionIndex]) {
@@ -579,7 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
     eventIcon: "default-icon.png",
     ownerUid: null, // Armazena o UID do criador
     activeSessionIndex: 0,
-    sessions: []
+    sessions: [],
+    displayOrder: []
   };
   let appState = {};
 
@@ -594,6 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
       numRounds: 1,
       currentRound: 1,
       drawMode: "manual",
+      lastModified: Date.now(),
       rounds: {},
       isSortedAscending: false
     };
@@ -612,10 +623,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncToFirebase = (immediate = false, syncLevel = 'numbers') => {
     const performSyncWithChecks = (level) => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
-      // Isso garante que a restauração de dados e edições de ID não causem conflitos.
-      const isConfigOpen = configModal && !configModal.classList.contains('hidden');
-      const isMgrOpen = eventsMgrModal && !eventsMgrModal.classList.contains('hidden');
-      if (isConfigOpen || isMgrOpen || !eventData.sessions.length) return;
+      const isConfigOrMgrOpen = (configModal && !configModal.classList.contains('hidden')) || (eventsMgrModal && !eventsMgrModal.classList.contains('hidden'));
+      // Permite sincronização 'order_only' mesmo com modais abertos, mas bloqueia outros tipos.
+      if (isConfigOrMgrOpen && level !== 'order_only') return;
+      if (!eventData.sessions.length) return;
 
       _performFirebaseSync(eventData, level);
     };
@@ -664,6 +675,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Compatibilidade: garante que as propriedades renomeadas existam
       if (eventData.sessionId) { eventData.eventid = eventData.sessionId; delete eventData.sessionId; }
       eventData.hasActiveEvent = true; // Marca que um evento foi carregado
+
+      // Inicializa a ordem de exibição se não existir ou estiver inconsistente
+      if (!eventData.displayOrder || eventData.displayOrder.length !== eventData.sessions.length) {
+        eventData.displayOrder = eventData.sessions.map((_, i) => i);
+      }
 
       appState = eventData.sessions[eventData.activeSessionIndex];
       if (!eventData.eventName && appState) eventData.eventName = appState.sessionName; // Fallback for overall event name
@@ -764,6 +780,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventData.eventIcon = remoteData.icon || eventData.eventIcon;
                 eventData.activeSessionIndex = (remoteData.sIdx !== undefined) ? remoteData.sIdx : eventData.activeSessionIndex;
                 eventData.ownerUid = remoteData.ouid || eventData.ownerUid;
+
+                if (remoteData.ord) eventData.displayOrder = remoteData.ord;
+                else if (remoteData.ss) {
+                  eventData.displayOrder = (Array.isArray(remoteData.ss) ? remoteData.ss : Object.keys(remoteData.ss)).map((_, i) => i);
+                }
 
                 if (remoteData.ss) {
                   const sessionsRaw = Array.isArray(remoteData.ss) ? remoteData.ss : Object.values(remoteData.ss);
@@ -894,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRound: s.crnd,
             drawMode: s.mode,
             isSortedAscending: s.asc,
+            lastModified: s.last,
             rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
               const r = s.rds[rId];
               acc[rId] = {
@@ -909,6 +931,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }).filter(s => s !== null);
 
         eventData.hasActiveEvent = true;
+        
+        // Carrega ordem remota ou gera padrão
+        if (data.ord) eventData.displayOrder = data.ord;
+        else eventData.displayOrder = eventData.sessions.map((_, i) => i);
+
 
         // Define o índice da sessão de bingo ativa
         if (eventData.activeSessionIndex === undefined || !eventData.sessions[eventData.activeSessionIndex]) {
@@ -1037,6 +1064,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Calcula a posição da sessão ativa na ordem de exibição para controle de navegação
+    const activeSessionActualIndex = eventData.activeSessionIndex;
+    const activeSessionDisplayPosition = eventData.displayOrder.indexOf(activeSessionActualIndex);
+
     // Garante que o conteúdo principal esteja visível após o carregamento
     adminMain.classList.remove('hidden');
 
@@ -1060,9 +1091,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentSessionNameLabel) {
       currentSessionNameLabel.textContent = appState.sessionName || "Sessão";
     }
-    const sessionsCount = eventData.sessions ? eventData.sessions.length : 0;
-    if (prevSessionMainButton) prevSessionMainButton.disabled = eventData.activeSessionIndex <= 0;
-    if (nextSessionMainButton) nextSessionMainButton.disabled = eventData.activeSessionIndex >= sessionsCount - 1;
+    if (prevSessionMainButton) prevSessionMainButton.disabled = activeSessionDisplayPosition <= 0;
+    if (nextSessionMainButton) nextSessionMainButton.disabled = activeSessionDisplayPosition >= eventData.displayOrder.length - 1;
 
     // Checkbox de Conclusão
     const currentRoundData = appState.rounds[appState.currentRound];
@@ -1111,9 +1141,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSessionSelector(); // Agora atualiza o seletor principal do header
 
     // Desabilita botões de reordenação se necessário
-    const activeIdx = eventData.activeSessionIndex;
-    if (moveSessionUpButton) moveSessionUpButton.disabled = activeIdx <= 0;
-    if (moveSessionDownButton) moveSessionDownButton.disabled = activeIdx >= eventData.sessions.length - 1;
+    if (moveSessionUpButton) moveSessionUpButton.disabled = activeSessionDisplayPosition <= 0;
+    if (moveSessionDownButton) moveSessionDownButton.disabled = activeSessionDisplayPosition >= eventData.displayOrder.length - 1;
 
     // Botão de Ordenação
     toggleSortButton.textContent = appState.isSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
@@ -1138,7 +1167,8 @@ document.addEventListener('DOMContentLoaded', () => {
     [mainSessionSelector, configSessionSelector].forEach(sel => {
       if (!sel) return;
       sel.innerHTML = '';
-      eventData.sessions.forEach((session, index) => {
+      eventData.displayOrder.forEach((index) => {
+        const session = eventData.sessions[index];
         if (!session) return;
         const name = session.sessionName || `Sessão ${index + 1}`;
         const option = document.createElement('option');
@@ -1492,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const closeModal = () => {
     configModal.classList.add('hidden');
-    updateUI(true, 'full'); // Força sincronização imediata ao fechar o modal
+    updateUI(false, 'none'); // Apenas atualiza a interface local sem disparar sync
   };
 
   /**
@@ -1600,11 +1630,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} direction - -1 para anterior, 1 para próxima.
    */
   const navigateSessionMain = (direction) => {
-    const currentIndex = eventData.activeSessionIndex;
-    const nextIndex = currentIndex + direction;
+    const currentPos = eventData.displayOrder.indexOf(eventData.activeSessionIndex);
+    const nextPos = currentPos + direction;
 
-    if (eventData.sessions && nextIndex >= 0 && nextIndex < eventData.sessions.length) {
-      eventData.activeSessionIndex = nextIndex;
+    if (nextPos >= 0 && nextPos < eventData.displayOrder.length) {
+      eventData.activeSessionIndex = eventData.displayOrder[nextPos];
       appState = eventData.sessions[eventData.activeSessionIndex];
       updateUI(true, 'full');
 
@@ -1685,19 +1715,16 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const moveSession = (direction) => {
     const currentIndex = eventData.activeSessionIndex;
-    if (currentIndex === null) return;
-    const newIndex = currentIndex + direction;
-    if (newIndex < 0 || newIndex >= eventData.sessions.length) return;
+    const currentPos = eventData.displayOrder.indexOf(currentIndex);
+    if (currentPos === -1) return;
+    
+    const nextPos = currentPos + direction;
+    if (nextPos < 0 || nextPos >= eventData.displayOrder.length) return;
 
-    // Troca de posição no array
-    const temp = eventData.sessions[currentIndex];
-    eventData.sessions[currentIndex] = eventData.sessions[newIndex];
-    eventData.sessions[newIndex] = temp;
-
-    // Atualiza o índice ativo para acompanhar o item movido
-    eventData.activeSessionIndex = newIndex;
-    // Reatribui appState para a nova posição
-    appState = eventData.sessions[eventData.activeSessionIndex];
+    // Troca de posição apenas na lista de ordem, não nos dados
+    const temp = eventData.displayOrder[currentPos];
+    eventData.displayOrder[currentPos] = eventData.displayOrder[nextPos];
+    eventData.displayOrder[nextPos] = temp;
 
     updateUI(true, 'full');
   };
@@ -1824,6 +1851,7 @@ document.addEventListener('DOMContentLoaded', () => {
       eventData.eventName = defaultName;
       eventData.eventIcon = "default-icon.png";
       eventData.sessions = [createDefaultSessionState(defaultName)];
+      eventData.displayOrder = [0];
       eventData.activeSessionIndex = 0;
       eventData.hasActiveEvent = true; // Marca que um evento está agora ativo
       appState = eventData.sessions[0];
@@ -1846,6 +1874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       eventData.sessions.push(createDefaultSessionState(name));
+      eventData.displayOrder.push(eventData.sessions.length - 1);
       eventData.activeSessionIndex = eventData.sessions.length - 1;
       appState = eventData.sessions[eventData.activeSessionIndex];
       updateUI(true, 'full');
@@ -1872,6 +1901,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sessionIdx = eventData.activeSessionIndex;
         eventData.sessions[sessionIdx].sessionName = cleanName;
+      eventData.sessions[sessionIdx].lastModified = Date.now();
         appState = eventData.sessions[sessionIdx];
         appState.sessionName = cleanName; // Update sessionName
         updateUI(true, 'full');
@@ -1892,6 +1922,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ok) {
         const defaultName = "Sessão Padrão";
         eventData.sessions = [createDefaultSessionState(defaultName)];
+        eventData.displayOrder = [0];
         eventData.activeSessionIndex = 0;
         appState = eventData.sessions[0];
         updateUI(true, 'full');
@@ -1907,6 +1938,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ok) {
       const idxToRemove = eventData.activeSessionIndex;
       eventData.sessions.splice(idxToRemove, 1);
+      
+      // Ajusta a ordem de exibição removendo o índice e decrementando os superiores
+      eventData.displayOrder = eventData.displayOrder
+        .filter(i => i !== idxToRemove)
+        .map(i => i > idxToRemove ? i - 1 : i);
+
       eventData.activeSessionIndex = 0;
       appState = eventData.sessions[0];
       updateUI(true, 'full');
@@ -1917,7 +1954,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (configEventTitle) {
     configEventTitle.addEventListener('input', (e) => {
       eventData.eventName = e.target.value;
-      updateUI(false);
+      updateUI(false, 'none'); // Atualiza o título no header localmente, sem sync
+    });
+    configEventTitle.addEventListener('change', (e) => {
+      updateUI(true, 'full'); // Sincroniza com o servidor quando o usuário termina a edição
     });
   }
 
@@ -1975,6 +2015,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     appState.numRounds = newNumRounds;
+    appState.lastModified = Date.now();
     updateUI(true, 'session');
   });
 
@@ -2002,12 +2043,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     appState.maxNumber = newMax;
+    appState.lastModified = Date.now();
     saveState(true, 'session');
   });
 
   // Altera entre modo de sorteio manual (input) ou automático (botão)
   configDrawMode.addEventListener('change', (e) => {
     appState.drawMode = e.target.value;
+    appState.lastModified = Date.now();
     updateUI(true, 'session');
   });
 
@@ -2097,6 +2140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeSessionIndex: 0,
                 hasActiveEvent: true,
                 lastModified: Date.now(),
+                displayOrder: imported.sessions.map((_, i) => i),
                 sessions: imported.sessions.map(s => {
                   const newSession = {
                     sessionName: s.sessionName,
@@ -2105,6 +2149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentRound: s.currentRound,
                     drawMode: s.drawMode,
                     isSortedAscending: s.isSortedAscending,
+                    lastModified: Date.now(),
                     rounds: {}
                   };
                   Object.keys(s.rounds || {}).forEach(rId => {
@@ -2139,6 +2184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             imported.sessionName = imported.sessionName || imported.eventName;
             eventData.sessions.push(imported);
+            eventData.displayOrder.push(eventData.sessions.length - 1);
             eventData.activeSessionIndex = eventData.sessions.length - 1;
             appState = eventData.sessions[eventData.activeSessionIndex];
             updateUI(true, 'full');
