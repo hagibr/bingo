@@ -19,6 +19,7 @@
 
 <body class="viewer-mode">
   <header class="app-header">
+    <!-- Informações do Evento -->
     <div style="display: flex; align-items: center; gap: 10px;">
       <img id="event-icon" src="default-icon.png" alt="Ícone" class="event-icon">
       <h1 id="event-title" style="margin: 0">Carregando Bingo...</h1>
@@ -62,6 +63,7 @@
 
   <main id="main-content" class="bingo-main">
     <!-- Seção de Entrada Manual -->
+    <!-- Exibida quando nenhum ID é passado pela URL ou storage -->
     <section id="id-entry-section" class="id-entry-section hidden">
       <h2>Entrar em uma Sessão</h2>
       <p>Digite o código fornecido pelo organizador (até 16 caracteres).</p>
@@ -74,6 +76,7 @@
 
     <!-- Conteúdo do Bingo (escondido até carregar) -->
     <div id="bingo-content" class="hidden">
+      <!-- Status da Rodada e Prêmio -->
       <section class="round-section" style="text-align: center;">
         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
           <h3 id="viewed-session-name" style="margin: 0; color: #28a745;">Sessão</h3>
@@ -90,6 +93,7 @@
             </div>
           </div>
         </div>
+        <!-- Visualização do Padrão a ser batido -->
         <div class="pattern-animator">
           <div id="pattern-grid" class="pattern-grid"></div>
           <span id="pattern-name-display"
@@ -97,6 +101,7 @@
         </div>
       </section>
 
+      <!-- Números Sorteados em Tempo Real -->
       <section class="drawn-numbers-section">
         <div class="drawn-numbers-header">
           <h2>Números Sorteados <span id="numbers-count"></span></h2>
