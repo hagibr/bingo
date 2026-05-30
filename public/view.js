@@ -153,11 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
     lastToastTimeout = setTimeout(removeToast, 2500);
   };
 
+  // Verifica se o objeto de configuração do Firebase está disponível
   if (typeof firebaseConfig === 'undefined') {
     eventTitle.textContent = "Erro: Configuração ausente";
     return;
   }
 
+  // Inicializa o Firebase se ainda não houver uma instância ativa
   if (firebase.apps.length === 0) {
     firebase.initializeApp(firebaseConfig);
   }
@@ -167,16 +169,17 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeRoundRef = null;
   let activeNumbersRef = null;
 
-  let fullData = null; // Dados brutos do Firebase (sessionsData)
+  let fullData = null; // Cache local dos dados completos do evento (metadados + estrutura)
   let localLastModified = 0; // Controle local da última atualização
-  let appState = null;
-  let viewedSessionIndex = null; // Índice da sessão sendo visualizada
-  let viewedRound = null; // Rodada que o usuário está olhando no momento
-  const followActive = true; // Sempre segue a rodada ativa do organizador
+  let appState = null; // Referência à sessão ativa que está sendo renderizada
+  let viewedSessionIndex = null; // Índice (no array original) da sessão visualizada
+  let viewedRound = null; // Número da rodada específica selecionada
+  const followActive = true; // Flag para forçar o espectador a seguir a navegação do organizador
   let localIsSortedAscending = false; // Controle local de ordenação
   let disconnectTimer = null; // Timer para desconexão programada
   let isOffline = false; // Rastreia o estado da conexão
 
+  // Lista de padrões de vitória (Sincronizada com o control.js)
   const BINGO_PATTERNS = [
     { name: "Personalizado", sequences: [] },
     { name: "Linha", sequences: [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24]] },
@@ -195,18 +198,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateUI = () => {
     if (!appState || !fullData) return;
 
-    // Se estiver em modo automático, força a visualização do que está ativo no servidor
+    // Sincronização de Visão: Se followActive estiver ligado, o espectador 
+    // é "puxado" para a mesma sessão/rodada que o organizador está operando.
     if (followActive) {
       viewedSessionIndex = fullData.activeSessionIndex;
       appState = fullData.sessions[viewedSessionIndex];
       viewedRound = appState.currentRound;
     }
 
+    // Habilita o botão de resumo apenas se houver dados
     if (eventSummaryButton) eventSummaryButton.classList.remove('hidden');
 
-    // Atualiza o nome da sessão visualizada
     if (viewedSessionNameDisplay && appState) viewedSessionNameDisplay.textContent = appState.sessionName;
 
+    // Títulos e Ícones
     document.getElementById('event-title').textContent = fullData.eventName || appState.eventName;
     document.title = "Bingo: " + (fullData.eventName || appState.eventName);
     document.getElementById('event-icon').src = fullData.eventIcon || "default-icon.png";
@@ -217,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentRoundData = appState.rounds[roundToDisplay];
     if (!currentRoundData) return;
 
-    // Status de Conclusão
+    // Status de Conclusão da Rodada
     if (roundCompletedStatus) {
       if (currentRoundData.isCompleted) {
         roundCompletedStatus.classList.remove('hidden');
@@ -228,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('prize-label').textContent = currentRoundData.prize || `Prêmio da Rodada ${roundToDisplay}`;
 
-    // Números sorteados
+    // --- Renderização da Lista de Números ---
     const list = document.getElementById('drawn-numbers-list');
     list.innerHTML = '';
     let nums = [...(currentRoundData.drawnNumbers || [])];
@@ -245,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleSortButton.textContent = localIsSortedAscending ? "Ordem: Crescente" : "Ordem: Sorteio";
     }
 
+    // Cria os elementos visuais das bolas de bingo
     nums.forEach(num => {
       const item = document.createElement('div');
       item.classList.add('drawn-number-item');
@@ -263,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
    * Gera o HTML para o resumo do evento e o exibe no modal.
    */
   const openEventSummaryModal = () => {
+    // O resumo permite que o espectador veja o histórico de todas as sessões 
+    // e rodadas do evento sem sair da tela atual.
     const summaryContent = document.getElementById('event-summary-content');
     if (!summaryContent || !fullData) return;
 
@@ -401,10 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rootRef = db.ref('evt/' + id);
 
-    // 1. Carregamento inicial completo (Uma única vez)
-    // Permite que o usuário tenha todos os dados de sessões e rodadas passadas.
     rootRef.once('value').then((snapshot) => {
       const data = snapshot.val();
+      // 1. Carregamento inicial da Estrutura (Metadados das sessões e rodadas)
+      // Note que os números sorteados não vêm neste nó principal para economizar banda.
       if (data) {
         // Mapeia do formato reduzido do Firebase para o formato descritivo interno
         fullData = {
@@ -436,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         appState = fullData.sessions[viewedSessionIndex];
 
-        // Carrega todos os números sorteados de todas as sessões/rodadas para o resumo do evento
+        // 2. Carrega especificamente os números sorteados de todas as sessões/rodadas
         const numsRef = db.ref(`nums/${id}`);
         numsRef.once('value').then(numsSnap => {
           const allNums = numsSnap.val() || {};
@@ -451,21 +459,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           });
 
-          // Ativa interface
+          // Altera a visibilidade das seções (Esconde entrada de ID, mostra o Bingo)
           idEntrySection.classList.add('hidden');
           bingoContent.classList.remove('hidden');
           if (showQrButton) showQrButton.classList.remove('hidden');
           if (leaveEventButton) leaveEventButton.classList.remove('hidden');
 
-          // 2. Inicia ouvintes granulares para tráfego reduzido em tempo real
+          // 3. Inicia ouvintes granulares para atualizações em tempo real (Deltas)
           setupGranularListeners(id);
-          updateUI(); // Agora updateUI terá os números sorteados iniciais
+          updateUI();
         }).catch(error => {
           console.error("Erro ao carregar números iniciais:", error);
           handleSessionError();
         });
       } else {
-        handleSessionError();
+        handleSessionError(); // ID não existe no banco
       }
     }).catch(() => handleSessionError());
   };
@@ -482,11 +490,13 @@ document.addEventListener('DOMContentLoaded', () => {
    * Configura ouvintes para apenas campos específicos que mudam durante o sorteio (Economia de Dados).
    */
   const setupGranularListeners = (id) => {
-    // Monitora o timestamp global de modificação
+    // Monitora o timestamp global de modificação. 
+    // Se este valor for removido, sabemos que o evento foi encerrado ou deletado.
     rootRef.child('last').on('value', snap => {
       localLastModified = snap.val() || 0;
-      // Se este valor ficou zerado, é certo que o organizador apagou o evento
+
       if (localLastModified == 0) {
+        // Evento apagado pelo organizador: Limpa o estado local
         sessionStorage.removeItem('activeBingoId');
         eventId = null;
         manualIdInput.value = '';
@@ -499,13 +509,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fullData = null;
         appState = null;
 
-        handleSessionError(); // Esconde o conteúdo e mostra a entrada manual
+        handleSessionError();
         eventTitle.textContent = "Aguardando Código";
         document.title = "Visualização - Bingo";
       }
     });
 
-    // Escuta mudanças nos metadados globais (raras)
+    // Escuta mudanças nos metadados globais: Qual sessão está ativa agora.
     rootRef.child('sIdx').on('value', snap => {
       if (!fullData) return;
       fullData.activeSessionIndex = snap.val();
@@ -513,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     });
 
+    // Escuta mudanças no nome ou ícone do evento
     rootRef.child('name').on('value', snap => {
       if (fullData) { fullData.eventName = snap.val(); updateUI(); }
     });
@@ -563,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // NOVO: Escuta especificamente os números sorteados em /numbers
+    // Escuta especificamente os números sorteados (Nó separado para alta frequência)
     if (activeNumbersRef) activeNumbersRef.off();
     activeNumbersRef = db.ref(`nums/${id}/${sessName}/${roundNum}`);
     activeNumbersRef.on('value', snap => {
@@ -600,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tenta conectar a uma sessão ao clicar no botão de entrada manual
   joinSessionButton.addEventListener('click', () => {
     const id = manualIdInput.value.trim().toUpperCase();
-    if (id.length >= 1 && id.length <= 16) {
+    if (id.length >= 1 && id.length <= 20) {
       eventId = id;
       sessionStorage.setItem('activeBingoId', id); // Salva para manter no refresh
       connectToSession(id);
@@ -740,7 +751,12 @@ document.addEventListener('DOMContentLoaded', () => {
     idEntrySection.classList.remove('hidden');
   }
 
-  // Redução de conexão quando não está aberto
+  /**
+   * Otimização de Recursos:
+   * Quando a aba fica em segundo plano (background), o navegador muitas vezes limita o JS.
+   * Programamos uma desconexão do Firebase após 1 minuto de inatividade para economizar bateria
+   * e conexões simultâneas no banco de dados.
+   */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       // Programa a desconexão para daqui a 1 minuto (60000ms)
