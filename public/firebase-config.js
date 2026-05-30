@@ -1,5 +1,15 @@
-// Renomeie este arquivo para firebase-config.js e adicione suas credenciais do Firebase Console
-// IMPORTANTE: Adicione o arquivo firebase-config.js ao seu .gitignore
+/**
+ * Configurações de conexão com o Firebase.
+ * 
+ * Para encontrar ou atualizar essas informações no Console do Firebase:
+ * 1. Acesse https://console.firebase.google.com/
+ * 2. Selecione o seu projeto.
+ * 3. No menu lateral esquerdo, clique no ícone de engrenagem (Configurações do Projeto).
+ * 4. Na aba "Geral", role a página até a seção "Seus aplicativos".
+ * 5. Localize o seu aplicativo Web e selecione a opção "Configuração" (ou "Config") 
+ *    dentro da seção do SDK para visualizar o objeto JSON abaixo.
+ * 6. Se ainda não criou um aplicativo, clique em "Adicionar aplicativo" e escolha "Web" (</>).
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyD8QOz-_rFA9Dv4S1LrG97qbCsT6jgtKkw",
   authDomain: "binguinho.web.app",
