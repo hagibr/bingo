@@ -9,8 +9,8 @@
 </head>
 
 <body class="admin-body">
-  <!-- Conteúdo do Painel -->
   <header id="admin-header" class="app-header">
+    <!-- Identificação do Evento e Ícone -->
     <div style="display: flex; align-items: center; gap: 15px;">
       <img id="event-icon" src="default-icon.png" alt="Ícone do Evento" class="event-icon">
       <div style="display: flex; flex-direction: column;">
@@ -41,6 +41,7 @@
         </svg>
       </button>
 
+      <!-- Menu de Perfil e Login do Google -->
       <div class="user-menu-wrapper">
         <button id="google-login-button" class="login-google-btn" title="Logar com Google">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="vertical-align: middle;">
@@ -59,7 +60,8 @@
           <img id="user-photo" src="default-icon.png" alt="User" class="user-avatar-btn" referrerpolicy="no-referrer">
           <div id="user-dropdown-menu" class="user-dropdown-menu hidden">
             <div id="user-name-display" class="user-name-display"></div>
-            <button id="events-mgr-button" class="dropdown-item" style="display: inline-flex; align-items: center; gap: 8px;">
+            <button id="events-mgr-button" class="dropdown-item"
+              style="display: inline-flex; align-items: center; gap: 8px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" style="width: 16px; height: 16px;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -84,7 +86,9 @@
 
   <main id="admin-main" class="bingo-main">
     <section class="round-section">
+      <!-- Layout de Cabeçalho da Rodada e Navegação de Sessão -->
       <div class="round-header-layout">
+        <!-- Navegação entre Sessões (Projetos de Bingo) -->
         <div class="session-nav-container">
           <button id="prev-session-main" class="nav-button" title="Sessão Anterior">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -104,6 +108,8 @@
             </svg>
           </button>
         </div>
+
+        <!-- Navegação entre Rodadas e Status de Conclusão -->
         <div class="round-controls-row">
           <div class="round-nav-container">
             <button id="prev-round-main" class="nav-button" title="Rodada Anterior">
@@ -133,11 +139,13 @@
           </div>
         </div>
 
+        <!-- Exibição e Edição do Prêmio -->
         <div class="prize-display">
           <span id="prize-label" contenteditable="true" title="Clique para editar o prêmio">Prêmio da Rodada: [Clique
             para editar]</span>
         </div>
 
+        <!-- Visualizador e Seletor de Padrão de Vitória -->
         <div class="pattern-animator">
           <div id="pattern-grid" class="pattern-grid"
             title="Clique nos quadrados para definir o padrão ou use o botão ao lado"></div>
@@ -147,6 +155,7 @@
     </section>
 
     <section class="drawn-numbers-section">
+      <!-- Seção de Sorteio e Lista de Números -->
       <div class="drawn-numbers-header">
         <h2>Números Sorteados <span id="numbers-count">(0)</span></h2>
         <div class="header-controls">
@@ -173,16 +182,19 @@
     </section>
   </main>
 
+  <!-- Modal de Configurações Detalhadas do Evento -->
   <div id="config-modal" class="modal hidden">
     <div class="modal-content">
       <button id="close-modal-x" class="close-x">&times;</button>
       <h2>Configurações do Evento</h2>
 
       <div class="config-grid">
+        <!-- Nome Global do Evento -->
         <div class="config-full">
           <label for="config-event-name">Nome do Evento:</label>
           <input type="text" id="config-event-name">
         </div>
+        <!-- Gerenciamento de Sessões dentro do Evento -->
         <div class="config-full">
           <label for="config-session-selector">Sessões Cadastradas:</label>
           <select id="config-session-selector" style="width: 100%; margin-bottom: 10px;"></select>
@@ -231,6 +243,7 @@
           </div>
         </div>
 
+        <!-- Configurações Técnicas da Sessão -->
         <div class="config-full config-row-3">
           <div>
             <label for="config-num-rounds">Rodadas:</label>
@@ -249,6 +262,7 @@
           </div>
         </div>
 
+        <!-- Upload de Ícone Personalizado -->
         <div class="config-full" style="text-align: center;">
           <label>Ícone do Evento (Clique na imagem para alterar):</label>
           <input type="file" id="config-icon-upload" accept="image/*" class="hidden">
@@ -258,10 +272,12 @@
           </div>
         </div>
 
+        <!-- Identificação e Compartilhamento -->
         <div class="config-full">
           <label for="config-event-id">Código do Evento (ID Público):</label>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="config-event-id" readonly style="text-transform: uppercase; flex-grow: 1; background-color: #f8f9fa; cursor: default; border-style: dashed;"
+            <input type="text" id="config-event-id" readonly
+              style="text-transform: uppercase; flex-grow: 1; background-color: #f8f9fa; cursor: default; border-style: dashed;"
               title="Este é o identificador único do seu evento. Use o botão ao lado para renomear.">
             <button id="regenerate-id-button" title="Renomear Código" style="background-color: #007bff;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -312,6 +328,7 @@
   </div>
 
   <!-- Modal de Gerenciamento de Eventos -->
+  <!-- Permite listar, abrir e sincronizar diferentes projetos de bingo -->
   <div id="events-mgr-modal" class="modal hidden">
     <div class="modal-content">
       <button id="close-events-mgr-x" class="close-x">&times;</button>
@@ -384,7 +401,6 @@
     </div>
   </div>
 
-  <!-- Modal de Opções de Troca de ID -->
   <!-- Modal de Opções de Troca de ID -->
   <div id="id-options-modal" class="modal hidden">
     <div class="modal-content" style="max-width: 400px; text-align: center;">

@@ -1,6 +1,6 @@
 // Inicializa a aplicação assim que o DOM estiver completamente carregado
 document.addEventListener('DOMContentLoaded', () => {
-  // --- Elementos do DOM ---
+  // --- Referências de Elementos do DOM (Interface Principal) ---
   const eventIcon = document.getElementById('event-icon');
   const eventTitle = document.getElementById('event-title');
   const configButton = document.getElementById('config-button');
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeQrModalButton = document.getElementById('close-qr-modal-button');
   const copyQrLinkButton = document.getElementById('copy-qr-link-button');
 
-  // Elementos do Gerenciador de Eventos
+  // --- Elementos do Gerenciador de Eventos (Lista de Projetos) ---
   const mgrForceSyncButton = document.getElementById('mgr-force-sync-button');
   const eventsMgrButton = document.getElementById('events-mgr-button');
   const eventsMgrModal = document.getElementById('events-mgr-modal');
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mgrImportCodeButton = document.getElementById('mgr-import-code-button');
   const mgrImportEventInput = document.getElementById('mgr-import-event-input');
 
-  // Elementos de Autenticação
+  // --- Elementos de Autenticação e Perfil ---
   const adminHeader = document.getElementById('admin-header');
   const adminMain = document.getElementById('admin-main');
   const googleLoginButton = document.getElementById('google-login-button');
@@ -207,8 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     patternSelect.appendChild(option);
   });
 
-  // --- Elementos do Modal de Configuração ---
+  // --- Elementos do Modal de Configuração de Evento/Sessão ---
   const configModal = document.getElementById('config-modal');
+  // Define o estado inicial como oculto
+  configModal.classList.add('hidden');
+
   const closeConfigButton = document.getElementById('close-config-button');
   const configEventTitle = document.getElementById('config-event-name');
   const configSessionName = document.getElementById('config-session-name');
@@ -269,18 +272,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const eventId = dataToSync.eventid;
-    const updates = {};
+    const updates = {}; // Objeto de atualização atômica para o Firebase
     const timestamp = firebase.database.ServerValue.TIMESTAMP;
     const isFull = (syncLevel === 'full' || syncLevel === true);
     const isSession = (syncLevel === 'session');
     const isOrderOnly = (syncLevel === 'order_only');
 
-    // Atualiza o timestamp e o ID da instância apenas se não for uma mudança silenciosa de ordem
+    // Se não for apenas reordenação, marca o timestamp de modificação global
+    // e o ID da instância que gerou a alteração para evitar "ecos" na sincronização.
     if (!isOrderOnly) {
       updates[`evt/${eventId}/last`] = timestamp;
       updates[`evt/${eventId}/sid`] = instanceId;
     }
 
+    // Sincronização de nível Estrutural (Raiz do evento e todas as sessões)
     if (isFull || isOrderOnly) {
       // Sincronização estrutural: Metadados da Raiz + Todas as Sessões
       if (isFull) {
@@ -289,12 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`evt/${eventId}/sIdx`] = dataToSync.activeSessionIndex;
         updates[`evt/${eventId}/ouid`] = dataToSync.ownerUid || user.uid;
       }
-      
+
+      // Sincroniza apenas a ordem de exibição das sessões
       updates[`evt/${eventId}/ord`] = dataToSync.displayOrder || [];
 
       const sessionsClone = JSON.parse(JSON.stringify(dataToSync.sessions));
 
-      // Registra apenas o ID do evento no índice do usuário para controle de posse
+      // Registra o ID do evento no nó do usuário (índice)
+      // Isso permite que o usuário veja seus eventos em qualquer dispositivo após o login.
       updates[`uevts/${user.uid}/${eventId}`] = true;
 
       const ssToUpload = sessionsClone.map((s, sIdx) => {
@@ -327,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       updates[`evt/${eventId}/ss`] = ssToUpload;
     } else if (dataToSync.activeSessionIndex !== null && dataToSync.sessions[dataToSync.activeSessionIndex]) {
+      // Sincronização de nível Granular (Apenas a sessão/rodada ativa)
       const idx = dataToSync.activeSessionIndex;
       const session = dataToSync.sessions[idx];
       const rIdx = session.currentRound;
@@ -374,6 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeRemoteRef) activeRemoteRef.off();
     activeRemoteRef = firebase.database().ref('evt/' + id);
 
+    // Ouve mudanças no nó do evento. O Firebase RTDB é eficiente
+    // e enviará apenas o que mudou (deltas).
     activeRemoteRef.on('value', async (snapshot) => {
       const remoteData = snapshot.val();
       // Ignora se não houver dados, se for um "eco" ou se os dados remotos forem mais antigos que os locais
@@ -498,12 +508,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       choice = await new Promise((resolve) => {
         const handleChoice = (val) => {
+          // Remove listeners temporários
           idOptReplace.onclick = null;
           idOptCopy.onclick = null;
           idOptCancel.onclick = null;
           idOptionsModal.classList.add('hidden');
           resolve(val);
         };
+        // Atribui ações aos botões do modal
         idOptReplace.onclick = () => handleChoice('1');
         idOptCopy.onclick = () => handleChoice('2');
         idOptCancel.onclick = () => handleChoice('0');
@@ -623,11 +635,13 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {string|boolean} syncLevel - Nível de sincronização: 'full', 'session', ou 'numbers' (padrão).
    */
   const syncToFirebase = (immediate = false, syncLevel = 'numbers') => {
+    // Função interna que executa a sincronização após passar por filtros de segurança
     const performSyncWithChecks = (level) => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
       const isConfigOrMgrOpen = (configModal && !configModal.classList.contains('hidden')) || (eventsMgrModal && !eventsMgrModal.classList.contains('hidden'));
       // Permite sincronização 'order_only' mesmo com modais abertos, mas bloqueia outros tipos.
       if (isConfigOrMgrOpen && level !== 'order_only') return;
+
       if (!eventData.sessions.length) return;
 
       _performFirebaseSync(eventData, level);
@@ -933,7 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).filter(s => s !== null);
 
         eventData.hasActiveEvent = true;
-        
+
         // Carrega ordem remota ou gera padrão
         if (data.ord) eventData.displayOrder = data.ord;
         else eventData.displayOrder = eventData.sessions.map((_, i) => i);
@@ -1655,6 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} direction - -1 para anterior, 1 para próxima.
    */
   const navigateRoundMain = (direction) => {
+    // Navega entre rodadas garantindo que o índice esteja dentro dos limites
     if (!appState) return;
     const nextRound = appState.currentRound + direction;
     if (nextRound >= 1 && nextRound <= appState.numRounds) {
@@ -1719,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentIndex = eventData.activeSessionIndex;
     const currentPos = eventData.displayOrder.indexOf(currentIndex);
     if (currentPos === -1) return;
-    
+
     const nextPos = currentPos + direction;
     if (nextPos < 0 || nextPos >= eventData.displayOrder.length) return;
 
@@ -1763,7 +1778,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!newIdRaw) return;
     const newId = newIdRaw.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
-    
+
     if (newId && newId !== eventData.eventid) {
       const confirmReplace = await showDialog({
         title: "Confirmar Alteração",
@@ -1913,7 +1928,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sessionIdx = eventData.activeSessionIndex;
         eventData.sessions[sessionIdx].sessionName = cleanName;
-      eventData.sessions[sessionIdx].lastModified = Date.now();
+        eventData.sessions[sessionIdx].lastModified = Date.now();
         appState = eventData.sessions[sessionIdx];
         appState.sessionName = cleanName; // Update sessionName
         updateUI(true, 'full');
@@ -1950,7 +1965,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ok) {
       const idxToRemove = eventData.activeSessionIndex;
       eventData.sessions.splice(idxToRemove, 1);
-      
+
       // Ajusta a ordem de exibição removendo o índice e decrementando os superiores
       eventData.displayOrder = eventData.displayOrder
         .filter(i => i !== idxToRemove)
@@ -2217,7 +2232,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * Registra o evento atual na lista de eventos conhecidos pelo usuário no localStorage.
    */
   const registerEventLocally = () => {
-    if (!eventData.eventid) return; // Guarda contra nenhum evento ativo
+    if (!eventData.eventid) return; // Prevenção: não registra se não houver ID
     const registry = JSON.parse(localStorage.getItem('bingoUserEvents') || '{}');
     // Armazena o nome principal e a lista de todas as sessões para visualização no gerenciador
     registry[eventData.eventid] = {
