@@ -479,15 +479,17 @@ document.addEventListener('DOMContentLoaded', () => {
    * Gerencia a alteração do ID da sessão com lógica de substituir ou copiar.
    * @param {string} newId - O novo código desejado.
    * @param {string} oldId - O código atual.
-   * @param {boolean} forceRename - Se verdadeiro, ignora o modal de opções e força a criação de um novo ID (usado para resolução de conflito).
+   * @param {string|boolean} forcedChoice - Escolha forçada ('1' para substituir, '2' para cópia) ou true para conflitos.
    */
-  const processIdChange = async (newId, oldId, forceRename = false) => {
+  const processIdChange = async (newId, oldId, forcedChoice = null) => {
     if (!newId || newId === oldId) return;
     const user = firebase.auth().currentUser;
 
     let choice;
-    if (forceRename) {
-      // Em caso de conflito de posse detectado no login ou ao carregar, tratamos como uma renomeação local forçada (cópia)
+    if (forcedChoice === '1' || forcedChoice === '2') {
+      choice = forcedChoice;
+    } else if (forcedChoice === true) {
+      // Em caso de conflito de posse detectado no login ou ao carregar, tratamos como uma renomeação local forçada (cópia/2)
       choice = '2';
     } else {
       // Mostra o modal customizado (sempre, mesmo offline)
@@ -1763,7 +1765,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const newId = newIdRaw.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
     
     if (newId && newId !== eventData.eventid) {
-      await processIdChange(newId, eventData.eventid);
+      const confirmReplace = await showDialog({
+        title: "Confirmar Alteração",
+        message: `Deseja substituir o código "${eventData.eventid}" por "${newId}"?\n\nO código antigo deixará de existir no servidor.`,
+        type: "confirm"
+      });
+
+      if (confirmReplace) {
+        await processIdChange(newId, eventData.eventid, '1');
+      }
     } else if (newId === eventData.eventid) {
       showToast("O novo código é igual ao atual.");
     }
@@ -1846,11 +1856,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (!ok) return;
 
-      const defaultName = "Novo Evento de Bingo";
+      const defaultEventName = "Nome do Evento de Bingo";
+      const defaultSessionName = "Nome da Sessão";
+      
       eventData.eventid = generateRandomId();
-      eventData.eventName = defaultName;
+      eventData.eventName = defaultEventName;
       eventData.eventIcon = "default-icon.png";
-      eventData.sessions = [createDefaultSessionState(defaultName)];
+      eventData.sessions = [createDefaultSessionState(defaultSessionName)];
       eventData.displayOrder = [0];
       eventData.activeSessionIndex = 0;
       eventData.hasActiveEvent = true; // Marca que um evento está agora ativo
