@@ -754,19 +754,19 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Otimização de Recursos:
    * Quando a aba fica em segundo plano (background), o navegador muitas vezes limita o JS.
-   * Programamos uma desconexão do Firebase após 1 minuto de inatividade para economizar bateria
+   * Programamos uma desconexão do Firebase após 5 minutos de inatividade para economizar bateria
    * e conexões simultâneas no banco de dados.
    */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      // Programa a desconexão para daqui a 1 minuto (60000ms)
+      // Programa a desconexão para daqui a 5 minutos (300000ms)
       disconnectTimer = setTimeout(() => {
         db.goOffline();
         isOffline = true;
         console.log("Desconectado do Firebase por inatividade.");
-      }, 60000);
+      }, 300000);
     } else {
-      // Se o usuário voltou antes de 1 minuto, cancela a desconexão programada
+      // Se o usuário voltou antes de 5 minutos, cancela a desconexão programada
       if (disconnectTimer) {
         clearTimeout(disconnectTimer);
         disconnectTimer = null;
