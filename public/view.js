@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    document.getElementById('prize-label').textContent = currentRoundData.prize || `Prêmio da Rodada ${roundToDisplay}`;
+    document.getElementById('prize-label').innerHTML = currentRoundData.prize || `Prêmio da Rodada ${roundToDisplay}`;
 
     // --- Renderização da Lista de Números ---
     const list = document.getElementById('drawn-numbers-list');

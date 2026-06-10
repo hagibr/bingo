@@ -1122,9 +1122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     undoLastButton.disabled = isLocked;
 
     // Prize Label
-    prizeLabel.textContent = appState.rounds[appState.currentRound].prize;
-    if (prizeLabel.textContent.trim() === '') {
-      prizeLabel.textContent = `Prêmio da Rodada ${appState.currentRound}`;
+    prizeLabel.innerHTML = appState.rounds[appState.currentRound].prize || '';
+    if (prizeLabel.innerHTML.trim() === '') {
+      prizeLabel.innerHTML = `Prêmio da Rodada ${appState.currentRound}`;
     }
 
     // Drawn Numbers
@@ -1621,10 +1621,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Salva o nome do prêmio quando o usuário para de editar o campo
   prizeLabel.addEventListener('blur', (e) => {
-    if (e.target.textContent.trim() === '') {
-      e.target.textContent = `Prêmio da Rodada ${appState.currentRound}`;
+    if (e.target.innerHTML.trim() === '') {
+      e.target.innerHTML = `Prêmio da Rodada ${appState.currentRound}`;
     }
-    appState.rounds[appState.currentRound].prize = e.target.textContent;
+    appState.rounds[appState.currentRound].prize = e.target.innerHTML;
     saveState(true, 'session');
   });
 
