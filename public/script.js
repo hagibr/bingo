@@ -639,8 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const performSyncWithChecks = (level) => {
       // Não sincroniza nada com o Firebase enquanto o menu de configuração estiver aberto.
       const isConfigOrMgrOpen = (configModal && !configModal.classList.contains('hidden')) || (eventsMgrModal && !eventsMgrModal.classList.contains('hidden'));
-      // Permite sincronização 'order_only' mesmo com modais abertos, mas bloqueia outros tipos.
-      if (isConfigOrMgrOpen && level !== 'order_only') return;
+      
+      // Bloqueia apenas a sincronização automática de números ('numbers') enquanto o modal está aberto.
+      // Isso permite que mudanças de nome (full) ou trocas de rodada (session) subam imediatamente.
+      if (isConfigOrMgrOpen && level === 'numbers') return;
 
       if (!eventData.sessions.length) return;
 
@@ -1989,23 +1991,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Listener para Renomear a Sessão Selecionada
-  if (configSessionName) {
-    configSessionName.addEventListener('change', (e) => {
-      const newName = e.target.value.trim();
-      const oldName = appState.sessionName;
-      if (!newName || newName === oldName) return;
+  // Caso você adicione um input com id "config-session-name" no futuro:
+  const sessionNameInput = document.getElementById('config-session-name');
+  if (sessionNameInput) {
+    sessionNameInput.addEventListener('input', (e) => {
+      appState.sessionName = e.target.value;
+      updateUI(false, 'none'); // Atualiza visualmente sem sincronizar a cada tecla
+    });
 
-      if (eventData.sessions.some(s => s.sessionName === newName)) {
-        showToast("Já existe uma sessão com este nome.");
-        e.target.value = oldName;
-        return;
-      }
-
-      const idx = eventData.activeSessionIndex;
-      eventData.sessions[idx].sessionName = newName;
-      appState = eventData.sessions[idx];
-      appState.sessionName = newName; // Update sessionName
-      updateUI(true, 'full');
+    sessionNameInput.addEventListener('change', (e) => {
+      updateUI(true, 'full'); // Sincroniza ao terminar de editar
     });
   }
 

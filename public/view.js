@@ -532,6 +532,37 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fullData) { fullData.eventIcon = snap.val(); updateUI(); }
     });
 
+    // Escuta mudanças na estrutura das sessões (incluindo nomes renomeados)
+    rootRef.child('ss').on('value', snap => {
+      const remoteSessions = snap.val();
+      if (fullData && remoteSessions) {
+        const sessionsArray = Array.isArray(remoteSessions) ? remoteSessions : Object.values(remoteSessions);
+        
+        // Reconstrói o array de sessões para garantir que novas sessões sejam detectadas
+        fullData.sessions = sessionsArray.map((s, sIdx) => {
+          // Tenta preservar os números sorteados que já foram carregados anteriormente para esta sessão
+          const existingRounds = fullData.sessions[sIdx]?.rounds || {};
+          
+          return {
+            sessionName: s.snm,
+            maxNumber: s.max,
+            numRounds: s.nrd,
+            currentRound: s.crnd,
+            drawMode: s.mode,
+            rounds: Object.keys(s.rds || {}).reduce((acc, rId) => {
+              const r = s.rds[rId];
+              acc[rId] = {
+                prize: r.prz, pattern: r.ptrn, patternIndex: r.pidx, isCompleted: r.done,
+                drawnNumbers: existingRounds[rId]?.drawnNumbers || []
+              };
+              return acc;
+            }, {})
+          };
+        });
+        updateUI();
+      }
+    });
+
     syncLiveSessionListeners(id);
   };
 
